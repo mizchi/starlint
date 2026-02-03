@@ -1,5 +1,5 @@
 ///|
-fn read_mbt_file_to_impls(filename : String) -> @syntax.Impls raise {
+fn read_mbt_file_to_impls(filename : String) -> (@syntax.Impls, String) raise {
   let source = @fs.read_file_to_string(filename)
   let (impls, reports) = @parser.parse_string(
     source,
@@ -10,82 +10,103 @@ fn read_mbt_file_to_impls(filename : String) -> @syntax.Impls raise {
     fail(reports[0].to_string())
   }
   // println(impls.to_json().stringify(indent=2))
-  return impls
+  return (impls, source)
 }
 
 ///|
-fn lint_file(filename : String) -> Array[@moonlint.Warning] raise {
-  let impls = read_mbt_file_to_impls(filename)
-  return @moonlint.lint(impls)
+fn lint_file(
+  filename : String,
+  rules : Array[@moonlint.Rule],
+) -> Array[@moonlint.Diagnostic] raise {
+  let (impls, source) = read_mbt_file_to_impls(filename)
+  let input = @moonlint.LintInput::new(impls~, source~, filename~)
+  return @moonlint.lint(input, rules)
 }
 
 ///|
-fn report_antipattern(
-  loc~ : @basic.Location,
-  antipattern~ : String,
-  suggestion~ : String,
-  replace_condition? : String,
-) -> String {
-  let suggestion = if replace_condition is Some(replace_condition) {
-    "If \{replace_condition}, \{suggestion}"
+fn collect_fixes(
+  diagnostics : Array[@moonlint.Diagnostic],
+  filename : String,
+) -> Array[@moonlint.Fix] {
+  let fixes = []
+  for diag in diagnostics {
+    match diag.fix {
+      Some(fix) =>
+        if fix.range.start.fname == "" || fix.range.start.fname == filename {
+          fixes.push(fix)
+        }
+      None => ()
+    }
   } else {
-    "\{suggestion}"
+    fixes
   }
-  let msg =
-    $| Found anti-pattern at \{loc}:
-    $|
-    $| \{antipattern}
-    $|
-    $| Suggestion: \{suggestion}
-    $|
-  return msg
 }
 
 ///|
-fn message_for_warning(warning : @moonlint.Warning) -> String {
-  match warning {
-    MatchTryQuestion(loc) => {
-      let antipattern =
-        #|     match (try? expr) {
-        #|       Ok(value) => <branch_ok>
-        #|       Err(err) => <branch_err>
-        #|     }
-      let suggestion =
-        #|rewrite to:
-        #|
-        #|     try expr catch {
-        #|       err => <branch_err>
-        #|     } noraise {
-        #|       value => <branch_ok>
-        #|     }
-      return report_antipattern(loc~, antipattern~, suggestion~)
-    }
-    StringLiteralMultiplyNumber(loc) => {
-      let antipattern =
-        #|     "<string literal>" * n
-      let suggestion =
-        #|rewrite to:
-        #|
-        #|     "<string literal>".repeat(n)
-      let replace_condition = "n was an integer expression"
-      return report_antipattern(
-        loc~,
-        antipattern~,
-        suggestion~,
-        replace_condition~,
-      )
-    }
+fn apply_fixes_to_source(
+  source : String,
+  fixes : Array[@moonlint.Fix],
+) -> (String, Int) {
+  if fixes.is_empty() {
+    return (source, 0)
   }
+  fixes.sort_by((a, b) => b.range.start.cnum - a.range.start.cnum)
+  let mut output = source
+  let mut applied = 0
+  let mut prev_start = output.length() + 1
+  for fix in fixes {
+    let start = fix.range.start.cnum
+    let end = fix.range.end.cnum
+    if end <= prev_start && 0 <= start && start <= end && end <= output.length() {
+      let prefix_result : Result[StringView, Error] = try? output[:start]
+      let suffix_result : Result[StringView, Error] = try? output[end:]
+      match (prefix_result, suffix_result) {
+        (Ok(prefix), Ok(suffix)) => {
+          let sb = StringBuilder::new()
+          sb
+          ..write_view(prefix)
+          ..write_string(fix.replacement)
+          ..write_view(suffix)
+          output = sb.to_string()
+          applied += 1
+          prev_start = start
+        }
+        _ => ()
+      }
+    }
+  } else {
+    (output, applied)
+  }
+}
+
+///|
+fn apply_fixes_to_file(
+  filename : String,
+  diagnostics : Array[@moonlint.Diagnostic],
+) -> Int raise {
+  let fixes = collect_fixes(diagnostics, filename)
+  if fixes.is_empty() {
+    return 0
+  }
+  let source = @fs.read_file_to_string(filename)
+  let (new_source, applied) = apply_fixes_to_source(source, fixes)
+  if applied > 0 && new_source != source {
+    @fs.write_string_to_file(filename, new_source)
+  }
+  applied
 }
 
 ///|
 fn main {
   let argv = @sys.get_cli_args()[1:].to_array()
-  let spec : Array[(String, String, @ArgParser.Spec, String)] = []
+  let apply_fix = @ref.new(false)
+  let spec : Array[(String, String, @ArgParser.Spec, String)] = [
+    ("--fix", "-f", @ArgParser.Spec::Set(apply_fix), "apply autofixes"),
+  ]
   let filenames = []
   let usage =
     #| usage: 
-    #|   moonlint.exe <file1> <file2> ...
+    #|   moonlint.exe [--fix] <file1> <file2> ...
   @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
     err => {
       println(err)
@@ -109,18 +130,35 @@ fn main {
       filenames.push(filename)
     }
   }
+  let rules = @lint.rules()
   // make output more human-friendly
   println(" ")
   for filename in filenames {
-    let warnings = lint_file(filename) catch {
+    let mut diagnostics = lint_file(filename, rules) catch {
       err => {
         println(err)
         panic()
       }
     }
-    for warning in warnings {
-      let msg = message_for_warning(warning)
-      println(msg)
+    if apply_fix.val {
+      let applied = apply_fixes_to_file(filename, diagnostics) catch {
+        err => {
+          println(err)
+          panic()
+        }
+      }
+      if applied > 0 {
+        diagnostics = lint_file(filename, rules) catch {
+          err => {
+            println(err)
+            panic()
+          }
+        }
+        println("Applied \{applied} fixes in \{filename}")
+      }
+    }
+    for diag in diagnostics {
+      println(@moonlint.format_diagnostic(diag))
     }
   }
 }

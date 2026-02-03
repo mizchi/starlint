@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "myfreess/moonlint/tasks/lint"
+
+import {
+  "moonbitlang/core/list",
+  "moonbitlang/parser/syntax",
+  "myfreess/moonlint",
+}
+
+// Values
+pub fn lint(@list.List[@syntax.Impl]) -> Array[@moonlint.Diagnostic]
+
+pub fn rules() -> Array[@moonlint.Rule]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

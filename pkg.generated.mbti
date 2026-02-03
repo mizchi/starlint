@@ -1,0 +1,81 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "myfreess/moonlint"
+
+import {
+  "moonbitlang/core/list",
+  "moonbitlang/parser/basic",
+  "moonbitlang/parser/syntax",
+}
+
+// Values
+pub fn expr_source(String, @syntax.Expr) -> String?
+
+pub fn format_diagnostic(Diagnostic) -> String
+
+pub fn is_trivial_expr(@syntax.Expr) -> Bool
+
+pub fn is_unit_expr(@syntax.Expr) -> Bool
+
+pub fn lint(LintInput, Array[Rule]) -> Array[Diagnostic]
+
+pub fn lint_impls(@list.List[@syntax.Impl], Array[Rule]) -> Array[Diagnostic]
+
+pub fn match_constant_bool(@syntax.Expr) -> Bool?
+
+pub fn match_constant_int(@syntax.Expr) -> String?
+
+pub fn match_constant_string(@syntax.Expr) -> String?
+
+pub fn match_infix(@syntax.Expr, String) -> (@syntax.Expr, @syntax.Expr, @basic.Location)?
+
+pub fn match_match_expr(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
+
+pub fn match_try_question(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
+
+pub fn pattern_source(String, @syntax.Pattern) -> String?
+
+pub fn source_slice(String, @basic.Location) -> String?
+
+pub fn unwrap_paren(@syntax.Expr) -> @syntax.Expr
+
+// Errors
+
+// Types and methods
+pub struct Diagnostic {
+  rule_id : String
+  loc : @basic.Location
+  message : String
+  detail : String?
+  suggestion : String?
+  fix : Fix?
+}
+pub fn Diagnostic::new(rule_id~ : String, loc~ : @basic.Location, message~ : String, detail? : String, suggestion? : String, fix? : Fix) -> Self
+pub impl Show for Diagnostic
+
+pub struct Fix {
+  range : @basic.Location
+  replacement : String
+}
+pub fn Fix::new(range~ : @basic.Location, replacement~ : String) -> Self
+pub impl Show for Fix
+
+pub struct LintInput {
+  impls : @list.List[@syntax.Impl]
+  source : String
+  filename : String
+}
+pub fn LintInput::new(impls~ : @list.List[@syntax.Impl], source~ : String, filename~ : String) -> Self
+
+pub struct Rule {
+  id : String
+  description : String
+  run : (LintInput) -> Array[Diagnostic]
+}
+pub fn Rule::new(id~ : String, description~ : String, run~ : (LintInput) -> Array[Diagnostic]) -> Self
+pub fn Rule::run(Self, LintInput) -> Array[Diagnostic]
+
+// Type aliases
+pub type RuleRunner = (LintInput) -> Array[Diagnostic]
+
+// Traits
+

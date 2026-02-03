@@ -1,3 +1,9 @@
-import { "moonbitlang/parser/syntax", "moonbitlang/parser/basic" }
+import {
+  "moonbitlang/parser/syntax",
+  "moonbitlang/parser/basic",
+}
 
-import "test" { "moonbitlang/parser" }
+import "test" {
+  "moonbitlang/parser",
+  "myfreess/moonlint/tasks/lint",
+}
