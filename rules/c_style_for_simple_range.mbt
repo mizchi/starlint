@@ -11,6 +11,33 @@ priv struct CStyleForSimpleRangeEnv {
 }
 
 ///|
+priv struct ContinueFinder {
+  mut found : Bool
+}
+
+///|
+impl @syntax.IterVisitor for ContinueFinder with visit_Expr(env, expr) {
+  if env.found {
+    return
+  }
+  match expr {
+    @syntax.Continue(..) => env.found = true
+    @syntax.For(..)
+    | @syntax.ForEach(..)
+    | @syntax.While(..)
+    | @syntax.Loop(..) => ()
+    _ => env.base().visit_Expr(expr)
+  }
+}
+
+///|
+fn contains_continue(expr : @syntax.Expr) -> Bool {
+  let env = ContinueFinder::{ found: false }
+  env.visit_Expr(expr)
+  env.found
+}
+
+///|
 fn[T] list_to_array_for(xs : @list.List[T]) -> Array[T] {
   let out = Array::new(capacity=4)
   for item in xs {
@@ -51,7 +78,8 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
         let binder_name = binder.name
         let cont_name = cont_binder.name
         if binder_name == cont_name &&
-          match_simple_update(binder_name, cont_expr) {
+          match_simple_update(binder_name, cont_expr) &&
+          !contains_continue(body) {
           let mut inclusive = false
           let mut bound_expr : @syntax.Expr? = None
           match @moonlint.match_infix(condition, "<") {

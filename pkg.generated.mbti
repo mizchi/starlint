@@ -20,6 +20,8 @@ pub fn expr_source(String, @syntax.Expr) -> String?
 
 pub fn format_diagnostic(Diagnostic) -> String
 
+pub fn is_call_expr(@syntax.Expr) -> Bool
+
 pub fn is_discard_pattern(@syntax.Pattern) -> Bool
 
 pub fn is_none_expr(@syntax.Expr) -> Bool
@@ -27,6 +29,8 @@ pub fn is_none_expr(@syntax.Expr) -> Bool
 pub fn is_none_pattern(@syntax.Pattern) -> Bool
 
 pub fn is_some_pattern(@syntax.Pattern) -> Bool
+
+pub fn is_string_literal_expr(@syntax.Expr) -> Bool
 
 pub fn is_trivial_expr(@syntax.Expr) -> Bool
 

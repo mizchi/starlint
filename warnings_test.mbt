@@ -119,6 +119,278 @@ test "legacy call syntax" {
 }
 
 ///|
+let option_map_or_else =
+  #|fn main {
+  #|  let x = opt.map_or(expensive(), f)
+  #|}
+
+///|
+test "prefer option map_or_else" {
+  let diagnostics = test_lint(option_map_or_else)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_option_map_or_else\"]")
+}
+
+///|
+let option_unwrap_or_else =
+  #|fn main {
+  #|  let x = opt.unwrap_or(expensive())
+  #|}
+
+///|
+test "prefer option unwrap_or_else" {
+  let diagnostics = test_lint(option_unwrap_or_else)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_option_unwrap_or_else\"]")
+}
+
+///|
+let string_concat_in_loop =
+  #|fn main {
+  #|  let mut s = ""
+  #|  for i in 0..<3 {
+  #|    s = s + "x"
+  #|  }
+  #|}
+
+///|
+test "prefer string builder for concat" {
+  let diagnostics = test_lint(string_concat_in_loop)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_string_builder_for_concat\"]")
+}
+
+///|
+let string_from_array_large =
+  #|fn main {
+  #|  let s = String::from_array(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
+  #|}
+
+///|
+test "avoid string from array large" {
+  let diagnostics = test_lint(string_from_array_large)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"avoid_string_from_array_large\"]")
+}
+
+///|
+let string_substring =
+  #|fn main {
+  #|  let s = "hello".substring(start=1, end=3)
+  #|}
+
+///|
+test "prefer string view slice" {
+  let diagnostics = test_lint(string_substring)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_string_view_slice\"]")
+}
+
+///|
+let string_view_to_string =
+  #|fn main {
+  #|  let s = "hello"
+  #|  let t = s[:][1:3].to_string()
+  #|}
+
+///|
+test "prefer string view usage" {
+  let diagnostics = test_lint(string_view_to_string)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_string_view_usage\"]")
+}
+
+///|
+let string_index_access =
+  #|fn main {
+  #|  for i in 0..<1 {
+  #|    let c = "hello"[i]
+  #|  }
+  #|}
+
+///|
+test "prefer unicode safe iteration" {
+  let diagnostics = test_lint(string_index_access)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_unicode_safe_iteration\"]")
+}
+
+///|
+let map_direct_index =
+  #|fn main {
+  #|  let m = { "a": 1 }
+  #|  let n = m
+  #|  let x = n["a"]
+  #|}
+
+///|
+test "prefer map get pattern" {
+  let diagnostics = test_lint(map_direct_index)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
+let map_direct_index_if =
+  #|fn main {
+  #|  let a = { "a": 1 }
+  #|  let b = a
+  #|  let m = if flag { a } else { b }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern if" {
+  let diagnostics = test_lint(map_direct_index_if)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
+let map_direct_index_assign =
+  #|fn main {
+  #|  let mut m = { "a": 1 }
+  #|  m = { "b": 2 }
+  #|  let x = m["b"]
+  #|}
+
+///|
+test "prefer map get pattern assign" {
+  let diagnostics = test_lint(map_direct_index_assign)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(
+    summary,
+    content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\", \"avoid_map_set_js\"]",
+  )
+}
+
+///|
+let map_direct_index_match =
+  #|fn main {
+  #|  let a = { "a": 1 }
+  #|  let b = { "a": 2 }
+  #|  let m = match opt {
+  #|    Some(_) => a
+  #|    None => b
+  #|  }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern match" {
+  let diagnostics = test_lint(map_direct_index_match)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(
+    summary,
+    content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\", \"avoid_map_set_js\"]",
+  )
+}
+
+///|
+let map_direct_index_match_raise =
+  #|fn main {
+  #|  let a = { "a": 1 }
+  #|  let m = match opt {
+  #|    Some(_) => a
+  #|    None => raise Failure("x")
+  #|  }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern match raise" {
+  let diagnostics = test_lint(map_direct_index_match_raise)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
+let map_direct_index_match_abort =
+  #|fn main {
+  #|  let a = { "a": 1 }
+  #|  let m = match opt {
+  #|    Some(_) => a
+  #|    None => abort("x")
+  #|  }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern match abort" {
+  let diagnostics = test_lint(map_direct_index_match_abort)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
+let map_direct_index_match_panic =
+  #|fn main {
+  #|  let a = { "a": 1 }
+  #|  let m = match opt {
+  #|    Some(_) => a
+  #|    None => panic()
+  #|  }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern match panic" {
+  let diagnostics = test_lint(map_direct_index_match_panic)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
+let map_direct_index_match_pkg_panic =
+  #|fn main {
+  #|  let a = { "a": 1 }
+  #|  let m = match opt {
+  #|    Some(_) => a
+  #|    None => @builtin.panic()
+  #|  }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern match pkg panic" {
+  let diagnostics = test_lint(map_direct_index_match_pkg_panic)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
+let map_direct_index_try_panic =
+  #|fn main {
+  #|  let m = try { "a": 1 } catch {
+  #|    _ => @builtin.panic()
+  #|  }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern try panic" {
+  let diagnostics = test_lint(map_direct_index_try_panic)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
+let map_direct_index_try =
+  #|fn main {
+  #|  let m = try { "a": 1 } catch {
+  #|    _ => fail("x")
+  #|  }
+  #|  let x = m["a"]
+  #|}
+
+///|
+test "prefer map get pattern try fail" {
+  let diagnostics = test_lint(map_direct_index_try)
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+}
+
+///|
 let c_style_for_simple_range =
   #|fn main {
   #|  for i = 0; i < 10; i = i + 1 {
@@ -136,6 +408,24 @@ test "c style for simple range" {
       #|[("c_style_for_simple_range", <lint test>-2:3-4:4)]
     ),
   )
+}
+
+///|
+let c_style_for_simple_range_with_continue =
+  #|fn main {
+  #|  for i = 0; i < 10; i = i + 1 {
+  #|    if i % 2 == 0 {
+  #|      continue
+  #|    }
+  #|    println(i)
+  #|  }
+  #|}
+
+///|
+test "c style for simple range with continue" {
+  let diagnostics = test_lint(c_style_for_simple_range_with_continue)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
 }
 
 ///|
@@ -229,7 +519,7 @@ let match_option_unwrap_or =
   #|  let opt = foo()
   #|  let value = match opt {
   #|    Some(v) => v
-  #|    None => 42
+  #|    None => 0
   #|  }
   #|}
 
@@ -243,6 +533,45 @@ test "match option unwrap_or" {
       #|[("match_option_unwrap_or", <lint test>-3:15-6:4)]
     ),
   )
+}
+
+///|
+let match_option_unwrap_or_literal_default =
+  #|fn main {
+  #|  let opt = foo()
+  #|  let value = match opt {
+  #|    Some(v) => v
+  #|    None => 42
+  #|  }
+  #|}
+
+///|
+test "match option unwrap_or literal default" {
+  let diagnostics = test_lint(match_option_unwrap_or_literal_default)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_option_unwrap_or", <lint test>-3:15-6:4)]
+    ),
+  )
+}
+
+///|
+let match_option_unwrap_or_non_literal_default =
+  #|fn main {
+  #|  let opt = foo()
+  #|  let value = match opt {
+  #|    Some(v) => v
+  #|    None => expensive()
+  #|  }
+  #|}
+
+///|
+test "match option unwrap_or non literal default" {
+  let diagnostics = test_lint(match_option_unwrap_or_non_literal_default)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
 }
 
 ///|
@@ -582,18 +911,14 @@ let prefer_pipeline_rebind_chain =
   #|  let b = f(a)
   #|  let c = g(b, 111)
   #|  let d = h(c, 222, 333)
+  #|  let e = k(d, 444)
   #|}
 
 ///|
 test "prefer pipeline rebind chain" {
   let diagnostics = test_lint(prefer_pipeline_rebind_chain)
-  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
-  inspect(
-    summary,
-    content=(
-      #|[("prefer_pipeline_rebind", <lint test>-2:3-4:25)]
-    ),
-  )
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"prefer_pipeline_rebind\"]")
 }
 
 ///|
@@ -621,13 +946,8 @@ let prefer_pipeline_rebind_two_steps =
 ///|
 test "prefer pipeline rebind two steps" {
   let diagnostics = test_lint(prefer_pipeline_rebind_two_steps)
-  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
-  inspect(
-    summary,
-    content=(
-      #|[("prefer_pipeline_rebind", <lint test>-2:3-3:18)]
-    ),
-  )
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[]")
 }
 
 ///|

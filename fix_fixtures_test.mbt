@@ -406,6 +406,41 @@ test "fix fixtures" {
       rules: ["dotdot_chain_sequence"],
     },
     FixFixture::{
+      name: "dotdot_chain_sequence_three_calls_fix",
+      input: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj.a();
+        #|  obj.b();
+        #|  obj.c();
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj..a()..b()..c();
+        #|}
+      ),
+      rules: ["dotdot_chain_sequence"],
+    },
+    FixFixture::{
+      name: "dotdot_chain_sequence_args_fix",
+      input: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj.a(1);
+        #|  obj.b(2, 3);
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj..a(1)..b(2, 3);
+        #|}
+      ),
+      rules: ["dotdot_chain_sequence"],
+    },
+    FixFixture::{
       name: "dotdot_chain_sequence_call_receiver_no_fix",
       input: (
         #|fn main {
@@ -554,20 +589,44 @@ test "fix fixtures" {
       rules: ["c_style_for_simple_range"],
     },
     FixFixture::{
+      name: "c_style_for_simple_range_continue_no_fix",
+      input: (
+        #|fn main {
+        #|  for i = 0; i < 10; i = i + 1 {
+        #|    if i % 2 == 0 {
+        #|      continue
+        #|    }
+        #|    foo(i)
+        #|  }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  for i = 0; i < 10; i = i + 1 {
+        #|    if i % 2 == 0 {
+        #|      continue
+        #|    }
+        #|    foo(i)
+        #|  }
+        #|}
+      ),
+      rules: ["c_style_for_simple_range"],
+    },
+    FixFixture::{
       name: "match_option_unwrap_or_fix",
       input: (
         #|fn main {
         #|  let opt = foo()
         #|  let value = match opt {
         #|    Some(v) => v
-        #|    None => 42
+        #|    None => 0
         #|  }
         #|}
       ),
       expected: (
         #|fn main {
         #|  let opt = foo()
-        #|  let value = opt.unwrap_or(42)
+        #|  let value = opt.unwrap_or(0)
         #|}
       ),
       rules: ["match_option_unwrap_or"],

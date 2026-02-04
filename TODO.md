@@ -69,7 +69,7 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
 - [ ] `loop_sum_fold`  
   `let mut acc = 0 ; for x in xs { acc += f(x) }` → `xs.fold(init=0, ...)` (fix)
 - [ ] `loop_string_builder_join`  
-  `StringBuilder` + 逐次追加 → `xs.map(...).join(sep)` (条件付き)
+  `StringBuilder` + 逐次追加 → `xs.map(...).join(sep)` (条件付き / core は StringBuilder/Buffer 推奨なので要検証)
 - [ ] `index_loop_for_each`  
   `for i = 0; i < xs.length(); { ... xs[i] ... }` → `for i, x in xs { ... }` (fix)
 
@@ -128,6 +128,22 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
   変更されない `String` 引数を `StringView` へ誘導 (提案)
 - [ ] `avoid_unnecessary_copy_slice`  
   `to_array()` / `to_string()` の不要コピーを `*View` へ置換 (提案)
+
+### core ベストプラクティス由来 (要検証)
+- [ ] `prefer_option_map_or_else`  
+  `map_or(default, f)` の default が関数呼び出しなら `map_or_else` へ (lazy 評価)
+- [ ] `prefer_option_unwrap_or_else`  
+  `unwrap_or(default)` の default が関数呼び出しなら `unwrap_or_else` へ (lazy 評価)
+- [ ] `prefer_string_builder_for_concat`  
+  ループ内の `s = s + ...` / `s += ...` を `StringBuilder`/`Buffer` へ (perf)
+- [ ] `avoid_string_from_array_large`  
+  大きな `Array[Char]` → `String::from_array` を避け `StringBuilder`/`Buffer` を提案 (perf)
+- [ ] `prefer_string_view_slice`  
+  substring 生成は `text[:][start:end]` の `StringView` を優先し必要なら `to_string()` (perf)
+- [ ] `prefer_unicode_safe_iteration`  
+  `s[i]` / `s.get_char(i)` の手動走査を `for c in s` / `s.iter()` / パターンマッチへ (安全性)
+- [ ] `prefer_map_get_pattern`  
+  `map[key]` 直接アクセスを `get` + `match/guard` に誘導 (安全性)
 
 ### ベンチマーク (Phase 1.5 の前提)
 - [ ] `bench_loop_vs_map_filter`  

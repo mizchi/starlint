@@ -5,6 +5,9 @@ let prefer_pipeline_rebind_rule_id : String = "prefer_pipeline_rebind"
 let prefer_pipeline_rebind_description : String = "Prefer |> when let bindings feed into the next call."
 
 ///|
+let min_rebind_steps : Int = 4
+
+///|
 priv struct PreferPipelineRebindEnv {
   diags : Array[@moonlint.Diagnostic]
   source : String
@@ -60,7 +63,7 @@ fn rebind_let_chain(
       _ => break
     }
   }
-  if steps.length() >= 2 {
+  if steps.length() >= min_rebind_steps {
     match outer_loc {
       Some(loc) => Some((loc, steps))
       None => None

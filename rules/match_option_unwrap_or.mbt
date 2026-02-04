@@ -11,6 +11,15 @@ priv struct MatchOptionUnwrapOrEnv {
 }
 
 ///|
+fn is_safe_unwrap_or_default(expr : @syntax.Expr) -> Bool {
+  match @moonlint.unwrap_paren(expr) {
+    @syntax.Constant(..) => true
+    @syntax.MultilineString(..) => true
+    _ => @moonlint.is_none_expr(expr) || @moonlint.is_unit_expr(expr)
+  }
+}
+
+///|
 impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) => {
@@ -35,7 +44,8 @@ impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
         }
         match (some_case, none_case, binder_name) {
           (Some(some_case), Some(none_case), Some(name)) =>
-            if @moonlint.match_ident_name(some_case.body) == Some(name) {
+            if @moonlint.match_ident_name(some_case.body) == Some(name) &&
+              is_safe_unwrap_or_default(none_case.body) {
               let message = "Match can be replaced with unwrap_or."
               let detail =
                 #|match opt {

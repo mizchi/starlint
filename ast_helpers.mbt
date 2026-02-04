@@ -35,6 +35,25 @@ pub fn match_constant_int(expr : @syntax.Expr) -> String? {
 }
 
 ///|
+pub fn is_string_literal_expr(expr : @syntax.Expr) -> Bool {
+  match unwrap_paren(expr) {
+    @syntax.Constant(c=String(_), ..) => true
+    @syntax.MultilineString(..) => true
+    @syntax.Interp(..) => true
+    _ => false
+  }
+}
+
+///|
+pub fn is_call_expr(expr : @syntax.Expr) -> Bool {
+  match unwrap_paren(expr) {
+    @syntax.Apply(..) => true
+    @syntax.DotApply(..) => true
+    _ => false
+  }
+}
+
+///|
 pub fn match_ident_name(expr : @syntax.Expr) -> String? {
   match unwrap_paren(expr) {
     @syntax.Ident(id={ name: Ident(name~), .. }, ..) => Some(name)
