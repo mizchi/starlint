@@ -2,7 +2,7 @@
 let prefer_guard_chain_rule_id : String = "prefer_guard_chain"
 
 ///|
-let prefer_guard_chain_description : String = "Prefer guard/if for nested matches with no-op fallback branches."
+let prefer_guard_chain_description : String = "Prefer guard/if for nested matches with trivial fallback branches."
 
 ///|
 priv struct PreferGuardChainEnv {
@@ -16,23 +16,55 @@ fn is_noop_pattern(pat : @syntax.Pattern) -> Bool {
 }
 
 ///|
-fn is_noop_case(case_ : @syntax.Case) -> Bool {
+fn is_terminal_expr(expr : @syntax.Expr) -> Bool {
+  match @moonlint.unwrap_paren(expr) {
+    @syntax.Raise(..) => true
+    @syntax.Return(..) => true
+    @syntax.Break(..) => true
+    @syntax.Continue(..) => true
+    @syntax.Apply(
+      func=@syntax.Field(record=_, accessor=@syntax.Accessor::Label(label), ..),
+      args=_,
+      attr=NoAttr,
+      loc=_
+    ) => is_terminal_name(@moonlint.label_name(label))
+    @syntax.Apply(
+      func=@syntax.Method(type_name=_, method_name~, ..),
+      args=_,
+      attr=NoAttr,
+      loc=_
+    ) => is_terminal_name(@moonlint.label_name(method_name))
+    @syntax.Apply(func=@syntax.Ident(id=ident, ..), args=_, attr=NoAttr, loc=_) =>
+      is_terminal_name(@moonlint.longident_right_name(ident.name))
+    @syntax.DotApply(method_name~, ..) =>
+      is_terminal_name(@moonlint.label_name(method_name))
+    _ => false
+  }
+}
+
+///|
+fn is_terminal_name(name : String) -> Bool {
+  name == "abort" || name == "fail" || name == "panic"
+}
+
+///|
+fn is_trivial_fallback_case(case_ : @syntax.Case) -> Bool {
   case_.guard_ is None &&
   is_noop_pattern(case_.pattern) &&
-  @moonlint.is_unit_expr(case_.body)
+  (@moonlint.is_unit_expr(case_.body) || is_terminal_expr(case_.body))
 }
 
 ///|
 fn active_case_from_cases(cases : @list.List[@syntax.Case]) -> @syntax.Case? {
   let cases_array = @moonlint.list_to_array(cases)
   let mut active_case : @syntax.Case? = None
-  let mut has_noop = false
+  let mut has_fallback = false
   for case_ in cases_array {
     if case_.guard_ is Some(_) {
       return None
     }
-    if is_noop_case(case_) {
-      has_noop = true
+    if is_trivial_fallback_case(case_) {
+      has_fallback = true
     } else {
       match active_case {
         Some(_) => return None
@@ -40,7 +72,7 @@ fn active_case_from_cases(cases : @list.List[@syntax.Case]) -> @syntax.Case? {
       }
     }
   }
-  if has_noop {
+  if has_fallback {
     active_case
   } else {
     None
@@ -119,7 +151,7 @@ fn push_prefer_guard_chain_diag(
   env : PreferGuardChainEnv,
   loc : @basic.Location,
 ) -> Unit {
-  let message = "Nested match with no-op fallback; prefer guard/if early return to reduce nesting."
+  let message = "Nested match with trivial fallback; prefer guard/if early return to reduce nesting."
   let detail =
     #|match a {
     #|  A(x) => match b {

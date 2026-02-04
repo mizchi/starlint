@@ -106,6 +106,21 @@ test "warning fixtures" {
       ),
       expected: "[]",
     },
+    WarningFixture::{
+      name: "prefer_guard_chain_with_raise",
+      input: (
+        #|fn main {
+        #|  match a {
+        #|    A(x) => match b {
+        #|      B(y) => work(y)
+        #|      _ => raise Error("bad")
+        #|    }
+        #|    _ => raise Error("bad")
+        #|  }
+        #|}
+      ),
+      expected: "[\"prefer_guard_chain\"]",
+    },
   ]
   for fixture in fixtures {
     let _ = fixture.name

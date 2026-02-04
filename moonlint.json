@@ -1,6 +1,8 @@
 {
+  "preset": "recommended",
   "categories": {
-    "fp": { "enabled": true }
+    "module": { "enabled": true },
+    "test": { "enabled": true }
   },
   "rules": {
     "match_try_question": "off",
