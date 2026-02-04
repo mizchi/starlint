@@ -30,7 +30,8 @@ fn push_require_doc_pub_fn_diag(
   let detail =
     #|pub fn f() { ... }
   let suggestion =
-    #|/// Description
+    #|///|
+    #|/// how to use
     #|pub fn f() { ... }
   env.diags.push(
     @starlint.Diagnostic::new(

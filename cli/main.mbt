@@ -120,7 +120,7 @@ fn format_diagnostic_colored(diag : @starlint.Diagnostic) -> String {
   }
   match diag.suggestion {
     Some(suggestion) =>
-      sb..write_string("\n\nSuggestion: ")..write_string(suggestion)
+      sb..write_string("\n\nSuggestion:\n")..write_string(suggestion)
     None => ()
   }
   match diag.fix {

@@ -31,6 +31,7 @@
     "avoid_map_set_js": "off",
     "avoid_json_js": "off",
     "avoid_double_to_string_js": "off",
+    "require_doc_pub_fn": "off",
     "dotdot_chain_sequence": "off",
     "prefer_pipeline": "warn",
     "prefer_pipeline_rebind": "warn"
