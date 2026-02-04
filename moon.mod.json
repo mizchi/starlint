@@ -10,6 +10,6 @@
   "repository": "https://github.com/mizchi/starlint",
   "license": "Apache-2.0",
   "keywords": [],
-  "description": "",
+  "description": "Opionated moonbit linter",
   "preferred-target": "native"
 }
