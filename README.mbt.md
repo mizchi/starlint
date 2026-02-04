@@ -19,6 +19,19 @@ starlint init # generate starlint.json (with rule_groups guidance)
 starlint --ai # output AI review metadata (module/file/function/test names + doc tests)
 ```
 
+## ai metadata (--ai)
+
+`--ai` emits a structured text dump for review by LLMs. It does not run lint rules.
+
+It includes:
+
+- module name and package names
+- public/private function names
+- test names + warnings for unnamed or check-style names
+- doc tests from `///` doc comments and `*.mbt.md` files
+
+Use it when you want an AI to infer module intent and review naming or test coverage.
+
 starlint walks up from the current directory to find `moon.mod.json`, and uses that
 module root as the base for config and file discovery.
 
@@ -58,7 +71,7 @@ curl -fsSL https://raw.githubusercontent.com/mizchi/starlint/main/install.sh | s
 
 Optional environment variables:
 
-- `STARLINT_VERSION` to pin a tag (e.g. `v0.1.0`)
+- `STARLINT_VERSION` to pin a tag (e.g. `v0.2.0`)
 - `STARLINT_INSTALL_DIR` to change the install directory (default: `$HOME/.local/bin`)
 
 For local development builds:
