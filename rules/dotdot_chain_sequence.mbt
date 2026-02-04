@@ -13,8 +13,8 @@ priv struct DotdotChainSequenceEnv {
 ///|
 priv struct DotApplyInfo {
   receiver_key : String
-  receiver_src : String?
-  call_src : String?
+  receiver_expr : @syntax.Expr
+  call_expr : @syntax.Expr
 }
 
 ///|
@@ -43,15 +43,15 @@ fn receiver_key(expr : @syntax.Expr) -> String? {
 }
 
 ///|
-fn method_call_info(source : String, expr : @syntax.Expr) -> DotApplyInfo? {
+fn method_call_info(expr : @syntax.Expr) -> DotApplyInfo? {
   match expr {
     @syntax.DotApply(self~, attr=NoAttr, return_self=false, ..) =>
       match receiver_key(self) {
         Some(key) =>
           Some(DotApplyInfo::{
             receiver_key: key,
-            receiver_src: @moonlint.expr_source(source, self),
-            call_src: @moonlint.expr_source(source, expr),
+            receiver_expr: self,
+            call_expr: expr,
           })
         None => None
       }
@@ -60,8 +60,8 @@ fn method_call_info(source : String, expr : @syntax.Expr) -> DotApplyInfo? {
         Some(key) =>
           Some(DotApplyInfo::{
             receiver_key: key,
-            receiver_src: @moonlint.expr_source(source, record),
-            call_src: @moonlint.expr_source(source, expr),
+            receiver_expr: record,
+            call_expr: expr,
           })
         None => None
       }
@@ -82,22 +82,29 @@ fn strip_receiver_prefix(call_src : String, receiver_src : String) -> String? {
 }
 
 ///|
-fn dotdot_chain_replacement(infos : Array[DotApplyInfo]) -> String? {
+fn dotdot_chain_replacement(
+  source : String,
+  infos : Array[DotApplyInfo],
+) -> String? {
   if infos.length() < 2 {
     return None
   }
   let first = infos[0]
-  let receiver_src = match first.receiver_src {
+  let receiver_src = match @moonlint.expr_source(source, first.receiver_expr) {
     Some(src) => src
     None => return None
   }
   let suffixes = Array::new(capacity=infos.length())
   for info in infos {
-    match info.receiver_src {
-      Some(src) if src == receiver_src => ()
-      _ => return None
+    let info_receiver_src = match
+      @moonlint.expr_source(source, info.receiver_expr) {
+      Some(src) => src
+      None => return None
     }
-    let call_src = match info.call_src {
+    if info_receiver_src != receiver_src {
+      return None
+    }
+    let call_src = match @moonlint.expr_source(source, info.call_expr) {
       Some(src) => src
       None => return None
     }
@@ -156,7 +163,7 @@ impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
         let mut receiver_key : String? = None
         let mut ok = true
         for item in items {
-          match method_call_info(env.source, item) {
+          match method_call_info(item) {
             Some(info) => {
               match receiver_key {
                 None => receiver_key = Some(info.receiver_key)
@@ -181,7 +188,7 @@ impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
           let suggestion =
             #|obj..a()..b()..c()
           let fix = if has_trailing_semicolon(env.source, loc) {
-            match dotdot_chain_replacement(infos) {
+            match dotdot_chain_replacement(env.source, infos) {
               Some(replacement) =>
                 Some(@moonlint.Fix::new(range=loc, replacement~))
               None => None

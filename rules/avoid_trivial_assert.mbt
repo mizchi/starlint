@@ -12,65 +12,6 @@ priv struct AvoidTrivialAssertEnv {
 }
 
 ///|
-fn trivial_assert_call_name(expr : @syntax.Expr) -> String? {
-  match @moonlint.unwrap_paren(expr) {
-    @syntax.Ident(id=ident, ..) =>
-      Some(@moonlint.longident_right_name(ident.name))
-    @syntax.Field(accessor=@syntax.Accessor::Label(label), ..) =>
-      Some(@moonlint.label_name(label))
-    @syntax.Method(type_name=_, method_name~, ..) =>
-      Some(@moonlint.label_name(method_name))
-    _ => None
-  }
-}
-
-///|
-fn trivial_assert_call_info(
-  expr : @syntax.Expr,
-) -> (String, Array[@syntax.Argument], @basic.Location)? {
-  match @moonlint.unwrap_paren(expr) {
-    @syntax.Apply(func~, args~, loc~, ..) =>
-      match trivial_assert_call_name(func) {
-        Some(name) => Some((name, @moonlint.list_to_array(args), loc))
-        None => None
-      }
-    @syntax.DotApply(method_name~, args~, loc~, ..) =>
-      Some(
-        (@moonlint.label_name(method_name), @moonlint.list_to_array(args), loc),
-      )
-    _ => None
-  }
-}
-
-///|
-fn trivial_assert_first_positional_arg(
-  args : Array[@syntax.Argument],
-) -> @syntax.Expr? {
-  for arg in args {
-    if arg.kind is @syntax.ArgumentKind::Positional {
-      return Some(arg.value)
-    }
-  }
-  None
-}
-
-///|
-fn trivial_assert_first_two_positional_args(
-  args : Array[@syntax.Argument],
-) -> (@syntax.Expr, @syntax.Expr)? {
-  let mut first : @syntax.Expr? = None
-  for arg in args {
-    if arg.kind is @syntax.ArgumentKind::Positional {
-      match first {
-        None => first = Some(arg.value)
-        Some(lhs) => return Some((lhs, arg.value))
-      }
-    }
-  }
-  None
-}
-
-///|
 fn is_simple_expr(expr : @syntax.Expr) -> Bool {
   match @moonlint.unwrap_paren(expr) {
     @syntax.Ident(..) => true
@@ -129,10 +70,10 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Impl(env, impl_) {
 
 ///|
 impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
-  match trivial_assert_call_info(expr) {
+  match @moonlint.match_call_info(expr) {
     Some((name, args, loc)) if env.in_test =>
       if name == "assert_true" || name == "assert_false" {
-        match trivial_assert_first_positional_arg(args) {
+        match @moonlint.first_positional_arg(args) {
           Some(arg) =>
             match @moonlint.match_constant_bool(arg) {
               Some(value) => {
@@ -156,7 +97,7 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
           None => ()
         }
       } else if name == "assert_eq" {
-        match trivial_assert_first_two_positional_args(args) {
+        match @moonlint.first_two_positional_args(args) {
           Some((lhs, rhs)) =>
             if is_simple_expr(lhs) &&
               is_simple_expr(rhs) &&

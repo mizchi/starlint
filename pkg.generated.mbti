@@ -18,7 +18,15 @@ pub fn constructor_type_name(@syntax.Constructor) -> String?
 
 pub fn expr_source(String, @syntax.Expr) -> String?
 
+pub fn first_positional_arg(Array[@syntax.Argument]) -> @syntax.Expr?
+
+pub fn first_two_positional_args(Array[@syntax.Argument]) -> (@syntax.Expr, @syntax.Expr)?
+
 pub fn format_diagnostic(Diagnostic) -> String
+
+pub fn func_param_names(@syntax.Func) -> Array[String]
+
+pub fn is_async_with_task_group_call(@syntax.Expr) -> Bool
 
 pub fn is_call_expr(@syntax.Expr) -> Bool
 
@@ -55,6 +63,12 @@ pub fn longident_full_name(@syntax.LongIdent) -> String
 pub fn longident_pkg_name(@syntax.LongIdent) -> String?
 
 pub fn longident_right_name(@syntax.LongIdent) -> String
+
+pub fn match_call_info(@syntax.Expr) -> (String, Array[@syntax.Argument], @basic.Location)?
+
+pub fn match_call_name(@syntax.Expr) -> String?
+
+pub fn match_callable_name(@syntax.Expr) -> String?
 
 pub fn match_constant_bool(@syntax.Expr) -> Bool?
 

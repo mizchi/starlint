@@ -11,48 +11,6 @@ priv struct SpawnResultMustBeUsedEnv {
 }
 
 ///|
-fn is_with_task_group_call(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
-    @syntax.Ident(id=ident, ..) => {
-      let name = @moonlint.longident_right_name(ident.name)
-      match @moonlint.longident_pkg_name(ident.name) {
-        Some(pkg) => pkg == "async" && name == "with_task_group"
-        None => false
-      }
-    }
-    @syntax.Field(
-      record=@syntax.Ident(id=ident, ..),
-      accessor=@syntax.Accessor::Label(label),
-      ..
-    ) =>
-      @moonlint.label_name(label) == "with_task_group" &&
-      @moonlint.longident_right_name(ident.name) == "async"
-    _ => false
-  }
-}
-
-///|
-fn task_group_param_names(func : @syntax.Func) -> Array[String] {
-  let params = @moonlint.list_to_array(func.parameters)
-  let names = Array::new(capacity=params.length())
-  for param in params {
-    match param {
-      @syntax.Parameter::Positional(binder~, ty=_) =>
-        if binder.name != "_" {
-          names.push(binder.name)
-        }
-      @syntax.Parameter::Labelled(binder~, ty=_) =>
-        if binder.name != "_" {
-          names.push(binder.name)
-        }
-      _ => ()
-    }
-  } else {
-    names
-  }
-}
-
-///|
 fn push_task_group_names(
   env : SpawnResultMustBeUsedEnv,
   names : Array[String],
@@ -127,7 +85,7 @@ fn push_spawn_result_unused_diag(
 impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr) {
   match @moonlint.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, ..) =>
-      if is_with_task_group_call(func) {
+      if @moonlint.is_async_with_task_group_call(func) {
         let args_array = @moonlint.list_to_array(args)
         if args_array.length() > 0 {
           let arg0 = args_array[0]
@@ -136,7 +94,7 @@ impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr)
               kind: @syntax.ArgumentKind::Positional,
               value: @syntax.Function(func~, ..),
             } => {
-              let names = task_group_param_names(func)
+              let names = @moonlint.func_param_names(func)
               let count = names.length()
               if count > 0 {
                 push_task_group_names(env, names)

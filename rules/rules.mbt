@@ -37,6 +37,7 @@ pub fn rules() -> Array[@moonlint.Rule] {
     avoid_json_js_rule(),
     avoid_double_to_string_js_rule(),
     dotdot_chain_sequence_rule(),
+    dotdot_single_call_rule(),
     prefer_pipeline_rule(),
     prefer_pipeline_rebind_rule(),
     async_cancellation_must_propagate_rule(),

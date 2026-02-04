@@ -131,6 +131,112 @@ pub fn[T] list_to_array(xs : @list.List[T]) -> Array[T] {
 }
 
 ///|
+pub fn match_callable_name(expr : @syntax.Expr) -> String? {
+  match unwrap_paren(expr) {
+    @syntax.Ident(id=ident, ..) => Some(longident_right_name(ident.name))
+    @syntax.Field(accessor=@syntax.Accessor::Label(label), ..) =>
+      Some(label_name(label))
+    @syntax.Method(type_name=_, method_name~, ..) =>
+      Some(label_name(method_name))
+    _ => None
+  }
+}
+
+///|
+pub fn match_call_name(expr : @syntax.Expr) -> String? {
+  match unwrap_paren(expr) {
+    @syntax.Apply(func~, ..) => match_callable_name(func)
+    @syntax.DotApply(method_name~, ..) => Some(label_name(method_name))
+    _ => None
+  }
+}
+
+///|
+pub fn match_call_info(
+  expr : @syntax.Expr,
+) -> (String, Array[@syntax.Argument], @basic.Location)? {
+  match unwrap_paren(expr) {
+    @syntax.Apply(func~, args~, loc~, ..) =>
+      match match_callable_name(func) {
+        Some(name) => Some((name, list_to_array(args), loc))
+        None => None
+      }
+    @syntax.DotApply(method_name~, args~, loc~, ..) =>
+      Some((label_name(method_name), list_to_array(args), loc))
+    _ => None
+  }
+}
+
+///|
+pub fn is_async_with_task_group_call(expr : @syntax.Expr) -> Bool {
+  match unwrap_paren(expr) {
+    @syntax.Ident(id=ident, ..) => {
+      let name = longident_right_name(ident.name)
+      match longident_pkg_name(ident.name) {
+        Some(pkg) => pkg == "async" && name == "with_task_group"
+        None => false
+      }
+    }
+    @syntax.Field(
+      record=@syntax.Ident(id=ident, ..),
+      accessor=@syntax.Accessor::Label(label),
+      ..
+    ) =>
+      label_name(label) == "with_task_group" &&
+      longident_right_name(ident.name) == "async"
+    _ => false
+  }
+}
+
+///|
+pub fn first_positional_arg(args : Array[@syntax.Argument]) -> @syntax.Expr? {
+  for arg in args {
+    match arg.kind {
+      @syntax.ArgumentKind::Positional => return Some(arg.value)
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
+pub fn first_two_positional_args(
+  args : Array[@syntax.Argument],
+) -> (@syntax.Expr, @syntax.Expr)? {
+  let mut first : @syntax.Expr? = None
+  for arg in args {
+    if arg.kind is @syntax.ArgumentKind::Positional {
+      match first {
+        None => first = Some(arg.value)
+        Some(lhs) => return Some((lhs, arg.value))
+      }
+    }
+  }
+  None
+}
+
+///|
+pub fn func_param_names(func : @syntax.Func) -> Array[String] {
+  let params = list_to_array(func.parameters)
+  let names = Array::new(capacity=params.length())
+  for param in params {
+    match param {
+      @syntax.Parameter::Positional(binder~, ty=_) =>
+        if binder.name != "_" {
+          names.push(binder.name)
+        }
+      @syntax.Parameter::Labelled(binder~, ty=_) =>
+        if binder.name != "_" {
+          names.push(binder.name)
+        }
+      _ => ()
+    }
+  } else {
+    names
+  }
+}
+
+///|
 pub fn is_some_pattern(pat : @syntax.Pattern) -> Bool {
   match pat {
     @syntax.Pattern::Constr(constr~, args=Some(args), ..) => {

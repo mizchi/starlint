@@ -473,6 +473,38 @@ test "fix fixtures" {
       rules: ["dotdot_chain_sequence"],
     },
     FixFixture::{
+      name: "dotdot_single_call_fix",
+      input: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj..a();
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj.a();
+        #|}
+      ),
+      rules: ["dotdot_single_call"],
+    },
+    FixFixture::{
+      name: "dotdot_single_call_chain_no_fix",
+      input: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj..a()..b();
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  obj..a()..b();
+        #|}
+      ),
+      rules: ["dotdot_single_call"],
+    },
+    FixFixture::{
       name: "prefer_pipeline_rebind_chain_no_fix",
       input: (
         #|fn main {

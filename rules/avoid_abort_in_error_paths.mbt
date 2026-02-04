@@ -15,28 +15,11 @@ priv struct AbortSearchEnv {
 }
 
 ///|
-fn call_name(expr : @syntax.Expr) -> String? {
-  match @moonlint.unwrap_paren(expr) {
-    @syntax.Apply(func=@syntax.Ident(id=ident, ..), ..) =>
-      Some(@moonlint.longident_right_name(ident.name))
-    @syntax.Apply(
-      func=@syntax.Field(record=_, accessor=@syntax.Accessor::Label(label), ..),
-      ..
-    ) => Some(@moonlint.label_name(label))
-    @syntax.Apply(func=@syntax.Method(type_name=_, method_name~, ..), ..) =>
-      Some(@moonlint.label_name(method_name))
-    @syntax.DotApply(method_name~, ..) =>
-      Some(@moonlint.label_name(method_name))
-    _ => None
-  }
-}
-
-///|
 impl @syntax.IterVisitor for AbortSearchEnv with visit_Expr(env, expr) {
   if env.found {
     return
   }
-  match call_name(expr) {
+  match @moonlint.match_call_name(expr) {
     Some(name) if name == "abort" || name == "panic" => env.found = true
     _ => ()
   }

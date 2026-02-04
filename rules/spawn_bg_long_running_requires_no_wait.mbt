@@ -11,48 +11,6 @@ priv struct SpawnBgLongRunningRequiresNoWaitEnv {
 }
 
 ///|
-fn spawn_bg_is_with_task_group_call(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
-    @syntax.Ident(id=ident, ..) => {
-      let name = @moonlint.longident_right_name(ident.name)
-      match @moonlint.longident_pkg_name(ident.name) {
-        Some(pkg) => pkg == "async" && name == "with_task_group"
-        None => false
-      }
-    }
-    @syntax.Field(
-      record=@syntax.Ident(id=ident, ..),
-      accessor=@syntax.Accessor::Label(label),
-      ..
-    ) =>
-      @moonlint.label_name(label) == "with_task_group" &&
-      @moonlint.longident_right_name(ident.name) == "async"
-    _ => false
-  }
-}
-
-///|
-fn spawn_bg_task_group_param_names(func : @syntax.Func) -> Array[String] {
-  let params = @moonlint.list_to_array(func.parameters)
-  let names = Array::new(capacity=params.length())
-  for param in params {
-    match param {
-      @syntax.Parameter::Positional(binder~, ty=_) =>
-        if binder.name != "_" {
-          names.push(binder.name)
-        }
-      @syntax.Parameter::Labelled(binder~, ty=_) =>
-        if binder.name != "_" {
-          names.push(binder.name)
-        }
-      _ => ()
-    }
-  } else {
-    names
-  }
-}
-
-///|
 fn spawn_bg_push_task_group_names(
   env : SpawnBgLongRunningRequiresNoWaitEnv,
   names : Array[String],
@@ -126,17 +84,6 @@ fn has_no_wait_arg(args : Array[@syntax.Argument]) -> Bool {
 }
 
 ///|
-fn first_positional_arg(args : Array[@syntax.Argument]) -> @syntax.Expr? {
-  for arg in args {
-    match arg.kind {
-      @syntax.ArgumentKind::Positional => return Some(arg.value)
-      _ => ()
-    }
-  }
-  None
-}
-
-///|
 fn is_infinite_loop_expr(expr : @syntax.Expr) -> Bool {
   match @moonlint.unwrap_paren(expr) {
     @syntax.Sequence(exprs~, last_expr~, ..) => {
@@ -180,7 +127,7 @@ impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with visit_Expr
 ) {
   match @moonlint.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, ..) =>
-      if spawn_bg_is_with_task_group_call(func) {
+      if @moonlint.is_async_with_task_group_call(func) {
         let args_array = @moonlint.list_to_array(args)
         if args_array.length() > 0 {
           let arg0 = args_array[0]
@@ -189,7 +136,7 @@ impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with visit_Expr
               kind: @syntax.ArgumentKind::Positional,
               value: @syntax.Function(func~, ..),
             } => {
-              let names = spawn_bg_task_group_param_names(func)
+              let names = @moonlint.func_param_names(func)
               let count = names.length()
               if count > 0 {
                 spawn_bg_push_task_group_names(env, names)
@@ -208,7 +155,7 @@ impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with visit_Expr
       if is_task_group_spawn_bg_call(env, expr) {
         let args_array = @moonlint.list_to_array(args)
         if !has_no_wait_arg(args_array) {
-          match first_positional_arg(args_array) {
+          match @moonlint.first_positional_arg(args_array) {
             Some(@syntax.Function(func~, ..)) =>
               if is_infinite_loop_expr(func.body) {
                 push_spawn_bg_no_wait_diag(env, expr.loc())

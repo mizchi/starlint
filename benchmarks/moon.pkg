@@ -1,5 +1,11 @@
 import {
+  "myfreess/moonlint",
+  "myfreess/moonlint/tasks/lint",
   "moonbitlang/core/bench",
   "moonbitlang/core/strconv",
+  "moonbitlang/parser",
+  "moonbitlang/parser/basic",
+  "moonbitlang/parser/syntax",
+  "moonbitlang/x/fs",
   "moonbitlang/x/sys",
 }
