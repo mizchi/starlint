@@ -62,8 +62,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" *.tar.gz --clobber
+          REPO="${GITHUB_REPOSITORY}"
+          if gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
+            gh release upload "$TAG" *.tar.gz --clobber -R "$REPO"
           else
-            gh release create "$TAG" *.tar.gz --generate-notes
+            gh release create "$TAG" *.tar.gz --generate-notes -R "$REPO"
           fi
