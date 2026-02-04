@@ -51,5 +51,6 @@ pub fn rules() -> Array[@moonlint.Rule] {
     require_doc_pub_fn_rule(),
     require_doc_pub_enum_rule(),
     using_only_in_file_rule(),
+    no_hole_placeholder_rule(),
   ]
 }

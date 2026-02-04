@@ -1,5 +1,6 @@
 {
   "preset": "recommended",
+  "ignore": ["target/*", "_build/*"],
   "categories": {
     "module": { "enabled": true },
     "test": { "enabled": true }

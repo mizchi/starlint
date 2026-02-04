@@ -113,10 +113,14 @@ pub impl Show for Fix
 pub struct LintConfig {
   rules : Map[String, RuleConfig]
   categories : Map[String, CategoryConfig]
+  ignore : Array[String]
+  overrides : Array[OverrideConfig]
 }
 pub fn LintConfig::empty() -> Self
 pub fn LintConfig::enable_categories(Array[String]) -> Self
+pub fn LintConfig::for_file(Self, String) -> Self
 pub fn LintConfig::from_json(String) -> Self raise
+pub fn LintConfig::is_ignored(Self, String) -> Bool
 pub fn LintConfig::preset(String) -> Self?
 pub fn LintConfig::recommended() -> Self
 
@@ -126,6 +130,12 @@ pub struct LintInput {
   filename : String
 }
 pub fn LintInput::new(impls~ : @list.List[@syntax.Impl], source~ : String, filename~ : String) -> Self
+
+pub struct OverrideConfig {
+  files : Array[String]
+  rules : Map[String, RuleConfig]
+  categories : Map[String, CategoryConfig]
+}
 
 pub struct Rule {
   id : String

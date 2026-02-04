@@ -14,11 +14,20 @@ pub struct CategoryConfig {
 pub struct LintConfig {
   rules : Map[String, RuleConfig]
   categories : Map[String, CategoryConfig]
+  ignore : Array[String]
+  overrides : Array[OverrideConfig]
+}
+
+///|
+pub struct OverrideConfig {
+  files : Array[String]
+  rules : Map[String, RuleConfig]
+  categories : Map[String, CategoryConfig]
 }
 
 ///|
 pub fn LintConfig::empty() -> LintConfig {
-  { rules: Map::new(), categories: Map::new() }
+  { rules: Map::new(), categories: Map::new(), ignore: [], overrides: [] }
 }
 
 ///|
@@ -140,6 +149,21 @@ pub fn LintConfig::from_json(text : String) -> LintConfig raise {
       }
       let rules = base.rules
       let categories = base.categories
+      let mut ignore = base.ignore
+      let mut overrides = base.overrides
+      match obj.get("ignore") {
+        Some(Array(items)) => {
+          let paths = []
+          for item in items {
+            match item {
+              String(value) => paths.push(value)
+              _ => ()
+            }
+          }
+          ignore = paths
+        }
+        _ => ()
+      }
       match obj.get("rules") {
         Some(Object(rule_obj)) =>
           for name, value in rule_obj {
@@ -160,7 +184,24 @@ pub fn LintConfig::from_json(text : String) -> LintConfig raise {
           }
         _ => ()
       }
-      { rules, categories }
+      match obj.get("overrides") {
+        Some(Array(items)) => {
+          let list = []
+          for item in items {
+            match item {
+              Object(override_obj) =>
+                match parse_override_config(override_obj) {
+                  Some(override_config) => list.push(override_config)
+                  None => ()
+                }
+              _ => ()
+            }
+          }
+          overrides = list
+        }
+        _ => ()
+      }
+      { rules, categories, ignore, overrides }
     }
     _ => base
   }
@@ -172,7 +213,174 @@ pub fn LintConfig::enable_categories(tags : Array[String]) -> LintConfig {
   for tag in tags {
     categories.set(tag, CategoryConfig::{ enabled: Some(true), severity: None })
   }
-  { rules: Map::new(), categories }
+  { rules: Map::new(), categories, ignore: [], overrides: [] }
+}
+
+///|
+fn parse_override_config(obj : Map[String, Json]) -> OverrideConfig? {
+  let files = match obj.get("files") {
+    Some(Array(items)) => {
+      let list = []
+      for item in items {
+        match item {
+          String(value) => list.push(value)
+          _ => ()
+        }
+      }
+      list
+    }
+    _ => []
+  }
+  if files.length() == 0 {
+    return None
+  }
+  let rules = Map::new()
+  let categories = Map::new()
+  match obj.get("rules") {
+    Some(Object(rule_obj)) =>
+      for name, value in rule_obj {
+        match parse_rule_config(value) {
+          Some(config) => rules.set(name, config)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  match obj.get("categories") {
+    Some(Object(cat_obj)) =>
+      for name, value in cat_obj {
+        match parse_category_config(value) {
+          Some(config) => categories.set(name, config)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  Some(OverrideConfig::{ files, rules, categories })
+}
+
+///|
+fn clone_rule_map(source : Map[String, RuleConfig]) -> Map[String, RuleConfig] {
+  let out = Map::new()
+  for name, value in source {
+    out.set(name, value)
+  }
+  out
+}
+
+///|
+fn clone_category_map(
+  source : Map[String, CategoryConfig],
+) -> Map[String, CategoryConfig] {
+  let out = Map::new()
+  for name, value in source {
+    out.set(name, value)
+  }
+  out
+}
+
+///|
+fn normalize_path(value : String) -> String {
+  value.replace_all(old="\\", new="/")
+}
+
+///|
+fn basename(path : String) -> String {
+  let mut idx = path.length()
+  while idx > 0 {
+    idx = idx - 1
+    if path[idx] == ('/' : UInt16) {
+      let view_result : Result[StringView, Error] = try? path[idx + 1:]
+      return match view_result {
+        Ok(view) => view.to_string()
+        Err(_) => path
+      }
+    }
+  }
+  path
+}
+
+///|
+fn match_wildcard(pattern : String, value : String) -> Bool {
+  let p = pattern
+  let s = value
+  let mut pi = 0
+  let mut si = 0
+  let mut star = -1
+  let mut match_pos = 0
+  while si < s.length() {
+    if pi < p.length() && p[pi] == ('*' : UInt16) {
+      star = pi
+      match_pos = si
+      pi = pi + 1
+    } else if pi < p.length() && p[pi] == s[si] {
+      pi = pi + 1
+      si = si + 1
+    } else if star != -1 {
+      pi = star + 1
+      match_pos = match_pos + 1
+      si = match_pos
+    } else {
+      return false
+    }
+  }
+  while pi < p.length() && p[pi] == ('*' : UInt16) {
+    pi = pi + 1
+  }
+  pi == p.length()
+}
+
+///|
+fn path_matches(pattern : String, filename : String) -> Bool {
+  let pat = normalize_path(pattern)
+  let file = normalize_path(filename)
+  if !pat.contains("*") {
+    return file == pat || file.has_suffix("/" + pat)
+  }
+  if pat.contains("/") {
+    match_wildcard(pat, file)
+  } else {
+    match_wildcard(pat, basename(file))
+  }
+}
+
+///|
+pub fn LintConfig::is_ignored(self : LintConfig, filename : String) -> Bool {
+  for pattern in self.ignore {
+    if path_matches(pattern, filename) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn LintConfig::for_file(self : LintConfig, filename : String) -> LintConfig {
+  let rules = clone_rule_map(self.rules)
+  let categories = clone_category_map(self.categories)
+  let merged = LintConfig::{
+    rules,
+    categories,
+    ignore: self.ignore,
+    overrides: [],
+  }
+  for override_ in self.overrides {
+    let mut matched = false
+    for pattern in override_.files {
+      if path_matches(pattern, filename) {
+        matched = true
+      }
+    }
+    if matched {
+      for name, value in override_.rules {
+        merged.rules.set(name, value)
+      }
+      for name, value in override_.categories {
+        merged.categories.set(name, value)
+      }
+    }
+  }
+  merged
 }
 
 ///|
