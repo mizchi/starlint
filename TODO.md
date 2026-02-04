@@ -42,21 +42,21 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
   `if cond { false } else { true }` → `!cond` (fix)
 - [x] `redundant_if_same_branch`  
   `if cond { expr } else { expr }` → `expr` (fix)
-- [ ] `legacy_call_syntax`  
+- [x] `legacy_call_syntax`  
   旧構文 `f!(...)` / `f(...)?` を通常呼び出しに置換 (fix)
-- [ ] `c_style_for_simple_range`  
+- [x] `c_style_for_simple_range`  
   `for i = 0; i < n; { ... continue i+1 }` → `for i in 0..<n` (fix)
 
 ### Phase 2 (条件付き・追加判定)
-- [ ] `match_option_unwrap_or`  
+- [x] `match_option_unwrap_or`  
   `match opt { Some(v) => v; None => default }` → `opt.unwrap_or(default)` (fix)
-- [ ] `match_option_map`  
+- [x] `match_option_map`  
   `match opt { Some(v) => f(v); None => None }` → `opt.map(f)` (fix)
-- [ ] `match_option_do_nothing`  
+- [x] `match_option_do_nothing`  
   `match opt { Some(v) => { ... }; None => () }` → `if opt is Some(v) { ... }` (fix)
-- [ ] `match_result_try`  
+- [x] `match_result_try`  
   `match (try? expr)` の変種 (入れ子・複合条件) を包括的に検出
-- [ ] `if_let_to_match` / `match_to_if_let`  
+- [x] `if_let_to_match` / `match_to_if_let`  
   片側の分岐が `None` / `Some` だけの簡易パターン変換 (fix)
 
 ### LLM の手続き型コードを関数型イディオムへ
@@ -73,21 +73,51 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
 - [ ] `index_loop_for_each`  
   `for i = 0; i < xs.length(); { ... xs[i] ... }` → `for i, x in xs { ... }` (fix)
 
+### LLM 手続き型補正の追加候補 (適用可否の検証対象)
+- [x] `prefer_eta_reduce`  
+  `fn(x){ f(x) }` / `x => f(x)` → `f` (fix)
+- [x] `prefer_tuple_destructure`  
+  `let a = t.0; let b = t.1` → `let (a, b) = t` (fix)
+- [ ] `avoid_unused_binding`  
+  使われない `let x = ...` を `_` に、または式へインライン化 (提案)
+- [x] `prefer_expression_over_return`  
+  `return expr` / `return ()` を末尾式へ寄せる提案 (提案)
+- [ ] `prefer_match_over_if_chain`  
+  enum/ADT らしい値への `if/else if` 連鎖を `match` へ (提案)
+- [x] `avoid_side_effect_in_map`  
+  `map` の戻り値を捨てる副作用コードを検出し、`iter().each` へ (提案)
+- [ ] `prefer_option_filter` / `prefer_option_bind`  
+  `match Option` の片側分岐を `filter`/`bind` へ (提案, `bind` は型依存/`match_option_map` と競合)
+- [ ] `prefer_result_map_err` / `prefer_result_bind`  
+  `match Result` の片側分岐を `map_err`/`bind` へ (提案, `bind` は型依存)
+- [ ] `prefer_no_mut_global`  
+  グローバル可変やクロージャ外部の `mut` 参照を検出して注意喚起 (提案)
+
 ### dotdot chain (..a()..b()) への書き換え
-- [ ] `dotdot_chain_sequence`  
+- [x] `dotdot_chain_sequence`  
   `obj.a(); obj.b(); obj.c()` → `obj..a()..b()..c()` (fix)
 - [ ] `dotdot_chain_rebind`  
   `let obj = obj.a(); let obj = obj.b();` → `obj..a()..b()` (fix, 条件付き)
 
 ### パイプライン演算子 (|>) を使った書き換え
-- [ ] `pipeline_nested_calls`  
+- [ ] `prefer_pipeline_nested_calls`  
   `f(g(h(x)))` → `x |> h |> g |> f` (fix)
-- [ ] `pipeline_rebind`  
-  `let x = f(x); let x = g(x);` → `x |> f |> g` (fix)
-- [ ] `pipeline_temp_var`  
+- [x] `prefer_pipeline_rebind`  
+  `let x = f(x); let y = g(x, ...)` の連鎖を検出して提案
+- [ ] `prefer_pipeline_temp_var`  
   `let tmp = f(x); g(tmp)` → `x |> f |> g` (fix)
-- [ ] `pipeline_chain_simple`  
-  `g(f(x))` / `h(g(f(x)))` の「単引数のみ」チェーンに限定して変換 (fix)
+- [x] `prefer_pipeline`  
+  `g(f(x))` / `h(g(f(x)))` の「単引数のみ」チェーンを検出して提案
+
+### パターンマッチ/型イディオム
+- [ ] `prefer_array_pattern`  
+  `xs.get(0)` / `xs.length()==0` で分岐するコード → `match xs { [] | [head, ..] }` (提案)
+- [ ] `prefer_string_pattern`  
+  `s == ""` / `s.starts_with("...")` → `match s { "" | [.."prefix", ..rest] }` (提案)
+- [ ] `avoid_double_option_param`  
+  `arg? : T?` / `arg : T?` + optional 指定など二重 Option を検出して単一化を提案
+- [ ] `avoid_unnecessary_mut`  
+  `let mut x = ...` で再代入がない場合は `let x = ...` を提案
 
 ### 参照/ビュー型の推奨 (性能/表現)
 - [ ] `prefer_readonly_array_param`  
@@ -102,7 +132,7 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
 ### ベンチマーク (Phase 1.5 の前提)
 - [ ] `bench_loop_vs_map_filter`  
   ループと `map/filter/fold` の比較
-- [ ] `bench_pipeline_vs_nested`  
+- [ ] `bench_prefer_pipeline_vs_nested`  
   `f(g(h(x)))` と `x |> h |> g |> f` の比較
 - [ ] `bench_dotdot_chain`  
   `obj.a(); obj.b()` と `obj..a()..b()` の比較
@@ -112,11 +142,11 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
   Map/Set/Json/Double::to_string の JS バンドルサイズ差分を測定
 
 ### JS バンドルサイズ制約向けルール
-- [ ] `avoid_map_set_js`  
+- [x] `avoid_map_set_js`  
   JS ターゲットで Map/Set 使用を検出し、軽量な代替を提案 (提案のみ)
-- [ ] `avoid_json_js`  
+- [x] `avoid_json_js`  
   JS ターゲットで Json 使用を検出し、手書きシリアライズ等を提案 (提案のみ)
-- [ ] `avoid_double_to_string_js`  
+- [x] `avoid_double_to_string_js`  
   JS ターゲットで `Double::to_string` 使用を検出 (提案のみ)
 
 ### Phase 3 (運用・拡張)

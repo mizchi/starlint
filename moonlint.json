@@ -1,0 +1,35 @@
+{
+  "categories": {
+    "fp": { "enabled": true }
+  },
+  "rules": {
+    "match_try_question": "off",
+    "string_literal_multiply_number": "off",
+    "boolean_if_true_false": "off",
+    "boolean_if_false_true": "off",
+    "redundant_if_same_branch": "off",
+    "legacy_call_syntax": "off",
+    "c_style_for_simple_range": "off",
+    "match_option_do_nothing": "off",
+    "match_option_unwrap_or": "off",
+    "match_option_map": "off",
+    "if_let_to_match": "off",
+    "match_to_if_let": "off",
+    "match_result_try": "off",
+    "prefer_arrow_fn": "off",
+    "prefer_eta_reduce": "off",
+    "avoid_side_effect_in_map": "off",
+    "prefer_tuple_destructure": "off",
+    "prefer_expression_over_return": "off",
+    "prefer_array_pattern": "off",
+    "prefer_string_pattern": "off",
+    "avoid_double_option_param": "off",
+    "avoid_unnecessary_mut": "off",
+    "avoid_map_set_js": "off",
+    "avoid_json_js": "off",
+    "avoid_double_to_string_js": "off",
+    "dotdot_chain_sequence": "off",
+    "prefer_pipeline": "warn",
+    "prefer_pipeline_rebind": "warn"
+  }
+}

@@ -5,7 +5,8 @@ fn test_lint(source : String) -> Array[@moonlint.Diagnostic] raise {
     fail(reports.to_json().stringify(indent=2))
   }
   let input = @moonlint.LintInput::new(impls~, source~, filename="<lint test>")
-  @moonlint.lint(input, @lint.rules())
+  let config = @moonlint.LintConfig::enable_categories(["fp", "size", "perf"])
+  @moonlint.lint_with_config(input, @lint.rules(), config)
 }
 
 ///|
@@ -28,7 +29,9 @@ test "match try?" {
   let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
   inspect(
     summary,
-    content="[(\"match_try_question\", <lint test>-2:13-9:4), (\"match_try_question\", <lint test>-5:7-8:8)]",
+    content=(
+      #|[("match_try_question", <lint test>-2:13-9:4), ("match_try_question", <lint test>-5:7-8:8), ("match_result_try", <lint test>-2:13-9:4), ("match_result_try", <lint test>-5:7-8:8)]
+    ),
   )
 }
 
@@ -94,4 +97,903 @@ test "redundant if same branch" {
     summary,
     content="[(\"redundant_if_same_branch\", <lint test>-2:11-2:39)]",
   )
+}
+
+///|
+let legacy_call_syntax =
+  #|fn main {
+  #|  f!(1, 2)
+  #|  g?(3)
+  #|}
+
+///|
+test "legacy call syntax" {
+  let diagnostics = test_lint(legacy_call_syntax)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("legacy_call_syntax", <lint test>-2:3-2:11), ("legacy_call_syntax", <lint test>-3:3-3:8)]
+    ),
+  )
+}
+
+///|
+let c_style_for_simple_range =
+  #|fn main {
+  #|  for i = 0; i < 10; i = i + 1 {
+  #|    println(i)
+  #|  }
+  #|}
+
+///|
+test "c style for simple range" {
+  let diagnostics = test_lint(c_style_for_simple_range)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("c_style_for_simple_range", <lint test>-2:3-4:4)]
+    ),
+  )
+}
+
+///|
+let match_option_do_nothing =
+  #|fn main {
+  #|  let opt = foo()
+  #|  match opt {
+  #|    Some(v) => { println(v) }
+  #|    None => ()
+  #|  }
+  #|}
+
+///|
+test "match option do nothing" {
+  let diagnostics = test_lint(match_option_do_nothing)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let match_option_do_nothing_last_expr =
+  #|fn main {
+  #|  let opt = foo()
+  #|  match opt {
+  #|    Some(_) => ()
+  #|    None => ()
+  #|  }
+  #|}
+
+///|
+test "match option do nothing last expr" {
+  let diagnostics = test_lint(match_option_do_nothing_last_expr)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_option_do_nothing", <lint test>-3:3-6:4)]
+    ),
+  )
+}
+
+///|
+let match_option_do_nothing_statement =
+  #|fn main {
+  #|  let opt = foo()
+  #|  match opt {
+  #|    Some(v) => println(v)
+  #|    None => ()
+  #|  }
+  #|  ()
+  #|}
+
+///|
+test "match option do nothing statement" {
+  let diagnostics = test_lint(match_option_do_nothing_statement)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_option_do_nothing", <lint test>-3:3-6:4)]
+    ),
+  )
+}
+
+///|
+let match_option_do_nothing_let_discard =
+  #|fn main {
+  #|  let opt = foo()
+  #|  let _ = match opt {
+  #|    Some(v) => println(v)
+  #|    None => ()
+  #|  }
+  #|  ()
+  #|}
+
+///|
+test "match option do nothing let discard" {
+  let diagnostics = test_lint(match_option_do_nothing_let_discard)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_option_do_nothing", <lint test>-3:11-6:4)]
+    ),
+  )
+}
+
+///|
+let match_option_unwrap_or =
+  #|fn main {
+  #|  let opt = foo()
+  #|  let value = match opt {
+  #|    Some(v) => v
+  #|    None => 42
+  #|  }
+  #|}
+
+///|
+test "match option unwrap_or" {
+  let diagnostics = test_lint(match_option_unwrap_or)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_option_unwrap_or", <lint test>-3:15-6:4)]
+    ),
+  )
+}
+
+///|
+let match_option_map =
+  #|fn main {
+  #|  let opt = foo()
+  #|  let value = match opt {
+  #|    Some(v) => f(v)
+  #|    None => None
+  #|  }
+  #|}
+
+///|
+test "match option map" {
+  let diagnostics = test_lint(match_option_map)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_option_map", <lint test>-3:15-6:4)]
+    ),
+  )
+}
+
+///|
+let match_to_if_let =
+  #|fn main {
+  #|  let opt = foo()
+  #|  let value = match opt {
+  #|    Some(v) => f(v)
+  #|    None => g()
+  #|  }
+  #|}
+
+///|
+test "match to if let" {
+  let diagnostics = test_lint(match_to_if_let)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let match_to_if_let_statement =
+  #|fn main {
+  #|  let opt = foo()
+  #|  match opt {
+  #|    Some(v) => f(v)
+  #|    None => g()
+  #|  }
+  #|  ()
+  #|}
+
+///|
+test "match to if let statement" {
+  let diagnostics = test_lint(match_to_if_let_statement)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_to_if_let", <lint test>-3:3-6:4)]
+    ),
+  )
+}
+
+///|
+let if_let_to_match =
+  #|fn main {
+  #|  let opt = foo()
+  #|  let value = if opt is Some(v) { f(v) } else { g() }
+  #|}
+
+///|
+test "if let to match" {
+  let diagnostics = test_lint(if_let_to_match)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("if_let_to_match", <lint test>-3:15-3:54)]
+    ),
+  )
+}
+
+///|
+let match_result_try =
+  #|fn main {
+  #|  let x = match (try? f() : Result[Int, Error]) {
+  #|    Ok(v) => v
+  #|    Err(_) => 0
+  #|  }
+  #|}
+
+///|
+test "match result try" {
+  let diagnostics = test_lint(match_result_try)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("match_result_try", <lint test>-2:11-5:4)]
+    ),
+  )
+}
+
+///|
+let avoid_map_set_js =
+  #|fn main {
+  #|  let m : Map[String, Int] = { "a": 1 }
+  #|  let n = Map::new()
+  #|  let s = Set::new()
+  #|}
+
+///|
+test "avoid map set js" {
+  let diagnostics = test_lint(avoid_map_set_js)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("avoid_map_set_js", <lint test>-2:11-2:27), ("avoid_map_set_js", <lint test>-2:30-2:40), ("avoid_map_set_js", <lint test>-3:11-3:19), ("avoid_map_set_js", <lint test>-4:11-4:19)]
+    ),
+  )
+}
+
+///|
+let avoid_json_js =
+  #|fn main {
+  #|  let x : Json = @json.parse("{}")
+  #|  let y = @json.stringify(x)
+  #|  let z = Json::Null
+  #|}
+
+///|
+test "avoid json js" {
+  let diagnostics = test_lint(avoid_json_js)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("avoid_json_js", <lint test>-2:11-2:15), ("avoid_json_js", <lint test>-2:18-2:29), ("avoid_json_js", <lint test>-3:11-3:26), ("avoid_json_js", <lint test>-4:11-4:21)]
+    ),
+  )
+}
+
+///|
+let avoid_double_to_string_js =
+  #|fn main {
+  #|  let x = Double::to_string(1.0)
+  #|  let y = 1.0.to_string()
+  #|}
+
+///|
+test "avoid double to_string js" {
+  let diagnostics = test_lint(avoid_double_to_string_js)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("avoid_double_to_string_js", <lint test>-2:11-2:28), ("avoid_double_to_string_js", <lint test>-3:11-3:26)]
+    ),
+  )
+}
+
+///|
+let dotdot_chain_sequence =
+  #|fn main {
+  #|  let obj = foo()
+  #|  obj.a();
+  #|  obj.b(1, 2);
+  #|}
+
+///|
+test "dotdot chain sequence" {
+  let diagnostics = test_lint(dotdot_chain_sequence)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("dotdot_chain_sequence", <lint test>-3:3-4:14)]
+    ),
+  )
+}
+
+///|
+let dotdot_chain_sequence_mixed =
+  #|fn main {
+  #|  obj.a()
+  #|  other.b()
+  #|}
+
+///|
+test "dotdot chain sequence mixed receivers" {
+  let diagnostics = test_lint(dotdot_chain_sequence_mixed)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let dotdot_chain_sequence_field =
+  #|fn main {
+  #|  let obj = foo()
+  #|  obj.field.a();
+  #|  obj.field.b();
+  #|}
+
+///|
+test "dotdot chain sequence field receiver" {
+  let diagnostics = test_lint(dotdot_chain_sequence_field)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("dotdot_chain_sequence", <lint test>-3:3-4:16)]
+    ),
+  )
+}
+
+///|
+let dotdot_chain_sequence_deep_field =
+  #|fn main {
+  #|  let obj = foo()
+  #|  obj.field.sub.a();
+  #|  obj.field.sub.b();
+  #|}
+
+///|
+test "dotdot chain sequence deep field receiver" {
+  let diagnostics = test_lint(dotdot_chain_sequence_deep_field)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("dotdot_chain_sequence", <lint test>-3:3-4:20)]
+    ),
+  )
+}
+
+///|
+let dotdot_chain_sequence_value =
+  #|fn main {
+  #|  let obj = foo()
+  #|  let x = { obj.a(); obj.b() }
+  #|}
+
+///|
+test "dotdot chain sequence value result" {
+  let diagnostics = test_lint(dotdot_chain_sequence_value)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("dotdot_chain_sequence", <lint test>-3:13-3:29)]
+    ),
+  )
+}
+
+///|
+let dotdot_chain_sequence_call_receiver =
+  #|fn main {
+  #|  make().a()
+  #|  make().b()
+  #|}
+
+///|
+test "dotdot chain sequence call receiver" {
+  let diagnostics = test_lint(dotdot_chain_sequence_call_receiver)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let dotdot_chain_sequence_called_field =
+  #|fn main {
+  #|  obj.field().a()
+  #|  obj.field().b()
+  #|}
+
+///|
+test "dotdot chain sequence called field receiver" {
+  let diagnostics = test_lint(dotdot_chain_sequence_called_field)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_pipeline =
+  #|fn main {
+  #|  let y = f(g(h(x)))
+  #|}
+
+///|
+test "prefer pipeline" {
+  let diagnostics = test_lint(prefer_pipeline)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_pipeline", <lint test>-2:11-2:21)]
+    ),
+  )
+}
+
+///|
+let prefer_pipeline_method =
+  #|fn main {
+  #|  let y = Foo::bar(g(x))
+  #|}
+
+///|
+test "prefer pipeline method" {
+  let diagnostics = test_lint(prefer_pipeline_method)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_pipeline", <lint test>-2:11-2:25)]
+    ),
+  )
+}
+
+///|
+let prefer_pipeline_multi_arg =
+  #|fn main {
+  #|  let y = f(g(x, y))
+  #|}
+
+///|
+test "prefer pipeline multi arg" {
+  let diagnostics = test_lint(prefer_pipeline_multi_arg)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_pipeline_rebind_chain =
+  #|fn main {
+  #|  let b = f(a)
+  #|  let c = g(b, 111)
+  #|  let d = h(c, 222, 333)
+  #|}
+
+///|
+test "prefer pipeline rebind chain" {
+  let diagnostics = test_lint(prefer_pipeline_rebind_chain)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_pipeline_rebind", <lint test>-2:3-4:25)]
+    ),
+  )
+}
+
+///|
+let prefer_pipeline_rebind_mismatch =
+  #|fn main {
+  #|  let b = f(a)
+  #|  let c = g(a, 111)
+  #|  let d = h(a)
+  #|}
+
+///|
+test "prefer pipeline rebind mismatch" {
+  let diagnostics = test_lint(prefer_pipeline_rebind_mismatch)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_pipeline_rebind_two_steps =
+  #|fn main {
+  #|  let b = f(a)
+  #|  let c = g(b, 1)
+  #|}
+
+///|
+test "prefer pipeline rebind two steps" {
+  let diagnostics = test_lint(prefer_pipeline_rebind_two_steps)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_pipeline_rebind", <lint test>-2:3-3:18)]
+    ),
+  )
+}
+
+///|
+let prefer_pipeline_rebind_non_first_arg =
+  #|fn main {
+  #|  let b = f(a)
+  #|  let c = g(1, b)
+  #|  let d = h(c)
+  #|}
+
+///|
+test "prefer pipeline rebind non first arg" {
+  let diagnostics = test_lint(prefer_pipeline_rebind_non_first_arg)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_pipeline_rebind_label_arg =
+  #|fn main {
+  #|  let b = f(a)
+  #|  let c = g(x=b, y=1)
+  #|  let d = h(c)
+  #|}
+
+///|
+test "prefer pipeline rebind label arg" {
+  let diagnostics = test_lint(prefer_pipeline_rebind_label_arg)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_pipeline_rebind_non_apply =
+  #|fn main {
+  #|  let b = a
+  #|  let c = g(b)
+  #|}
+
+///|
+test "prefer pipeline rebind non apply" {
+  let diagnostics = test_lint(prefer_pipeline_rebind_non_apply)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_pipeline_outer_multi =
+  #|fn main {
+  #|  let y = f(g(h(x)), z)
+  #|}
+
+///|
+test "prefer pipeline outer multi" {
+  let diagnostics = test_lint(prefer_pipeline_outer_multi)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_pipeline_dot_apply =
+  #|fn main {
+  #|  let y = obj.f(g(x))
+  #|}
+
+///|
+test "prefer pipeline dot apply" {
+  let diagnostics = test_lint(prefer_pipeline_dot_apply)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_arrow_fn =
+  #|fn main {
+  #|  let f = fn(a){ a }
+  #|}
+
+///|
+test "prefer arrow fn" {
+  let diagnostics = test_lint(prefer_arrow_fn)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_arrow_fn", <lint test>-2:11-2:21)]
+    ),
+  )
+}
+
+///|
+let prefer_eta_reduce =
+  #|fn main {
+  #|  let f = fn(x){ g(x) }
+  #|}
+
+///|
+test "prefer eta reduce" {
+  let diagnostics = test_lint(prefer_eta_reduce)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_arrow_fn", <lint test>-2:11-2:24), ("prefer_eta_reduce", <lint test>-2:11-2:24)]
+    ),
+  )
+}
+
+///|
+let prefer_eta_reduce_arrow =
+  #|fn main {
+  #|  let f = (x, y) => h(x, y)
+  #|}
+
+///|
+test "prefer eta reduce arrow" {
+  let diagnostics = test_lint(prefer_eta_reduce_arrow)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_eta_reduce", <lint test>-2:11-2:28)]
+    ),
+  )
+}
+
+///|
+let avoid_side_effect_in_map =
+  #|fn main {
+  #|  xs.map(f);
+  #|}
+
+///|
+test "avoid side effect in map" {
+  let diagnostics = test_lint(avoid_side_effect_in_map)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("avoid_side_effect_in_map", <lint test>-2:3-2:12)]
+    ),
+  )
+}
+
+///|
+let prefer_tuple_destructure =
+  #|fn main {
+  #|  let a = t.0
+  #|  let b = t.1
+  #|  foo(a, b)
+  #|}
+
+///|
+test "prefer tuple destructure" {
+  let diagnostics = test_lint(prefer_tuple_destructure)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_tuple_destructure", <lint test>-2:3-4:12)]
+    ),
+  )
+}
+
+///|
+let prefer_tuple_destructure_non_consecutive =
+  #|fn main {
+  #|  let a = t.0
+  #|  let b = t.2
+  #|  foo(a, b)
+  #|}
+
+///|
+test "prefer tuple destructure non consecutive" {
+  let diagnostics = test_lint(prefer_tuple_destructure_non_consecutive)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_expression_over_return =
+  #|fn main {
+  #|  return foo()
+  #|}
+
+///|
+test "prefer expression over return" {
+  let diagnostics = test_lint(prefer_expression_over_return)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_expression_over_return", <lint test>-2:3-2:15)]
+    ),
+  )
+}
+
+///|
+let prefer_expression_over_return_sequence =
+  #|fn main {
+  #|  let x = 1
+  #|  return foo(x)
+  #|}
+
+///|
+test "prefer expression over return sequence" {
+  let diagnostics = test_lint(prefer_expression_over_return_sequence)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_expression_over_return", <lint test>-3:3-3:16)]
+    ),
+  )
+}
+
+///|
+let prefer_expression_over_return_early =
+  #|fn main {
+  #|  if cond { return foo() }
+  #|  bar()
+  #|}
+
+///|
+test "prefer expression over return early" {
+  let diagnostics = test_lint(prefer_expression_over_return_early)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_array_pattern_match =
+  #|fn main {
+  #|  let xs = [1, 2, 3]
+  #|  match xs.get(0) {
+  #|    Some(v) => println(v)
+  #|    None => ()
+  #|  }
+  #|}
+
+///|
+test "prefer array pattern match" {
+  let diagnostics = test_lint(prefer_array_pattern_match)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_array_pattern", <lint test>-3:3-6:4)]
+    ),
+  )
+}
+
+///|
+let prefer_array_pattern_length =
+  #|fn main {
+  #|  if xs.length() == 0 { foo() } else { bar() }
+  #|}
+
+///|
+test "prefer array pattern length" {
+  let diagnostics = test_lint(prefer_array_pattern_length)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_array_pattern", <lint test>-2:3-2:47)]
+    ),
+  )
+}
+
+///|
+let prefer_array_pattern_length_no_else =
+  #|fn main {
+  #|  if xs.length() == 0 { foo() }
+  #|}
+
+///|
+test "prefer array pattern length no else" {
+  let diagnostics = test_lint(prefer_array_pattern_length_no_else)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
+}
+
+///|
+let prefer_string_pattern_empty =
+  #|fn main {
+  #|  if s == "" { foo() } else { bar() }
+  #|}
+
+///|
+test "prefer string pattern empty" {
+  let diagnostics = test_lint(prefer_string_pattern_empty)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_string_pattern", <lint test>-2:3-2:38)]
+    ),
+  )
+}
+
+///|
+let prefer_string_pattern_prefix =
+  #|fn main {
+  #|  if s.starts_with("let") { foo() } else { bar() }
+  #|}
+
+///|
+test "prefer string pattern prefix" {
+  let diagnostics = test_lint(prefer_string_pattern_prefix)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_string_pattern", <lint test>-2:3-2:51)]
+    ),
+  )
+}
+
+///|
+let avoid_double_option_param =
+  #|fn f(a? : Int?) { a }
+  #|fn g(b? : String? = None) { b }
+  #|fn h(c : Int?) { c }
+
+///|
+test "avoid double option param" {
+  let diagnostics = test_lint(avoid_double_option_param)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("avoid_double_option_param", <lint test>-1:6-1:15), ("avoid_double_option_param", <lint test>-2:6-2:25)]
+    ),
+  )
+}
+
+///|
+let avoid_unnecessary_mut =
+  #|fn main {
+  #|  let mut x = 1
+  #|  let y = x + 1
+  #|}
+
+///|
+test "avoid unnecessary mut" {
+  let diagnostics = test_lint(avoid_unnecessary_mut)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(
+    summary,
+    content=(
+      #|[("avoid_unnecessary_mut", <lint test>-2:3-3:16)]
+    ),
+  )
+}
+
+///|
+let avoid_unnecessary_mut_used =
+  #|fn main {
+  #|  let mut x = 0
+  #|  x = x + 1
+  #|}
+
+///|
+test "avoid unnecessary mut used" {
+  let diagnostics = test_lint(avoid_unnecessary_mut_used)
+  let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
+  inspect(summary, content="[]")
 }
