@@ -29,6 +29,7 @@ jobs:
       - name: Build starlint
         run: |
           export PATH="$HOME/.moon/bin:$PATH"
+          moon update
           moon build --target native cli
 
       - name: Package
