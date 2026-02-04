@@ -52,8 +52,20 @@ fn main {
 ## install
 
 ```
+curl -fsSL https://raw.githubusercontent.com/mizchi/starlint/main/install.sh | sh
+```
+
+Optional environment variables:
+
+- `STARLINT_VERSION` to pin a tag (e.g. `v0.1.0`)
+- `STARLINT_INSTALL_DIR` to change the install directory (default: `$HOME/.local/bin`)
+
+For local development builds:
+
+```
 just install
 ```
+
 ## configuration
 
 starlint supports a JSON config file at `starlint.json` or `.starlint.json`.

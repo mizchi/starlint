@@ -1,0 +1,68 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: macos-14
+            target: macos-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+
+      - name: Build starlint
+        run: |
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon build --target native cli
+
+      - name: Package
+        run: |
+          BIN="_build/native/release/build/cli/cli.exe"
+          OUT="starlint-${{ matrix.target }}.tar.gz"
+          mkdir -p dist
+          cp "$BIN" dist/starlint
+          chmod +x dist/starlint
+          tar -C dist -czf "$OUT" starlint
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: starlint-${{ matrix.target }}
+          path: starlint-${{ matrix.target }}.tar.gz
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: starlint-*
+          merge-multiple: true
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" *.tar.gz --clobber
+          else
+            gh release create "$TAG" *.tar.gz --generate-notes
+          fi
