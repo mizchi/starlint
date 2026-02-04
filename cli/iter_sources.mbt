@@ -128,6 +128,47 @@ fn get_mbt_path_set_from_base(
 }
 
 ///|
+fn get_mbt_md_path_set_from_base(
+  base_fs : String,
+  base_rel : String,
+) -> Array[String] raise Error {
+  let md_set = Array::new(capacity=8)
+  let path_set = @fs.read_dir(base_fs) catch {
+    err => fail("failed to read directory \{base_fs}: \{err}")
+  }
+  let path_set = {
+    let q = @queue.new()
+    for path in path_set {
+      if !need_ignore(path) {
+        q.push((join_path(base_fs, path), join_rel(base_rel, path)))
+      }
+    } else {
+      q
+    }
+  }
+  while not(path_set.is_empty()) {
+    let (fs_path, rel_path) = path_set.unsafe_pop()
+    if (fs_path |> @fs.path_exists |> not) {
+      println("invalid path construct by starlint internal: \{fs_path}")
+    }
+    if is_directory(fs_path) {
+      let new_path_set = @fs.read_dir(fs_path) catch {
+        err => fail("failed to read directory \{base_fs}: \{err}")
+      }
+      for new_path in new_path_set {
+        path_set.push(
+          (join_path(fs_path, new_path), join_rel(rel_path, new_path)),
+        )
+      }
+    } else if fs_path.has_suffix(".mbt.md") {
+      md_set.push(rel_path)
+    }
+  } else {
+    return md_set
+  }
+}
+
+///|
 fn load_module_info(module_root : String) -> Json raise Error {
   let text = @fs.read_file_to_string(join_path(module_root, "moon.mod.json"))
   @json.parse(text)

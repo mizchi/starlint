@@ -420,6 +420,465 @@ fn read_mbt_file_to_impls(
 }
 
 ///|
+fn get_module_name(module_info : Json) -> String {
+  if module_info is Object(module_info) &&
+    module_info.get("name") is Some(String(name)) {
+    name
+  } else {
+    "unknown"
+  }
+}
+
+///|
+fn package_name_for_file(module_name : String, display_path : String) -> String {
+  match display_path.rev_find("/") {
+    None => module_name
+    Some(idx) => {
+      let prefix_result : Result[StringView, Error] = try? display_path[:idx]
+      match prefix_result {
+        Ok(view) => {
+          let dir = view.to_string()
+          if dir == "" {
+            module_name
+          } else {
+            module_name + "/" + dir
+          }
+        }
+        Err(_) => module_name
+      }
+    }
+  }
+}
+
+///|
+fn type_short_name(ty : @syntax.Type) -> String? {
+  match ty {
+    @syntax.Type::Name(constr_id~, ..) =>
+      Some(@starlint.constr_id_right_name(constr_id))
+    @syntax.Type::Object(constr_id) =>
+      Some(@starlint.constr_id_right_name(constr_id))
+    _ => None
+  }
+}
+
+///|
+fn format_fun_decl_name(fun_decl : @syntax.FunDecl) -> String {
+  let base = fun_decl.name.name
+  match fun_decl.type_name {
+    Some(type_name) => "\{@starlint.type_name_right_name(type_name)}::\{base}"
+    None => base
+  }
+}
+
+///|
+fn format_impl_method_name(
+  self_ty : @syntax.Type?,
+  method_name : @syntax.Binder,
+) -> String {
+  let base = method_name.name
+  match self_ty {
+    Some(ty) =>
+      match type_short_name(ty) {
+        Some(type_name) => "\{type_name}::\{base}"
+        None => base
+      }
+    None => base
+  }
+}
+
+///|
+fn is_public_vis(vis : @syntax.Visibility) -> Bool {
+  match vis {
+    @syntax.Visibility::Pub(..) => true
+    _ => false
+  }
+}
+
+///|
+fn is_check_style_test_name(name : String) -> Bool {
+  let lower = name.to_lower()
+  lower.contains("check")
+}
+
+///|
+priv struct AiNames {
+  pub_functions : Array[String]
+  priv_functions : Array[String]
+  tests : Array[String]
+  check_style_tests : Array[String]
+  unnamed_tests : Int
+}
+
+///|
+priv struct DocTestInfo {
+  tests : Array[String]
+  check_style_tests : Array[String]
+  unnamed_tests : Int
+  block_count : Int
+}
+
+///|
+fn strip_doc_prefix(line : String) -> String {
+  if line.has_prefix("///") {
+    let rest_result : Result[StringView, Error] = try? line[3:]
+    match rest_result {
+      Ok(rest) => rest.to_string().trim().to_string()
+      Err(_) => line
+    }
+  } else {
+    line
+  }
+}
+
+///|
+fn is_test_line(trimmed : String) -> Bool {
+  trimmed.has_prefix("test ") ||
+  trimmed.has_prefix("test{") ||
+  trimmed.has_prefix("async test ") ||
+  trimmed.has_prefix("async test{")
+}
+
+///|
+fn extract_named_test(line : String) -> String? {
+  let trimmed = line.trim().to_string()
+  match trimmed.find("\"") {
+    None => None
+    Some(start) => {
+      let rest_result : Result[StringView, Error] = try? trimmed[start + 1:]
+      match rest_result {
+        Ok(rest) =>
+          match rest.find("\"") {
+            Some(end_rel) => {
+              let name_result : Result[StringView, Error] = try? rest[:end_rel]
+              match name_result {
+                Ok(view) => Some(view.to_string())
+                Err(_) => None
+              }
+            }
+            None => None
+          }
+        Err(_) => None
+      }
+    }
+  }
+}
+
+///|
+fn extract_doc_tests(source : String, allow_plain_blocks : Bool) -> DocTestInfo {
+  let tests = Array::new(capacity=4)
+  let check_style_tests = Array::new(capacity=2)
+  let mut unnamed_tests = 0
+  let mut block_count = 0
+  let mut in_block = false
+  for part in source.split("\n") {
+    let line = part.to_string()
+    let trimmed = line.trim().to_string()
+    let has_doc_prefix = trimmed.has_prefix("///")
+    let content = if has_doc_prefix {
+      strip_doc_prefix(trimmed).trim().to_string()
+    } else {
+      trimmed
+    }
+    if content.has_prefix("```") {
+      if !allow_plain_blocks && !has_doc_prefix {
+        continue
+      }
+      if !in_block {
+        if content.has_prefix("```mbt") &&
+          (content.contains("test") || content.contains("check")) {
+          in_block = true
+          block_count += 1
+        }
+      } else {
+        in_block = false
+      }
+      continue
+    }
+    if in_block && is_test_line(content) {
+      if !allow_plain_blocks && !has_doc_prefix {
+        continue
+      }
+      match extract_named_test(content) {
+        Some(name) => {
+          tests.push(name)
+          if is_check_style_test_name(name) {
+            check_style_tests.push(name)
+          }
+        }
+        None => unnamed_tests += 1
+      }
+    }
+  } else {
+    DocTestInfo::{ tests, check_style_tests, unnamed_tests, block_count }
+  }
+}
+
+///|
+fn collect_ai_names(impls : @syntax.Impls) -> AiNames {
+  let pub_functions = Array::new(capacity=8)
+  let priv_functions = Array::new(capacity=8)
+  let tests = Array::new(capacity=4)
+  let check_style_tests = Array::new(capacity=2)
+  let mut unnamed_tests = 0
+  for impl_ in impls {
+    match impl_ {
+      @syntax.Impl::TopFuncDef(fun_decl~, ..) => {
+        let name = format_fun_decl_name(fun_decl)
+        if is_public_vis(fun_decl.vis) {
+          pub_functions.push(name)
+        } else {
+          priv_functions.push(name)
+        }
+      }
+      @syntax.Impl::TopImpl(self_ty~, method_name~, vis~, ..) => {
+        let name = format_impl_method_name(self_ty, method_name)
+        if is_public_vis(vis) {
+          pub_functions.push(name)
+        } else {
+          priv_functions.push(name)
+        }
+      }
+      @syntax.Impl::TopView(view_func_name~, vis~, ..) => {
+        let name = view_func_name.name
+        if is_public_vis(vis) {
+          pub_functions.push(name)
+        } else {
+          priv_functions.push(name)
+        }
+      }
+      @syntax.Impl::TopTest(name~, ..) =>
+        match name {
+          Some((test_name, _)) => {
+            tests.push(test_name)
+            if is_check_style_test_name(test_name) {
+              check_style_tests.push(test_name)
+            }
+          }
+          None => unnamed_tests += 1
+        }
+      _ => ()
+    }
+  } else {
+    AiNames::{
+      pub_functions,
+      priv_functions,
+      tests,
+      check_style_tests,
+      unnamed_tests,
+    }
+  }
+}
+
+///|
+fn print_ai_metadata(
+  file_entries : Array[(String, String)],
+  doc_entries : Array[String],
+  module_name : String,
+  module_root : String,
+) -> Unit {
+  let sb = StringBuilder::new()
+  sb
+  ..write_string("AI Review Metadata\n")
+  ..write_string("module: ")
+  ..write_string(module_name)
+  ..write_string("\n")
+  ..write_string("instructions:\n")
+  ..write_string(
+    "- Infer module purpose from module/file/function/test names.\n",
+  )
+  ..write_string(
+    "- Ensure test names describe behavior; avoid check-style phrasing.\n",
+  )
+  ..write_string(
+    "- Follow TDD principle: test names should describe what, not how.\n",
+  )
+  ..write_string(
+    "- Flag public APIs without tests or doc tests in the same module.\n",
+  )
+  ..write_string(
+    "- Call out vague module/file names (util/misc/helper) that hide intent.\n",
+  )
+  ..write_string("\nfiles:\n")
+  for entry in file_entries {
+    let (fs_path, display_path) = entry
+    let package_name = package_name_for_file(module_name, display_path)
+    let parse_result : Result[(@syntax.Impls, String), Error] = try? read_mbt_file_to_impls(
+      fs_path, display_path,
+    )
+    match parse_result {
+      Ok((impls, source)) => {
+        let names = collect_ai_names(impls)
+        names.pub_functions.sort_by((a, b) => a.compare(b))
+        names.priv_functions.sort_by((a, b) => a.compare(b))
+        names.tests.sort_by((a, b) => a.compare(b))
+        names.check_style_tests.sort_by((a, b) => a.compare(b))
+        sb
+        ..write_string("- file: ")
+        ..write_string(display_path)
+        ..write_string("\n")
+        sb
+        ..write_string("  package: ")
+        ..write_string(package_name)
+        ..write_string("\n")
+        sb..write_string("  public functions:\n")
+        if names.pub_functions.is_empty() {
+          sb..write_string("    - (none)\n")
+        } else {
+          for name in names.pub_functions {
+            sb..write_string("    - ")..write_string(name)..write_string("\n")
+          }
+        }
+        sb..write_string("  private functions:\n")
+        if names.priv_functions.is_empty() {
+          sb..write_string("    - (none)\n")
+        } else {
+          for name in names.priv_functions {
+            sb..write_string("    - ")..write_string(name)..write_string("\n")
+          }
+        }
+        sb..write_string("  tests:\n")
+        if names.tests.is_empty() {
+          sb..write_string("    - (none)\n")
+        } else {
+          for name in names.tests {
+            sb..write_string("    - ")..write_string(name)..write_string("\n")
+          }
+        }
+        if names.unnamed_tests > 0 || !names.check_style_tests.is_empty() {
+          sb..write_string("  test name warnings:\n")
+          if names.unnamed_tests > 0 {
+            sb
+            ..write_string("    - unnamed tests: ")
+            ..write_string(names.unnamed_tests.to_string())
+            ..write_string("\n")
+          }
+          for name in names.check_style_tests {
+            sb
+            ..write_string("    - check-style: ")
+            ..write_string(name)
+            ..write_string("\n")
+          }
+        }
+        let doc_info = extract_doc_tests(source, false)
+        if doc_info.block_count > 0 {
+          doc_info.tests.sort_by((a, b) => a.compare(b))
+          doc_info.check_style_tests.sort_by((a, b) => a.compare(b))
+          sb..write_string("  doc tests:\n")
+          sb
+          ..write_string("    code_blocks: ")
+          ..write_string(doc_info.block_count.to_string())
+          ..write_string("\n")
+          sb..write_string("    tests:\n")
+          if doc_info.tests.is_empty() {
+            sb..write_string("      - (none)\n")
+          } else {
+            for name in doc_info.tests {
+              sb
+              ..write_string("      - ")
+              ..write_string(name)
+              ..write_string("\n")
+            }
+          }
+          if doc_info.unnamed_tests > 0 ||
+            !doc_info.check_style_tests.is_empty() {
+            sb..write_string("    test name warnings:\n")
+            if doc_info.unnamed_tests > 0 {
+              sb
+              ..write_string("      - unnamed tests: ")
+              ..write_string(doc_info.unnamed_tests.to_string())
+              ..write_string("\n")
+            }
+            for name in doc_info.check_style_tests {
+              sb
+              ..write_string("      - check-style: ")
+              ..write_string(name)
+              ..write_string("\n")
+            }
+          }
+        }
+      }
+      Err(err) => {
+        sb
+        ..write_string("- file: ")
+        ..write_string(display_path)
+        ..write_string("\n")
+        sb
+        ..write_string("  package: ")
+        ..write_string(package_name)
+        ..write_string("\n")
+        sb..write_string("  parse_error: ")..write_string(err.to_string())
+        sb..write_string("\n")
+      }
+    }
+  }
+  sb..write_string("\ndoc_tests:\n")
+  if doc_entries.is_empty() {
+    sb..write_string("  - (none)\n")
+  } else {
+    let mut printed = false
+    for doc_path in doc_entries {
+      let fs_path = join_path(module_root, doc_path)
+      let doc_source_result : Result[String, Error] = try? @fs.read_file_to_string(
+        fs_path,
+      )
+      match doc_source_result {
+        Ok(doc_source) => {
+          let info = extract_doc_tests(doc_source, true)
+          if info.block_count == 0 {
+            continue
+          }
+          printed = true
+          sb
+          ..write_string("- file: ")
+          ..write_string(doc_path)
+          ..write_string("\n")
+          sb
+          ..write_string("  code_blocks: ")
+          ..write_string(info.block_count.to_string())
+          ..write_string("\n")
+          sb..write_string("  tests:\n")
+          if info.tests.is_empty() {
+            sb..write_string("    - (none)\n")
+          } else {
+            for name in info.tests {
+              sb..write_string("    - ")..write_string(name)..write_string("\n")
+            }
+          }
+          if info.unnamed_tests > 0 || !info.check_style_tests.is_empty() {
+            sb..write_string("  test name warnings:\n")
+            if info.unnamed_tests > 0 {
+              sb
+              ..write_string("    - unnamed tests: ")
+              ..write_string(info.unnamed_tests.to_string())
+              ..write_string("\n")
+            }
+            for name in info.check_style_tests {
+              sb
+              ..write_string("    - check-style: ")
+              ..write_string(name)
+              ..write_string("\n")
+            }
+          }
+        }
+        Err(err) => {
+          printed = true
+          sb
+          ..write_string("- file: ")
+          ..write_string(doc_path)
+          ..write_string("\n")
+          sb..write_string("  read_error: ")..write_string(err.to_string())
+          sb..write_string("\n")
+        }
+      }
+    }
+    if !printed {
+      sb..write_string("  - (none)\n")
+    }
+  }
+  println(sb.to_string())
+}
+
+///|
 fn default_config_path(module_root : String) -> String? {
   let primary = join_path(module_root, "starlint.json")
   if @fs.path_exists(primary) {
@@ -621,6 +1080,7 @@ fn run_with_start_dir(argv : Array[String], start_dir : String) -> Unit {
   }
   let apply_fix = @ref.new(false)
   let config_path = @ref.new("")
+  let ai_mode = @ref.new(false)
   let by_file = @ref.new(false)
   let by_rule = @ref.new(false)
   let spec : Array[(String, String, @ArgParser.Spec, String)] = [
@@ -631,13 +1091,14 @@ fn run_with_start_dir(argv : Array[String], start_dir : String) -> Unit {
       @ArgParser.Spec::Set_string(config_path),
       "config file path",
     ),
+    ("--ai", "", @ArgParser.Spec::Set(ai_mode), "output AI review metadata"),
     ("--by-file", "", @ArgParser.Spec::Set(by_file), "group by file (default)"),
     ("--by-rule", "", @ArgParser.Spec::Set(by_rule), "group by rule"),
   ]
   let filenames = []
   let usage =
     #| usage: 
-    #|   starlint [--fix] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
+    #|   starlint [--ai] [--fix] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
     #|   starlint init
     #|   starlint doc
   @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
@@ -658,6 +1119,7 @@ fn run_with_start_dir(argv : Array[String], start_dir : String) -> Unit {
       panic()
     }
   }
+  let module_name = get_module_name(module_info)
   let base_rel = get_src_location(module_info)
   let base_fs = if base_rel == "." || base_rel == "" {
     module_root
@@ -673,6 +1135,17 @@ fn run_with_start_dir(argv : Array[String], start_dir : String) -> Unit {
     }
   } else {
     build_file_entries_from_args(filenames, start_dir, module_root)
+  }
+  let doc_entries = get_mbt_md_path_set_from_base(module_root, ".") catch {
+    err => {
+      println("failed when finding doc files: \{err}")
+      panic()
+    }
+  }
+  doc_entries.sort_by((a, b) => a.compare(b))
+  if ai_mode.val {
+    print_ai_metadata(file_entries, doc_entries, module_name, module_root)
+    return
   }
   let rules = @lint.rules()
   let config = match resolve_config_path(module_root, config_path.val) {

@@ -1,10 +1,6 @@
 {
   "preset": "recommended",
   "ignore": ["target/*", "_build/*"],
-  "categories": {
-    "module": { "enabled": true },
-    "test": { "enabled": true }
-  },
   "rules": {
     "match_try_question": "off",
     "string_literal_multiply_number": "off",

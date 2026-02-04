@@ -16,6 +16,7 @@ starlint foo.mbt # check this file
 starlint --by-rule foo.mbt # group diagnostics by rule
 starlint doc # show rule list and defaults
 starlint init # generate starlint.json (with rule_groups guidance)
+starlint --ai # output AI review metadata (module/file/function/test names + doc tests)
 ```
 
 starlint walks up from the current directory to find `moon.mod.json`, and uses that
@@ -80,7 +81,10 @@ starlint supports a JSON config file at `starlint.json` or `.starlint.json`.
 
 The `recommended` preset enables: `fp`, `size`, `async`, `error` by default (perf is off).
 
-### module/test categories
+### module/test categories (optional)
+
+These are optional add-ons. `module` includes doc comment requirements for `pub fn` / `pub enum`,
+which can be noisy, so it is **off by default**. Enable when you want stricter module conventions.
 
 ```
 {
