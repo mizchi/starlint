@@ -10,6 +10,8 @@ import {
 // Values
 pub fn lint(@list.List[@syntax.Impl]) -> Array[@moonlint.Diagnostic]
 
+pub fn lint_with_config(@list.List[@syntax.Impl], @moonlint.LintConfig) -> Array[@moonlint.Diagnostic]
+
 pub fn rules() -> Array[@moonlint.Rule]
 
 // Errors

@@ -4,6 +4,9 @@ pub fn format_diagnostic(diag : Diagnostic) -> String {
   sb
   ..write_string("Found ")
   ..write_string(diag.rule_id)
+  ..write_string(" (")
+  ..write_string(diag.severity.to_string())
+  ..write_string(")")
   ..write_string(" at ")
   ..write_string(diag.loc.to_string())
   ..write_string(":\n\n")

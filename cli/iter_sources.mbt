@@ -8,7 +8,9 @@ fn is_directory(path : String, loc~ : SourceLoc) -> Bool raise Error {
 
 ///|
 fn need_ignore(path : String) -> Bool {
-  let ignore_list = ["target", ".git", ".mooncakes", ".github", ".moonagent"]
+  let ignore_list = [
+    "target", "_build", ".git", ".mooncakes", ".github", ".moonagent", "rules",
+  ]
   ignore_list.contains(path)
 }
 
@@ -31,7 +33,7 @@ fn get_mbt_path_set_from_base(base : String) -> Array[String] raise Error {
   }
   while not(path_set.is_empty()) {
     let path = path_set.unsafe_pop()
-    if not(@fs.path_exists(path)) {
+    if (path |> @fs.path_exists |> not) {
       println("invalid path construct by moonlint internal: \{path}")
     }
     if is_directory(path) {

@@ -22,6 +22,9 @@ pub struct Rule {
   id : String
   description : String
   run : RuleRunner
+  tags : Array[String]
+  default_severity : Severity
+  enabled_by_default : Bool
 }
 
 ///|
@@ -29,11 +32,14 @@ pub fn Rule::new(
   id~ : String,
   description~ : String,
   run~ : RuleRunner,
+  tags? : Array[String] = [],
+  default_severity? : Severity = Severity::Warning,
+  enabled_by_default? : Bool = true,
 ) -> Rule {
-  { id, description, run }
+  { id, description, run, tags, default_severity, enabled_by_default }
 }
 
 ///|
-pub fn Rule::run(self : Rule, input : LintInput) -> Array[Diagnostic] {
-  self.run(input)
+pub fn Rule::apply(self : Rule, input : LintInput) -> Array[Diagnostic] {
+  (self.run)(input)
 }

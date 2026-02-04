@@ -8,23 +8,57 @@ import {
 }
 
 // Values
+pub fn constr_id_pkg_name(@syntax.ConstrId) -> String?
+
+pub fn constr_id_right_name(@syntax.ConstrId) -> String
+
+pub fn constructor_name(@syntax.Constructor) -> String
+
+pub fn constructor_type_name(@syntax.Constructor) -> String?
+
 pub fn expr_source(String, @syntax.Expr) -> String?
 
 pub fn format_diagnostic(Diagnostic) -> String
+
+pub fn is_discard_pattern(@syntax.Pattern) -> Bool
+
+pub fn is_none_expr(@syntax.Expr) -> Bool
+
+pub fn is_none_pattern(@syntax.Pattern) -> Bool
+
+pub fn is_some_pattern(@syntax.Pattern) -> Bool
 
 pub fn is_trivial_expr(@syntax.Expr) -> Bool
 
 pub fn is_unit_expr(@syntax.Expr) -> Bool
 
+pub fn label_name(@syntax.Label) -> String
+
 pub fn lint(LintInput, Array[Rule]) -> Array[Diagnostic]
 
 pub fn lint_impls(@list.List[@syntax.Impl], Array[Rule]) -> Array[Diagnostic]
+
+pub fn lint_impls_with_config(@list.List[@syntax.Impl], Array[Rule], LintConfig) -> Array[Diagnostic]
+
+pub fn lint_with_config(LintInput, Array[Rule], LintConfig) -> Array[Diagnostic]
+
+pub fn[T] list_to_array(@list.List[T]) -> Array[T]
+
+pub fn location_key(@basic.Location) -> String
+
+pub fn longident_full_name(@syntax.LongIdent) -> String
+
+pub fn longident_pkg_name(@syntax.LongIdent) -> String?
+
+pub fn longident_right_name(@syntax.LongIdent) -> String
 
 pub fn match_constant_bool(@syntax.Expr) -> Bool?
 
 pub fn match_constant_int(@syntax.Expr) -> String?
 
 pub fn match_constant_string(@syntax.Expr) -> String?
+
+pub fn match_ident_name(@syntax.Expr) -> String?
 
 pub fn match_infix(@syntax.Expr, String) -> (@syntax.Expr, @syntax.Expr, @basic.Location)?
 
@@ -34,13 +68,24 @@ pub fn match_try_question(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
 
 pub fn pattern_source(String, @syntax.Pattern) -> String?
 
+pub fn resolve_rule_settings(Rule, LintConfig) -> (Bool, Severity)
+
+pub fn some_binder_name(@syntax.Pattern) -> String?
+
 pub fn source_slice(String, @basic.Location) -> String?
+
+pub fn type_name_right_name(@syntax.TypeName) -> String
 
 pub fn unwrap_paren(@syntax.Expr) -> @syntax.Expr
 
 // Errors
 
 // Types and methods
+pub struct CategoryConfig {
+  enabled : Bool?
+  severity : Severity?
+}
+
 pub struct Diagnostic {
   rule_id : String
   loc : @basic.Location
@@ -48,8 +93,10 @@ pub struct Diagnostic {
   detail : String?
   suggestion : String?
   fix : Fix?
+  severity : Severity
 }
-pub fn Diagnostic::new(rule_id~ : String, loc~ : @basic.Location, message~ : String, detail? : String, suggestion? : String, fix? : Fix) -> Self
+pub fn Diagnostic::new(rule_id~ : String, loc~ : @basic.Location, message~ : String, detail? : String, suggestion? : String, fix? : Fix, severity? : Severity) -> Self
+pub fn Diagnostic::with_severity(Self, Severity) -> Self
 pub impl Show for Diagnostic
 
 pub struct Fix {
@@ -58,6 +105,14 @@ pub struct Fix {
 }
 pub fn Fix::new(range~ : @basic.Location, replacement~ : String) -> Self
 pub impl Show for Fix
+
+pub struct LintConfig {
+  rules : Map[String, RuleConfig]
+  categories : Map[String, CategoryConfig]
+}
+pub fn LintConfig::empty() -> Self
+pub fn LintConfig::enable_categories(Array[String]) -> Self
+pub fn LintConfig::from_json(String) -> Self raise
 
 pub struct LintInput {
   impls : @list.List[@syntax.Impl]
@@ -70,9 +125,25 @@ pub struct Rule {
   id : String
   description : String
   run : (LintInput) -> Array[Diagnostic]
+  tags : Array[String]
+  default_severity : Severity
+  enabled_by_default : Bool
 }
-pub fn Rule::new(id~ : String, description~ : String, run~ : (LintInput) -> Array[Diagnostic]) -> Self
-pub fn Rule::run(Self, LintInput) -> Array[Diagnostic]
+pub fn Rule::apply(Self, LintInput) -> Array[Diagnostic]
+pub fn Rule::new(id~ : String, description~ : String, run~ : (LintInput) -> Array[Diagnostic], tags? : Array[String], default_severity? : Severity, enabled_by_default? : Bool) -> Self
+
+pub struct RuleConfig {
+  enabled : Bool?
+  severity : Severity?
+}
+
+pub enum Severity {
+  Info
+  Warning
+  Error
+}
+pub impl Eq for Severity
+pub impl Show for Severity
 
 // Type aliases
 pub type RuleRunner = (LintInput) -> Array[Diagnostic]

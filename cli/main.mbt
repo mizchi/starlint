@@ -4,7 +4,7 @@ fn read_mbt_file_to_impls(filename : String) -> (@syntax.Impls, String) raise {
   let (impls, reports) = @parser.parse_string(
     source,
     name=filename,
-    parser=MoonYacc,
+    parser=Handrolled,
   )
   if reports.length() > 0 {
     fail(reports[0].to_string())
@@ -14,13 +14,31 @@ fn read_mbt_file_to_impls(filename : String) -> (@syntax.Impls, String) raise {
 }
 
 ///|
+fn default_config_path() -> String? {
+  if @fs.path_exists("moonlint.json") {
+    Some("moonlint.json")
+  } else if @fs.path_exists(".moonlint.json") {
+    Some(".moonlint.json")
+  } else {
+    None
+  }
+}
+
+///|
+fn load_config(path : String) -> @moonlint.LintConfig raise {
+  let text = @fs.read_file_to_string(path)
+  @moonlint.LintConfig::from_json(text)
+}
+
+///|
 fn lint_file(
   filename : String,
   rules : Array[@moonlint.Rule],
+  config : @moonlint.LintConfig,
 ) -> Array[@moonlint.Diagnostic] raise {
   let (impls, source) = read_mbt_file_to_impls(filename)
   let input = @moonlint.LintInput::new(impls~, source~, filename~)
-  return @moonlint.lint(input, rules)
+  return @moonlint.lint_with_config(input, rules, config)
 }
 
 ///|
@@ -100,13 +118,20 @@ fn apply_fixes_to_file(
 fn main {
   let argv = @sys.get_cli_args()[1:].to_array()
   let apply_fix = @ref.new(false)
+  let config_path = @ref.new("")
   let spec : Array[(String, String, @ArgParser.Spec, String)] = [
     ("--fix", "-f", @ArgParser.Spec::Set(apply_fix), "apply autofixes"),
+    (
+      "--config",
+      "-c",
+      @ArgParser.Spec::Set_string(config_path),
+      "config file path",
+    ),
   ]
   let filenames = []
   let usage =
     #| usage: 
-    #|   moonlint.exe [--fix] <file1> <file2> ...
+    #|   moonlint.exe [--fix] [--config <file>] <file1> <file2> ...
   @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
     err => {
       println(err)
@@ -131,10 +156,30 @@ fn main {
     }
   }
   let rules = @lint.rules()
+  let config = match config_path.val {
+    "" =>
+      match default_config_path() {
+        Some(path) =>
+          load_config(path) catch {
+            err => {
+              println("failed to load config: \{err}")
+              panic()
+            }
+          }
+        None => @moonlint.LintConfig::empty()
+      }
+    _ =>
+      load_config(config_path.val) catch {
+        err => {
+          println("failed to load config: \{err}")
+          panic()
+        }
+      }
+  }
   // make output more human-friendly
   println(" ")
   for filename in filenames {
-    let mut diagnostics = lint_file(filename, rules) catch {
+    let mut diagnostics = lint_file(filename, rules, config) catch {
       err => {
         println(err)
         panic()
@@ -148,7 +193,7 @@ fn main {
         }
       }
       if applied > 0 {
-        diagnostics = lint_file(filename, rules) catch {
+        diagnostics = lint_file(filename, rules, config) catch {
           err => {
             println(err)
             panic()
@@ -158,7 +203,7 @@ fn main {
       }
     }
     for diag in diagnostics {
-      println(@moonlint.format_diagnostic(diag))
+      diag |> @moonlint.format_diagnostic |> println
     }
   }
 }

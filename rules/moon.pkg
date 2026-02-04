@@ -1,4 +1,6 @@
 import {
   "myfreess/moonlint",
+  "moonbitlang/core/list",
+  "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",
 }
