@@ -19,7 +19,7 @@ fn parse_uint_or(default_value : UInt, value : String) -> UInt {
 ///|
 fn bench_size() -> Int {
   let default_size = 100000
-  match @sys.get_env_var("MOONLINT_BENCH_SIZE") {
+  match @sys.get_env_var("STARLINT_BENCH_SIZE") {
     Some(value) => parse_int_or(default_size, value)
     None => default_size
   }
@@ -28,7 +28,7 @@ fn bench_size() -> Int {
 ///|
 fn bench_count() -> UInt {
   let default_count : UInt = 3
-  match @sys.get_env_var("MOONLINT_BENCH_COUNT") {
+  match @sys.get_env_var("STARLINT_BENCH_COUNT") {
     Some(value) => parse_uint_or(default_count, value)
     None => default_count
   }

@@ -1,6 +1,6 @@
 ///|
 fn lint_bench_file_path() -> String {
-  match @sys.get_env_var("MOONLINT_LINT_BENCH_FILE") {
+  match @sys.get_env_var("STARLINT_LINT_BENCH_FILE") {
     Some(value) => value
     None => "warnings_fixtures_test.mbt"
   }
@@ -9,7 +9,7 @@ fn lint_bench_file_path() -> String {
 ///|
 fn lint_bench_repeat() -> Int {
   let default_repeat = 1
-  let repeat = match @sys.get_env_var("MOONLINT_LINT_BENCH_REPEAT") {
+  let repeat = match @sys.get_env_var("STARLINT_LINT_BENCH_REPEAT") {
     Some(value) => parse_int_or(default_repeat, value)
     None => default_repeat
   }

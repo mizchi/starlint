@@ -56,8 +56,7 @@ just install
 ```
 ## configuration
 
-starlint supports a JSON config file at `starlint.json` or `.starlint.json`
-(also reads `moonlint.json` for backward compatibility).
+starlint supports a JSON config file at `starlint.json` or `.starlint.json`.
 
 ### preset (recommended)
 

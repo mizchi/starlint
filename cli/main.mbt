@@ -386,13 +386,8 @@ fn default_rules_config_json(rules : Array[@starlint.Rule]) -> String {
 fn run_init(rules : Array[@starlint.Rule], module_root : String) -> Unit {
   let config_path = join_path(module_root, "starlint.json")
   let hidden_config = join_path(module_root, ".starlint.json")
-  let legacy_config = join_path(module_root, "moonlint.json")
-  let legacy_hidden = join_path(module_root, ".moonlint.json")
-  if @fs.path_exists(config_path) ||
-    @fs.path_exists(hidden_config) ||
-    @fs.path_exists(legacy_config) ||
-    @fs.path_exists(legacy_hidden) {
-    println("config already exists (starlint.json or moonlint.json).")
+  if @fs.path_exists(config_path) || @fs.path_exists(hidden_config) {
+    println("config already exists (starlint.json).")
     return
   }
   let text = default_rules_config_json(rules)
@@ -433,14 +428,6 @@ fn default_config_path(module_root : String) -> String? {
   let hidden = join_path(module_root, ".starlint.json")
   if @fs.path_exists(hidden) {
     return Some(hidden)
-  }
-  let legacy = join_path(module_root, "moonlint.json")
-  if @fs.path_exists(legacy) {
-    return Some(legacy)
-  }
-  let legacy_hidden = join_path(module_root, ".moonlint.json")
-  if @fs.path_exists(legacy_hidden) {
-    return Some(legacy_hidden)
   }
   None
 }
