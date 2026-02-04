@@ -1,6 +1,6 @@
 {
   "name": "mizchi/starlint",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "deps": {
     "moonbitlang/parser": "0.1.15",
     "moonbitlang/x": "0.4.38",
@@ -10,6 +10,6 @@
   "repository": "https://github.com/mizchi/starlint",
   "license": "Apache-2.0",
   "keywords": [],
-  "description": "Opionated moonbit linter",
+  "description": "Opinionated moonbit linter",
   "preferred-target": "native"
 }
