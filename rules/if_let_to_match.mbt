@@ -1,0 +1,151 @@
+///|
+let if_let_to_match_rule_id : String = "if_let_to_match"
+
+///|
+let if_let_to_match_description : String = "Prefer match when if-let has both branches."
+
+///|
+priv struct IfLetToMatchEnv {
+  diags : Array[@moonlint.Diagnostic]
+  source : String
+  skip_locs : Map[String, Bool]
+}
+
+///|
+fn push_if_let_to_match_diag(
+  env : IfLetToMatchEnv,
+  subject : @syntax.Expr,
+  pat : @syntax.Pattern,
+  ifso : @syntax.Expr,
+  ifnot : @syntax.Expr,
+  loc : @basic.Location,
+) -> Unit {
+  let message = "if-let can be replaced with match."
+  let detail =
+    #|if opt is Some(v) { expr1 } else { expr2 }
+  let suggestion =
+    #|match opt {
+    #|  Some(v) => expr1
+    #|  None => expr2
+    #|}
+  let fix = match
+    (
+      @moonlint.expr_source(env.source, subject),
+      @moonlint.pattern_source(env.source, pat),
+      @moonlint.expr_source(env.source, ifso),
+      @moonlint.expr_source(env.source, ifnot),
+    ) {
+    (Some(subject_src), Some(pattern_src), Some(ifso_src), Some(ifnot_src)) => {
+      let replacement = "match (\{subject_src}) { \{pattern_src} => \{ifso_src}  None => \{ifnot_src} }"
+      Some(@moonlint.Fix::new(range=loc, replacement~))
+    }
+    _ => None
+  }
+  let diag = match fix {
+    Some(fix) =>
+      @moonlint.Diagnostic::new(
+        rule_id=if_let_to_match_rule_id,
+        loc~,
+        message~,
+        detail~,
+        suggestion~,
+        fix~,
+      )
+    None =>
+      @moonlint.Diagnostic::new(
+        rule_id=if_let_to_match_rule_id,
+        loc~,
+        message~,
+        detail~,
+        suggestion~,
+      )
+  }
+  env.diags.push(diag)
+}
+
+///|
+
+///|
+impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
+  match expr {
+    @syntax.Sequence(exprs~, last_expr=_, loc=_) => {
+      let items = @moonlint.list_to_array(exprs)
+      for item in items {
+        match item {
+          @syntax.If(
+            cond=@syntax.Is(expr=_, pat~, loc=_),
+            ifso=_,
+            ifnot=Some(_),
+            loc~
+          ) =>
+            if @moonlint.is_some_pattern(pat) {
+              env.skip_locs.set(@moonlint.location_key(loc), true)
+            }
+          _ => ()
+        }
+      }
+    }
+    @syntax.Let(pattern~, expr=bound, body=_, loc=_) =>
+      if @moonlint.is_discard_pattern(pattern) {
+        match bound {
+          @syntax.If(
+            cond=@syntax.Is(expr=_, pat~, loc=_),
+            ifso=_,
+            ifnot=Some(_),
+            loc~
+          ) =>
+            if @moonlint.is_some_pattern(pat) {
+              env.skip_locs.set(@moonlint.location_key(loc), true)
+            }
+          _ => ()
+        }
+      }
+    @syntax.LetMut(binder~, ty=_, expr=bound, body=_, loc=_) =>
+      if binder.name == "_" {
+        match bound {
+          @syntax.If(
+            cond=@syntax.Is(expr=_, pat~, loc=_),
+            ifso=_,
+            ifnot=Some(_),
+            loc~
+          ) =>
+            if @moonlint.is_some_pattern(pat) {
+              env.skip_locs.set(@moonlint.location_key(loc), true)
+            }
+          _ => ()
+        }
+      }
+    @syntax.If(
+      cond=@syntax.Is(expr=subject, pat~, loc=_),
+      ifso~,
+      ifnot=Some(ifnot),
+      loc~
+    ) =>
+      if @moonlint.is_some_pattern(pat) &&
+        env.skip_locs.get(@moonlint.location_key(loc)) is None {
+        push_if_let_to_match_diag(env, subject, pat, ifso, ifnot, loc)
+      }
+    _ => ()
+  }
+  env.base().visit_Expr(expr)
+}
+
+///|
+fn if_let_to_match_rule() -> @moonlint.Rule {
+  @moonlint.Rule::new(
+    id=if_let_to_match_rule_id,
+    description=if_let_to_match_description,
+    run=input => {
+      let env = IfLetToMatchEnv::{
+        diags: Array::new(capacity=8),
+        source: input.source,
+        skip_locs: Map::new(),
+      }
+      for impl_ in input.impls {
+        env.visit_Impl(impl_)
+      } else {
+        env.diags
+      }
+    },
+  )
+}

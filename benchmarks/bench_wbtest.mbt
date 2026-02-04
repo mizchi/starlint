@@ -85,7 +85,11 @@ fn bench_loop_vs_map_filter(bench : @bench.T, size : Int, count : UInt) -> Unit 
 }
 
 ///|
-fn bench_pipeline_vs_nested(bench : @bench.T, size : Int, count : UInt) -> Unit {
+fn bench_prefer_pipeline_vs_nested(
+  bench : @bench.T,
+  size : Int,
+  count : UInt,
+) -> Unit {
   let xs = build_array(size)
   fn f(x : Int) -> Int {
     x + 1
@@ -103,7 +107,7 @@ fn bench_pipeline_vs_nested(bench : @bench.T, size : Int, count : UInt) -> Unit 
     fn() {
       let mut sum = 0
       for x in xs {
-        sum += f(g(h(x)))
+        sum += x |> h |> g |> f
       }
       bench.keep(sum)
     },
@@ -118,7 +122,7 @@ fn bench_pipeline_vs_nested(bench : @bench.T, size : Int, count : UInt) -> Unit 
       }
       bench.keep(sum)
     },
-    name="pipeline_calls",
+    name="prefer_pipeline_calls",
     count~,
   )
 }
@@ -198,7 +202,7 @@ test (bench : @bench.T) {
   let size = bench_size()
   let count = bench_count()
   bench_loop_vs_map_filter(bench, size, count)
-  bench_pipeline_vs_nested(bench, size, count)
+  bench_prefer_pipeline_vs_nested(bench, size, count)
   bench_dotdot_chain(bench, size / 10, count)
   bench_view_vs_copy(bench, size, count)
 }

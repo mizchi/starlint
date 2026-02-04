@@ -35,6 +35,153 @@ pub fn match_constant_int(expr : @syntax.Expr) -> String? {
 }
 
 ///|
+pub fn match_ident_name(expr : @syntax.Expr) -> String? {
+  match unwrap_paren(expr) {
+    @syntax.Ident(id={ name: Ident(name~), .. }, ..) => Some(name)
+    _ => None
+  }
+}
+
+///|
+pub fn constructor_name(constr : @syntax.Constructor) -> String {
+  let { name, .. } = constr
+  name.name
+}
+
+///|
+pub fn constructor_type_name(constr : @syntax.Constructor) -> String? {
+  match constr.extra_info {
+    @syntax.ConstructorExtraInfo::TypeName(type_name) =>
+      type_name.name |> longident_right_name |> Some
+    _ => None
+  }
+}
+
+///|
+pub fn longident_right_name(id : @syntax.LongIdent) -> String {
+  match id {
+    @syntax.LongIdent::Ident(name~) => name
+    @syntax.LongIdent::Dot(pkg=_, id~) => id
+  }
+}
+
+///|
+pub fn longident_pkg_name(id : @syntax.LongIdent) -> String? {
+  match id {
+    @syntax.LongIdent::Dot(pkg~, id=_) => Some(pkg)
+    _ => None
+  }
+}
+
+///|
+pub fn longident_full_name(id : @syntax.LongIdent) -> String {
+  match id {
+    @syntax.LongIdent::Ident(name~) => name
+    @syntax.LongIdent::Dot(pkg~, id~) => "\{pkg}.\{id}"
+  }
+}
+
+///|
+pub fn type_name_right_name(type_name : @syntax.TypeName) -> String {
+  longident_right_name(type_name.name)
+}
+
+///|
+pub fn constr_id_right_name(constr_id : @syntax.ConstrId) -> String {
+  longident_right_name(constr_id.id)
+}
+
+///|
+pub fn constr_id_pkg_name(constr_id : @syntax.ConstrId) -> String? {
+  longident_pkg_name(constr_id.id)
+}
+
+///|
+pub fn label_name(label : @syntax.Label) -> String {
+  label.name
+}
+
+///|
+pub fn[T] list_to_array(xs : @list.List[T]) -> Array[T] {
+  let out = Array::new(capacity=4)
+  for item in xs {
+    out.push(item)
+  } else {
+    out
+  }
+}
+
+///|
+pub fn is_some_pattern(pat : @syntax.Pattern) -> Bool {
+  match pat {
+    @syntax.Pattern::Constr(constr~, args=Some(args), ..) => {
+      if constructor_name(constr) != "Some" {
+        return false
+      }
+      let args_array = list_to_array(args)
+      args_array.length() == 1
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn some_binder_name(pat : @syntax.Pattern) -> String? {
+  match pat {
+    @syntax.Pattern::Constr(constr~, args=Some(args), ..) => {
+      if constructor_name(constr) != "Some" {
+        return None
+      }
+      let args_array = list_to_array(args)
+      if args_array.length() != 1 {
+        return None
+      }
+      let arg = args_array[0]
+      match arg.pat {
+        @syntax.Pattern::Var(binder) => Some(binder.name)
+        _ => None
+      }
+    }
+    _ => None
+  }
+}
+
+///|
+pub fn is_none_pattern(pat : @syntax.Pattern) -> Bool {
+  match pat {
+    @syntax.Pattern::Constr(constr~, args=None, ..) =>
+      constructor_name(constr) == "None"
+    @syntax.Pattern::Constr(constr~, args=Some(args), ..) => {
+      if constructor_name(constr) != "None" {
+        return false
+      }
+      let args_array = list_to_array(args)
+      args_array.length() == 0
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn is_none_expr(expr : @syntax.Expr) -> Bool {
+  match unwrap_paren(expr) {
+    @syntax.Constr(constr={ name: { name: "None", .. }, .. }, ..) => true
+    _ => false
+  }
+}
+
+///|
+pub fn is_discard_pattern(pat : @syntax.Pattern) -> Bool {
+  match pat {
+    @syntax.Pattern::Any(..) => true
+    @syntax.Pattern::Var(binder) => binder.name == "_"
+    @syntax.Pattern::Alias(pat=inner, alias_=binder, ..) =>
+      binder.name == "_" || is_discard_pattern(inner)
+    _ => false
+  }
+}
+
+///|
 pub fn match_constant_bool(expr : @syntax.Expr) -> Bool? {
   match unwrap_paren(expr) {
     @syntax.Constant(c=Bool(value), ..) => Some(value)
@@ -74,6 +221,11 @@ pub fn source_slice(source : String, loc : @basic.Location) -> String? {
     Ok(view) => Some(view.to_string())
     Err(_) => None
   }
+}
+
+///|
+pub fn location_key(loc : @basic.Location) -> String {
+  "\{loc.start.cnum}-\{loc.end.cnum}"
 }
 
 ///|
