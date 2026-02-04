@@ -1,6 +1,6 @@
 ///|
 fn test_lint(source : String) -> Array[@starlint.Diagnostic] raise {
-  let (impls, reports) = @parser.parse_string(source, name="<lint test>")
+  let (impls, reports) = parse_string_for_lint(source, name="<lint test>")
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }

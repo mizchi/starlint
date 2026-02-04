@@ -3,6 +3,7 @@ package "mizchi/starlint"
 
 import {
   "moonbitlang/core/list",
+  "moonbitlang/parser",
   "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",
 }
@@ -83,6 +84,8 @@ pub fn match_infix(@syntax.Expr, String) -> (@syntax.Expr, @syntax.Expr, @basic.
 pub fn match_match_expr(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
 
 pub fn match_try_question(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
+
+pub fn parse_string_for_lint(String, name? : String, parser? : @parser.Parser) -> (@list.List[@syntax.Impl], Array[@basic.Report])
 
 pub fn pattern_source(String, @syntax.Pattern) -> String?
 

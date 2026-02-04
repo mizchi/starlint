@@ -43,7 +43,7 @@ fn load_lint_bench_source() -> (String, String) {
 
 ///|
 fn parse_impls_for_bench(source : String, filename : String) -> @syntax.Impls {
-  let (impls, reports) = @parser.parse_string(
+  let (impls, reports) = @starlint.parse_string_for_lint(
     source,
     name=filename,
     parser=MoonYacc,

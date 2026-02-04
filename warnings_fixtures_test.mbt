@@ -17,7 +17,7 @@ fn test_lint_for_warning_fixtures_with_categories(
   source : String,
   categories : Array[String],
 ) -> Array[@starlint.Diagnostic] raise {
-  let (impls, reports) = @parser.parse_string(source, name="<warning fixture>")
+  let (impls, reports) = parse_string_for_lint(source, name="<warning fixture>")
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }
@@ -36,7 +36,7 @@ fn test_lint_for_warning_fixtures_with_categories_and_filename(
   categories : Array[String],
   filename : String,
 ) -> Array[@starlint.Diagnostic] raise {
-  let (impls, reports) = @parser.parse_string(source, name=filename)
+  let (impls, reports) = parse_string_for_lint(source, name=filename)
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }

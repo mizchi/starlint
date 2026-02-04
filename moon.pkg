@@ -1,8 +1,11 @@
 import {
   "moonbitlang/core/json",
   "moonbitlang/core/list",
+  "moonbitlang/parser",
+  "moonbitlang/parser/lexer",
   "moonbitlang/parser/syntax",
   "moonbitlang/parser/basic",
+  "moonbitlang/parser/tokens",
 }
 
 import "test" {

@@ -8,7 +8,7 @@ struct FixFixture {
 
 ///|
 fn test_lint_for_fixtures(source : String) -> Array[@starlint.Diagnostic] raise {
-  let (impls, reports) = @parser.parse_string(source, name="<fix test>")
+  let (impls, reports) = parse_string_for_lint(source, name="<fix test>")
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }
