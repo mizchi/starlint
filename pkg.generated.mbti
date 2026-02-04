@@ -117,6 +117,8 @@ pub struct LintConfig {
 pub fn LintConfig::empty() -> Self
 pub fn LintConfig::enable_categories(Array[String]) -> Self
 pub fn LintConfig::from_json(String) -> Self raise
+pub fn LintConfig::preset(String) -> Self?
+pub fn LintConfig::recommended() -> Self
 
 pub struct LintInput {
   impls : @list.List[@syntax.Impl]

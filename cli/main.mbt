@@ -246,7 +246,7 @@ fn main {
               panic()
             }
           }
-        None => @moonlint.LintConfig::empty()
+        None => @moonlint.LintConfig::recommended()
       }
     _ =>
       load_config(config_path.val) catch {

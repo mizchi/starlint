@@ -22,6 +22,19 @@ pub fn LintConfig::empty() -> LintConfig {
 }
 
 ///|
+pub fn LintConfig::recommended() -> LintConfig {
+  LintConfig::enable_categories(["fp", "size", "async", "error"])
+}
+
+///|
+pub fn LintConfig::preset(name : String) -> LintConfig? {
+  match name.to_lower() {
+    "recommended" => Some(LintConfig::recommended())
+    _ => None
+  }
+}
+
+///|
 fn parse_bool(json : Json) -> Bool? {
   match json {
     True => Some(true)
@@ -115,10 +128,18 @@ fn parse_category_config(json : Json) -> CategoryConfig? {
 ///|
 pub fn LintConfig::from_json(text : String) -> LintConfig raise {
   let json = @json.parse(text)
-  let rules = Map::new()
-  let categories = Map::new()
+  let mut base = LintConfig::empty()
   match json {
     Object(obj) => {
+      match obj.get("preset") {
+        Some(String(name)) =>
+          if LintConfig::preset(name) is Some(preset) {
+            base = preset
+          }
+        _ => ()
+      }
+      let rules = base.rules
+      let categories = base.categories
       match obj.get("rules") {
         Some(Object(rule_obj)) =>
           for name, value in rule_obj {
@@ -139,10 +160,10 @@ pub fn LintConfig::from_json(text : String) -> LintConfig raise {
           }
         _ => ()
       }
+      { rules, categories }
     }
-    _ => ()
+    _ => base
   }
-  { rules, categories }
 }
 
 ///|

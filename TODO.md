@@ -145,6 +145,36 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
 - [ ] `prefer_map_get_pattern`  
   `map[key]` 直接アクセスを `get` + `match/guard` に誘導 (安全性)
 
+### Async / Error handling
+- [x] `async_cancellation_must_propagate`  
+  async の `catch` で cancellation を握りつぶさない (`@async.is_being_cancelled()` を再 raise)
+- [x] `prefer_task_group_spawn`  
+  `@async.spawn` / `spawn_bg` を `@async.with_task_group` に寄せる
+- [x] `spawn_result_must_be_used`  
+  `group.spawn(...)` の戻り値 Task を未使用のまま捨てない
+- [x] `spawn_bg_long_running_requires_no_wait`  
+  `spawn_bg` で長寿命タスクは `no_wait=true` を要求
+- [x] `no_wrap_generic_error`  
+  `suberror WrapA(Error)` のような汎用 Error を包むだけの型を避ける
+- [x] `avoid_abort_in_error_paths`  
+  `catch` 内の `abort/panic` を抑制
+- [x] `prefer_noraise_async`  
+  error effect のない `async fn` に `noraise` を付与する提案
+
+### Test (TDD / snapshot)
+- [x] `avoid_trivial_assert`  
+  `assert_true(true)` / `assert_false(true)` / `assert_eq(x, x)` のような無意味な検証を検知
+- [x] `prefer_input_expected_assert`  
+  `assert_eq(f(x), y)` を input/expected/actual 変数に分解する提案
+
+### Module / API
+- [x] `require_doc_pub_fn`  
+  `pub fn` に doc comment を必須化
+- [x] `require_doc_pub_enum`  
+  `pub enum` に doc comment を必須化
+- [x] `using_only_in_file`  
+  `using` は指定ファイル（file.mbt）に限定
+
 ### ベンチマーク (Phase 1.5 の前提)
 - [ ] `bench_loop_vs_map_filter`  
   ループと `map/filter/fold` の比較
@@ -172,5 +202,6 @@ moon fmt が直せず、moon check が対応できないベストプラクティ
   重複・交差する Fix の検知とスキップ理由の表示
 
 ## カテゴリ方針
-- perf / fp / size の3タグを付与
+- perf / fp / size / async / error / test / module のタグを付与
 - fp（関数型）系はデフォルト無効、明示的に有効化する
+- async / error はデフォルト無効

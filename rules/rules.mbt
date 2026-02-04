@@ -39,5 +39,17 @@ pub fn rules() -> Array[@moonlint.Rule] {
     dotdot_chain_sequence_rule(),
     prefer_pipeline_rule(),
     prefer_pipeline_rebind_rule(),
+    async_cancellation_must_propagate_rule(),
+    prefer_task_group_spawn_rule(),
+    spawn_result_must_be_used_rule(),
+    spawn_bg_long_running_requires_no_wait_rule(),
+    no_wrap_generic_error_rule(),
+    avoid_abort_in_error_paths_rule(),
+    prefer_noraise_async_rule(),
+    avoid_trivial_assert_rule(),
+    prefer_input_expected_assert_rule(),
+    require_doc_pub_fn_rule(),
+    require_doc_pub_enum_rule(),
+    using_only_in_file_rule(),
   ]
 }
