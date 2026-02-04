@@ -2,6 +2,7 @@
 package "myfreess/moonlint/cli"
 
 // Values
+pub fn run(Array[String], start_dir? : String) -> Unit
 
 // Errors
 

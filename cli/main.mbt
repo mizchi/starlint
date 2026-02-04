@@ -383,8 +383,8 @@ fn default_rules_config_json(rules : Array[@moonlint.Rule]) -> String {
 }
 
 ///|
-fn run_init(rules : Array[@moonlint.Rule]) -> Unit {
-  let config_path = "moonlint.json"
+fn run_init(rules : Array[@moonlint.Rule], module_root : String) -> Unit {
+  let config_path = join_path(module_root, "moonlint.json")
   if @fs.path_exists(config_path) {
     println("moonlint.json already exists.")
     return
@@ -400,12 +400,15 @@ fn run_init(rules : Array[@moonlint.Rule]) -> Unit {
 }
 
 ///|
-fn read_mbt_file_to_impls(filename : String) -> (@syntax.Impls, String) raise {
-  let source = @fs.read_file_to_string(filename)
+fn read_mbt_file_to_impls(
+  fs_path : String,
+  source_name : String,
+) -> (@syntax.Impls, String) raise {
+  let source = @fs.read_file_to_string(fs_path)
   let normalized_source = normalize_using_type_keyword(source)
   let (impls, reports) = @parser.parse_string(
     normalized_source,
-    name=filename,
+    name=source_name,
     parser=MoonYacc,
   )
   if reports.length() > 0 {
@@ -416,13 +419,29 @@ fn read_mbt_file_to_impls(filename : String) -> (@syntax.Impls, String) raise {
 }
 
 ///|
-fn default_config_path() -> String? {
-  if @fs.path_exists("moonlint.json") {
-    Some("moonlint.json")
-  } else if @fs.path_exists(".moonlint.json") {
-    Some(".moonlint.json")
+fn default_config_path(module_root : String) -> String? {
+  let primary = join_path(module_root, "moonlint.json")
+  if @fs.path_exists(primary) {
+    Some(primary)
   } else {
-    None
+    let fallback = join_path(module_root, ".moonlint.json")
+    if @fs.path_exists(fallback) {
+      Some(fallback)
+    } else {
+      None
+    }
+  }
+}
+
+///|
+fn resolve_config_path(module_root : String, path : String) -> String {
+  if path == "" {
+    return path
+  }
+  if is_abs_path(path) {
+    path
+  } else {
+    join_path(module_root, path)
   }
 }
 
@@ -434,12 +453,13 @@ fn load_config(path : String) -> @moonlint.LintConfig raise {
 
 ///|
 fn lint_file(
-  filename : String,
+  fs_path : String,
+  display_path : String,
   rules : Array[@moonlint.Rule],
   config : @moonlint.LintConfig,
 ) -> Array[@moonlint.Diagnostic] raise {
-  let (impls, source) = read_mbt_file_to_impls(filename)
-  let input = @moonlint.LintInput::new(impls~, source~, filename~)
+  let (impls, source) = read_mbt_file_to_impls(fs_path, display_path)
+  let input = @moonlint.LintInput::new(impls~, source~, filename=display_path)
   return @moonlint.lint_with_config(input, rules, config)
 }
 
@@ -501,33 +521,102 @@ fn apply_fixes_to_source(
 
 ///|
 fn apply_fixes_to_file(
-  filename : String,
+  fs_path : String,
+  display_path : String,
   diagnostics : Array[@moonlint.Diagnostic],
 ) -> Int raise {
-  let fixes = collect_fixes(diagnostics, filename)
+  let fixes = collect_fixes(diagnostics, display_path)
   if fixes.is_empty() {
     return 0
   }
-  let source = @fs.read_file_to_string(filename)
+  let source = @fs.read_file_to_string(fs_path)
   let (new_source, applied) = apply_fixes_to_source(source, fixes)
   if applied > 0 && new_source != source {
-    @fs.write_string_to_file(filename, new_source)
+    @fs.write_string_to_file(fs_path, new_source)
   }
   applied
 }
 
 ///|
-fn main {
-  let argv = @sys.get_cli_args()[1:].to_array()
+fn resolve_start_dir(start_dir : String) -> String {
+  let base = match @sys.get_env_var("PWD") {
+    Some(path) => path
+    None =>
+      match @sys.get_env_var("INIT_CWD") {
+        Some(path) => path
+        None => "."
+      }
+  }
+  if start_dir == "" {
+    return base
+  }
+  if is_abs_path(start_dir) {
+    start_dir
+  } else {
+    join_path(base, start_dir)
+  }
+}
+
+///|
+fn resolve_module_root(start_dir : String) -> String raise Error {
+  match find_module_root(start_dir) {
+    Some(root) => root
+    None => fail("moon.mod.json not found from \{start_dir}")
+  }
+}
+
+///|
+fn build_file_entries_from_args(
+  filenames : Array[String],
+  start_dir : String,
+  module_root : String,
+) -> Array[(String, String)] {
+  let entries = []
+  for filename in filenames {
+    let fs_path = resolve_path(start_dir, filename)
+    let rel_path = match path_relative_to_root(fs_path, module_root) {
+      Some(rel) => if rel == "" { filename } else { strip_dot_slash(rel) }
+      None => filename
+    }
+    entries.push((fs_path, rel_path))
+  } else {
+    entries
+  }
+}
+
+///|
+fn build_file_entries_from_module(
+  module_root : String,
+  base_fs : String,
+  base_rel : String,
+) -> Array[(String, String)] raise Error {
+  let rel_paths = get_mbt_path_set_from_base(base_fs, base_rel)
+  let entries = []
+  for rel_path in rel_paths {
+    let fs_path = join_path(module_root, rel_path)
+    entries.push((fs_path, rel_path))
+  } else {
+    entries
+  }
+}
+
+///|
+fn run_with_start_dir(argv : Array[String], start_dir : String) -> Unit {
   if argv.length() > 0 && !argv[0].has_prefix("-") {
     let cmd = argv[0]
     let rules = @lint.rules()
-    if cmd == "init" {
-      run_init(rules)
-      return
-    }
     if cmd == "doc" {
       print_rules_doc(rules)
+      return
+    }
+    if cmd == "init" {
+      let module_root = resolve_module_root(start_dir) catch {
+        err => {
+          println("failed to find module root: \{err}")
+          panic()
+        }
+      }
+      run_init(rules, module_root)
       return
     }
   }
@@ -558,27 +647,38 @@ fn main {
       panic()
     }
   }
-  if filenames.length() == 0 {
-    let base = get_src_location(load_module_info()) catch {
-      err => {
-        println("failed to load module info: \{err}")
-        panic()
-      }
+  let module_root = resolve_module_root(start_dir) catch {
+    err => {
+      println("failed to find module root: \{err}")
+      panic()
     }
-    let mbt_set = get_mbt_path_set_from_base(base) catch {
+  }
+  let module_info = load_module_info(module_root) catch {
+    err => {
+      println("failed to load module info: \{err}")
+      panic()
+    }
+  }
+  let base_rel = get_src_location(module_info)
+  let base_fs = if base_rel == "." || base_rel == "" {
+    module_root
+  } else {
+    join_path(module_root, base_rel)
+  }
+  let file_entries = if filenames.length() == 0 {
+    build_file_entries_from_module(module_root, base_fs, base_rel) catch {
       err => {
         println("failed when finding source files: \{err}")
         panic()
       }
     }
-    for filename in mbt_set {
-      filenames.push(filename)
-    }
+  } else {
+    build_file_entries_from_args(filenames, start_dir, module_root)
   }
   let rules = @lint.rules()
-  let config = match config_path.val {
+  let config = match resolve_config_path(module_root, config_path.val) {
     "" =>
-      match default_config_path() {
+      match default_config_path(module_root) {
         Some(path) =>
           load_config(path) catch {
             err => {
@@ -588,8 +688,8 @@ fn main {
           }
         None => @moonlint.LintConfig::recommended()
       }
-    _ =>
-      load_config(config_path.val) catch {
+    path =>
+      load_config(path) catch {
         err => {
           println("failed to load config: \{err}")
           panic()
@@ -598,33 +698,38 @@ fn main {
   }
   let use_by_rule = if by_file.val { false } else { by_rule.val }
   let diagnostics = []
-  for filename in filenames {
-    let file_config = config.for_file(filename)
-    if file_config.is_ignored(filename) {
+  for entry in file_entries {
+    let (fs_path, display_path) = entry
+    let file_config = config.for_file(display_path)
+    if file_config.is_ignored(display_path) {
       continue
     }
-    let mut file_diagnostics = lint_file(filename, rules, file_config) catch {
+    let mut file_diagnostics = lint_file(
+      fs_path, display_path, rules, file_config,
+    ) catch {
       err => {
         println(err)
         panic()
       }
     }
     if apply_fix.val {
-      let applied = apply_fixes_to_file(filename, file_diagnostics) catch {
+      let applied = apply_fixes_to_file(fs_path, display_path, file_diagnostics) catch {
         err => {
           println(err)
           panic()
         }
       }
       if applied > 0 {
-        let refreshed_config = config.for_file(filename)
-        file_diagnostics = lint_file(filename, rules, refreshed_config) catch {
+        let refreshed_config = config.for_file(display_path)
+        file_diagnostics = lint_file(
+          fs_path, display_path, rules, refreshed_config,
+        ) catch {
           err => {
             println(err)
             panic()
           }
         }
-        println("Applied \{applied} fixes in \{filename}")
+        println("Applied \{applied} fixes in \{display_path}")
       }
     }
     for diag in file_diagnostics {
@@ -638,4 +743,15 @@ fn main {
   } else {
     print_by_file(diagnostics)
   }
+}
+
+///|
+pub fn run(args : Array[String], start_dir? : String = "") -> Unit {
+  run_with_start_dir(args, resolve_start_dir(start_dir))
+}
+
+///|
+fn main {
+  let argv = @sys.get_cli_args()[1:].to_array()
+  run(argv)
 }
