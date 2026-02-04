@@ -6,13 +6,13 @@ let prefer_pipeline_description : String = "Prefer pipeline operator for nested 
 
 ///|
 priv struct PreferPipelineEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
 ///|
 fn is_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(func) {
+  match @starlint.unwrap_paren(func) {
     @syntax.Ident(..) => true
     @syntax.Method(..) => true
     @syntax.Constr(..) => true
@@ -24,9 +24,9 @@ fn is_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
 fn simple_apply(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, @syntax.Expr, @basic.Location)? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, attr=NoAttr, loc~) => {
-      let args_array = @moonlint.list_to_array(args)
+      let args_array = @starlint.list_to_array(args)
       if args_array.length() != 1 {
         return None
       }
@@ -76,11 +76,11 @@ fn pipeline_suggestion(
   base : @syntax.Expr,
   funcs : Array[@syntax.Expr],
 ) -> String? {
-  let base_src = match @moonlint.expr_source(source, base) {
+  let base_src = match @starlint.expr_source(source, base) {
     Some(src) => src
     None => return None
   }
-  let base_text = match @moonlint.unwrap_paren(base) {
+  let base_text = match @starlint.unwrap_paren(base) {
     @syntax.Ident(..) => base_src
     @syntax.Constant(..) => base_src
     @syntax.Field(..) => base_src
@@ -95,7 +95,7 @@ fn pipeline_suggestion(
   let mut idx = funcs.length()
   while idx > 0 {
     idx = idx - 1
-    let func_src = match @moonlint.expr_source(source, funcs[idx]) {
+    let func_src = match @starlint.expr_source(source, funcs[idx]) {
       Some(src) => src
       None => return None
     }
@@ -106,9 +106,9 @@ fn pipeline_suggestion(
 
 ///|
 impl @syntax.IterVisitor for PreferPipelineEnv with visit_Expr(env, expr) {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Apply(args~, ..) => {
-      let args_array = @moonlint.list_to_array(args)
+      let args_array = @starlint.list_to_array(args)
       if args_array.length() != 1 {
         return
       }
@@ -127,8 +127,8 @@ impl @syntax.IterVisitor for PreferPipelineEnv with visit_Expr(env, expr) {
           let diag = if loc.start.lnum == loc.end.lnum &&
             !suggestion_text.contains("\n") {
             let replacement = "(\{suggestion_text})"
-            let fix = @moonlint.Fix::new(range=loc, replacement~)
-            @moonlint.Diagnostic::new(
+            let fix = @starlint.Fix::new(range=loc, replacement~)
+            @starlint.Diagnostic::new(
               rule_id=prefer_pipeline_rule_id,
               loc~,
               message~,
@@ -137,7 +137,7 @@ impl @syntax.IterVisitor for PreferPipelineEnv with visit_Expr(env, expr) {
               fix~,
             )
           } else {
-            @moonlint.Diagnostic::new(
+            @starlint.Diagnostic::new(
               rule_id=prefer_pipeline_rule_id,
               loc~,
               message~,
@@ -158,8 +158,8 @@ impl @syntax.IterVisitor for PreferPipelineEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn prefer_pipeline_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_pipeline_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_pipeline_rule_id,
     description=prefer_pipeline_description,
     tags=["fp"],

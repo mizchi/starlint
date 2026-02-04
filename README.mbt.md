@@ -1,4 +1,4 @@
-# moonlint
+# starlint
 
 simple linter for MoonBit language.
 
@@ -11,25 +11,31 @@ moon test --target wasm-gc
 ## basic usage
 
 ```
-moonlint.exe # auto scan current project
-moonlint.exe foo.mbt # check this file
-moonlint.exe --by-rule foo.mbt # group diagnostics by rule
-moonlint.exe doc # show rule list and defaults
-moonlint.exe init # generate moonlint.json (with rule_groups guidance)
+starlint # auto scan current project
+starlint foo.mbt # check this file
+starlint --by-rule foo.mbt # group diagnostics by rule
+starlint doc # show rule list and defaults
+starlint init # generate starlint.json (with rule_groups guidance)
 ```
 
-moonlint walks up from the current directory to find `moon.mod.json`, and uses that
+starlint walks up from the current directory to find `moon.mod.json`, and uses that
 module root as the base for config and file discovery.
+
+You can also start from a specific directory:
+
+```
+starlint --config path/to/starlint.json src/foo.mbt
+```
 
 ## embed as CLI main
 
-Use moonlint as a library-driven CLI by calling `@cli.run(...)` from your own
+Use starlint as a library-driven CLI by calling `@cli.run(...)` from your own
 `main` (e.g. `src/internal/cli.mbt`).
 
 ```
 // moon.pkg
 import {
-  "myfreess/moonlint/cli",
+  "mizchi/starlint/cli",
   "moonbitlang/x/sys",
 }
 ```
@@ -38,7 +44,8 @@ import {
 ///|
 fn main {
   let argv = @sys.get_cli_args()[1:].to_array()
-  @cli.run(argv)
+  @cli.run(argv) // uses PWD (or INIT_CWD) to locate moon.mod.json
+  // or: @cli.run(argv, start_dir="path/to/project")
 }
 ```
 
@@ -49,7 +56,8 @@ just install
 ```
 ## configuration
 
-moonlint supports a JSON config file at `moonlint.json` or `.moonlint.json`.
+starlint supports a JSON config file at `starlint.json` or `.starlint.json`
+(also reads `moonlint.json` for backward compatibility).
 
 ### preset (recommended)
 

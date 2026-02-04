@@ -6,7 +6,7 @@ let avoid_unnecessary_mut_description : String = "Avoid let mut when the binding
 
 ///|
 priv struct AvoidUnnecessaryMutEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
@@ -22,7 +22,7 @@ impl @syntax.IterVisitor for AssignDetector with visit_Expr(env, expr) {
   }
   match expr {
     @syntax.Assign(var_~, expr=_, augmented_by=_, loc=_) =>
-      if @moonlint.longident_right_name(var_.name) == env.name {
+      if @starlint.longident_right_name(var_.name) == env.name {
         env.found = true
       }
     _ => ()
@@ -49,7 +49,7 @@ impl @syntax.IterVisitor for AvoidUnnecessaryMutEnv with visit_Expr(env, expr) {
         let suggestion =
           #|let x = expr
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=avoid_unnecessary_mut_rule_id,
             loc~,
             message~,
@@ -64,8 +64,8 @@ impl @syntax.IterVisitor for AvoidUnnecessaryMutEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn avoid_unnecessary_mut_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_unnecessary_mut_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_unnecessary_mut_rule_id,
     description=avoid_unnecessary_mut_description,
     tags=["fp"],

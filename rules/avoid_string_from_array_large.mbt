@@ -6,13 +6,13 @@ let avoid_string_from_array_large_description : String = "Avoid String::from_arr
 
 ///|
 priv struct AvoidStringFromArrayLargeEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn should_warn_from_array_arg(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
-    @syntax.Array(exprs~, ..) => @moonlint.list_to_array(exprs).length() >= 8
+  match @starlint.unwrap_paren(expr) {
+    @syntax.Array(exprs~, ..) => @starlint.list_to_array(exprs).length() >= 8
     @syntax.ArraySpread(..) => true
     _ => false
   }
@@ -23,16 +23,16 @@ impl @syntax.IterVisitor for AvoidStringFromArrayLargeEnv with visit_Expr(
   env,
   expr,
 ) {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Apply(
       func=@syntax.Method(type_name~, method_name~, ..),
       args~,
       attr=NoAttr,
       loc~
     ) =>
-      if @moonlint.type_name_right_name(type_name) == "String" &&
-        @moonlint.label_name(method_name) == "from_array" {
-        let args_array = @moonlint.list_to_array(args)
+      if @starlint.type_name_right_name(type_name) == "String" &&
+        @starlint.label_name(method_name) == "from_array" {
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() == 1 {
           let arg = args_array[0]
           match arg.kind {
@@ -44,7 +44,7 @@ impl @syntax.IterVisitor for AvoidStringFromArrayLargeEnv with visit_Expr(
                 let suggestion =
                   #|Use StringBuilder/Buffer when building strings incrementally.
                 env.diags.push(
-                  @moonlint.Diagnostic::new(
+                  @starlint.Diagnostic::new(
                     rule_id=avoid_string_from_array_large_rule_id,
                     loc~,
                     message~,
@@ -63,8 +63,8 @@ impl @syntax.IterVisitor for AvoidStringFromArrayLargeEnv with visit_Expr(
 }
 
 ///|
-fn avoid_string_from_array_large_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_string_from_array_large_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_string_from_array_large_rule_id,
     description=avoid_string_from_array_large_description,
     tags=["perf"],

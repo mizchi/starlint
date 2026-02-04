@@ -6,13 +6,13 @@ let avoid_side_effect_in_map_description : String = "Avoid using map for side ef
 
 ///|
 priv struct AvoidSideEffectInMapEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
 ///|
 fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.DotApply(
       self=_,
       method_name~,
@@ -21,10 +21,10 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       attr=NoAttr,
       loc~
     ) =>
-      if @moonlint.label_name(method_name) != "map" {
+      if @starlint.label_name(method_name) != "map" {
         None
       } else {
-        let args_array = @moonlint.list_to_array(args)
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() != 1 {
           None
         } else {
@@ -41,10 +41,10 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       attr=NoAttr,
       loc~
     ) =>
-      if @moonlint.label_name(label) != "map" {
+      if @starlint.label_name(label) != "map" {
         None
       } else {
-        let args_array = @moonlint.list_to_array(args)
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() != 1 {
           None
         } else {
@@ -61,10 +61,10 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       attr=NoAttr,
       loc~
     ) =>
-      if @moonlint.label_name(method_name) != "map" {
+      if @starlint.label_name(method_name) != "map" {
         None
       } else {
-        let args_array = @moonlint.list_to_array(args)
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() != 2 {
           None
         } else {
@@ -84,7 +84,7 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       if name != "map" {
         None
       } else {
-        let args_array = @moonlint.list_to_array(args)
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() != 2 {
           None
         } else {
@@ -130,7 +130,7 @@ fn push_avoid_side_effect_in_map_diag(
         let suggestion =
           #|xs.iter().each(f)
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=avoid_side_effect_in_map_rule_id,
             loc~,
             message~,
@@ -147,7 +147,7 @@ fn push_avoid_side_effect_in_map_diag(
 impl @syntax.IterVisitor for AvoidSideEffectInMapEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Let(pattern~, expr=bound, body=_, loc=_) =>
-      if @moonlint.is_discard_pattern(pattern) {
+      if @starlint.is_discard_pattern(pattern) {
         push_avoid_side_effect_in_map_diag(env, bound, false)
       }
     @syntax.LetMut(binder~, ty=_, expr=bound, body=_, loc=_) =>
@@ -161,8 +161,8 @@ impl @syntax.IterVisitor for AvoidSideEffectInMapEnv with visit_Expr(env, expr) 
 }
 
 ///|
-fn avoid_side_effect_in_map_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_side_effect_in_map_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_side_effect_in_map_rule_id,
     description=avoid_side_effect_in_map_description,
     tags=["fp"],

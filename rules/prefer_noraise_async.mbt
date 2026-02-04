@@ -6,7 +6,7 @@ let prefer_noraise_async_description : String = "Prefer noraise for async functi
 
 ///|
 priv struct PreferNoraiseAsyncEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
@@ -61,7 +61,7 @@ fn push_prefer_noraise_diag(
   let suggestion =
     #|async fn f noraise { ... }
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=prefer_noraise_async_rule_id,
       loc~,
       message~,
@@ -105,8 +105,8 @@ impl @syntax.IterVisitor for PreferNoraiseAsyncEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn prefer_noraise_async_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_noraise_async_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_noraise_async_rule_id,
     description=prefer_noraise_async_description,
     tags=["async"],

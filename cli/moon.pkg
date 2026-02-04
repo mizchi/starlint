@@ -1,6 +1,6 @@
 import {
-  "myfreess/moonlint",
-  "myfreess/moonlint/tasks/lint",
+  "mizchi/starlint",
+  "mizchi/starlint/tasks/lint",
   "moonbitlang/parser",
   "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",

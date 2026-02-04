@@ -1,18 +1,18 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "myfreess/moonlint/tasks/lint"
+package "mizchi/starlint/tasks/lint"
 
 import {
+  "mizchi/starlint",
   "moonbitlang/core/list",
   "moonbitlang/parser/syntax",
-  "myfreess/moonlint",
 }
 
 // Values
-pub fn lint(@list.List[@syntax.Impl]) -> Array[@moonlint.Diagnostic]
+pub fn lint(@list.List[@syntax.Impl]) -> Array[@starlint.Diagnostic]
 
-pub fn lint_with_config(@list.List[@syntax.Impl], @moonlint.LintConfig) -> Array[@moonlint.Diagnostic]
+pub fn lint_with_config(@list.List[@syntax.Impl], @starlint.LintConfig) -> Array[@starlint.Diagnostic]
 
-pub fn rules() -> Array[@moonlint.Rule]
+pub fn rules() -> Array[@starlint.Rule]
 
 // Errors
 

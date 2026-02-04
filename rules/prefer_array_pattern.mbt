@@ -6,24 +6,24 @@ let prefer_array_pattern_description : String = "Prefer array pattern matching f
 
 ///|
 priv struct PreferArrayPatternEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn match_get_zero(expr : @syntax.Expr) -> @syntax.Expr? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.DotApply(self~, method_name~, args~, return_self=_, attr=_, loc=_) =>
-      if @moonlint.label_name(method_name) != "get" {
+      if @starlint.label_name(method_name) != "get" {
         None
       } else {
-        let args_array = @moonlint.list_to_array(args)
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() != 1 {
           None
         } else {
           let arg = args_array[0]
           match arg.kind {
             @syntax.ArgumentKind::Positional =>
-              if @moonlint.match_constant_int(arg.value) == Some("0") {
+              if @starlint.match_constant_int(arg.value) == Some("0") {
                 Some(self)
               } else {
                 None
@@ -38,11 +38,11 @@ fn match_get_zero(expr : @syntax.Expr) -> @syntax.Expr? {
 
 ///|
 fn match_length_call(expr : @syntax.Expr) -> @syntax.Expr? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.DotApply(self~, method_name~, args~, return_self=_, attr=_, loc=_) =>
-      if @moonlint.label_name(method_name) != "length" {
+      if @starlint.label_name(method_name) != "length" {
         None
-      } else if @moonlint.list_to_array(args).length() == 0 {
+      } else if @starlint.list_to_array(args).length() == 0 {
         Some(self)
       } else {
         None
@@ -53,12 +53,12 @@ fn match_length_call(expr : @syntax.Expr) -> @syntax.Expr? {
 
 ///|
 fn is_zero_expr(expr : @syntax.Expr) -> Bool {
-  @moonlint.match_constant_int(expr) == Some("0")
+  @starlint.match_constant_int(expr) == Some("0")
 }
 
 ///|
 fn match_length_compare_zero(expr : @syntax.Expr) -> @syntax.Expr? {
-  match @moonlint.match_infix(expr, "==") {
+  match @starlint.match_infix(expr, "==") {
     Some((lhs, rhs, _)) =>
       if is_zero_expr(lhs) {
         match_length_call(rhs)
@@ -68,7 +68,7 @@ fn match_length_compare_zero(expr : @syntax.Expr) -> @syntax.Expr? {
         None
       }
     None =>
-      match @moonlint.match_infix(expr, "!=") {
+      match @starlint.match_infix(expr, "!=") {
         Some((lhs, rhs, _)) =>
           if is_zero_expr(lhs) {
             match_length_call(rhs)
@@ -88,9 +88,9 @@ fn has_some_none_cases(cases_array : Array[@syntax.Case]) -> Bool {
   let mut has_none = false
   for case_ in cases_array {
     if case_.guard_ is None {
-      if @moonlint.is_some_pattern(case_.pattern) {
+      if @starlint.is_some_pattern(case_.pattern) {
         has_some = true
-      } else if @moonlint.is_none_pattern(case_.pattern) {
+      } else if @starlint.is_none_pattern(case_.pattern) {
         has_none = true
       }
     }
@@ -104,7 +104,7 @@ impl @syntax.IterVisitor for PreferArrayPatternEnv with visit_Expr(env, expr) {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) =>
       match match_get_zero(subject) {
         Some(_) => {
-          let cases_array = @moonlint.list_to_array(cases)
+          let cases_array = @starlint.list_to_array(cases)
           if cases_array.length() == 2 && has_some_none_cases(cases_array) {
             let message = "Match on get(0) can be replaced with array pattern matching."
             let detail =
@@ -118,7 +118,7 @@ impl @syntax.IterVisitor for PreferArrayPatternEnv with visit_Expr(env, expr) {
               #|  [] => ()
               #|}
             env.diags.push(
-              @moonlint.Diagnostic::new(
+              @starlint.Diagnostic::new(
                 rule_id=prefer_array_pattern_rule_id,
                 loc~,
                 message~,
@@ -141,7 +141,7 @@ impl @syntax.IterVisitor for PreferArrayPatternEnv with visit_Expr(env, expr) {
           #|  [head, ..] => { ... }
           #|}
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_array_pattern_rule_id,
             loc~,
             message~,
@@ -156,8 +156,8 @@ impl @syntax.IterVisitor for PreferArrayPatternEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn prefer_array_pattern_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_array_pattern_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_array_pattern_rule_id,
     description=prefer_array_pattern_description,
     tags=["fp"],

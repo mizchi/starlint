@@ -6,12 +6,12 @@ let avoid_double_to_string_js_description : String = "Avoid Double::to_string wh
 
 ///|
 priv struct AvoidDoubleToStringJsEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn is_double_literal(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Constant(c=@syntax.Constant::Double(_), ..) => true
     _ => false
   }
@@ -27,7 +27,7 @@ fn push_double_to_string_diag(
     #|JS target tends to include heavier floating formatting helpers.
   let suggestion =
     #|Consider a small custom formatter or precomputed strings when possible.
-  let diag = @moonlint.Diagnostic::new(
+  let diag = @starlint.Diagnostic::new(
     rule_id=avoid_double_to_string_js_rule_id,
     loc~,
     message~,
@@ -41,12 +41,12 @@ fn push_double_to_string_diag(
 impl @syntax.IterVisitor for AvoidDoubleToStringJsEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Method(type_name~, method_name~, loc~) =>
-      if @moonlint.type_name_right_name(type_name) == "Double" &&
-        @moonlint.label_name(method_name) == "to_string" {
+      if @starlint.type_name_right_name(type_name) == "Double" &&
+        @starlint.label_name(method_name) == "to_string" {
         push_double_to_string_diag(env, loc)
       }
     @syntax.DotApply(self~, method_name~, loc~, ..) =>
-      if @moonlint.label_name(method_name) == "to_string" &&
+      if @starlint.label_name(method_name) == "to_string" &&
         is_double_literal(self) {
         push_double_to_string_diag(env, loc)
       }
@@ -56,8 +56,8 @@ impl @syntax.IterVisitor for AvoidDoubleToStringJsEnv with visit_Expr(env, expr)
 }
 
 ///|
-fn avoid_double_to_string_js_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_double_to_string_js_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_double_to_string_js_rule_id,
     description=avoid_double_to_string_js_description,
     tags=["size"],

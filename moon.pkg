@@ -7,5 +7,5 @@ import {
 
 import "test" {
   "moonbitlang/parser",
-  "myfreess/moonlint/tasks/lint",
+  "mizchi/starlint/tasks/lint",
 }

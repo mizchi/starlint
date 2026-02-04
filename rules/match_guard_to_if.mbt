@@ -6,22 +6,22 @@ let match_guard_to_if_description : String = "Prefer if/else chain when all matc
 
 ///|
 priv struct MatchGuardToIfEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn is_guard_case(case_ : @syntax.Case) -> Bool {
-  case_.guard_ is Some(_) && @moonlint.is_discard_pattern(case_.pattern)
+  case_.guard_ is Some(_) && @starlint.is_discard_pattern(case_.pattern)
 }
 
 ///|
 fn is_else_case(case_ : @syntax.Case) -> Bool {
-  case_.guard_ is None && @moonlint.is_discard_pattern(case_.pattern)
+  case_.guard_ is None && @starlint.is_discard_pattern(case_.pattern)
 }
 
 ///|
 fn is_guard_chain_cases(cases : @list.List[@syntax.Case]) -> Bool {
-  let cases_array = @moonlint.list_to_array(cases)
+  let cases_array = @starlint.list_to_array(cases)
   if cases_array.length() < 2 {
     return false
   }
@@ -58,7 +58,7 @@ fn push_match_guard_to_if_diag(
     #|}
   let suggestion =
     #|if cond1 { ... } else if cond2 { ... } else { ... }
-  let diag = @moonlint.Diagnostic::new(
+  let diag = @starlint.Diagnostic::new(
     rule_id=match_guard_to_if_rule_id,
     loc~,
     message~,
@@ -81,8 +81,8 @@ impl @syntax.IterVisitor for MatchGuardToIfEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn match_guard_to_if_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn match_guard_to_if_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=match_guard_to_if_rule_id,
     description=match_guard_to_if_description,
     tags=["fp"],

@@ -6,27 +6,27 @@ let avoid_json_js_description : String = "Avoid Json usage when JS bundle size i
 
 ///|
 priv struct AvoidJsonJsEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn is_json_type_name(type_name : @syntax.TypeName) -> Bool {
-  @moonlint.type_name_right_name(type_name) == "Json"
+  @starlint.type_name_right_name(type_name) == "Json"
 }
 
 ///|
 fn is_json_constr_id(constr_id : @syntax.ConstrId) -> Bool {
-  @moonlint.constr_id_right_name(constr_id) == "Json"
+  @starlint.constr_id_right_name(constr_id) == "Json"
 }
 
 ///|
 fn is_json_pkg_ident(binding : @syntax.Var) -> Bool {
-  @moonlint.longident_pkg_name(binding.name) == Some("json")
+  @starlint.longident_pkg_name(binding.name) == Some("json")
 }
 
 ///|
 fn is_json_constructor(constr : @syntax.Constructor) -> Bool {
-  @moonlint.constructor_type_name(constr) == Some("Json")
+  @starlint.constructor_type_name(constr) == Some("Json")
 }
 
 ///|
@@ -36,7 +36,7 @@ fn push_json_diag(env : AvoidJsonJsEnv, loc : @basic.Location) -> Unit {
     #|JS target tends to include heavier JSON runtime helpers.
   let suggestion =
     #|When size matters, consider a tiny hand-rolled encoder or plain structs.
-  let diag = @moonlint.Diagnostic::new(
+  let diag = @starlint.Diagnostic::new(
     rule_id=avoid_json_js_rule_id,
     loc~,
     message~,
@@ -79,8 +79,8 @@ impl @syntax.IterVisitor for AvoidJsonJsEnv with visit_Type(env, ty) {
 }
 
 ///|
-fn avoid_json_js_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_json_js_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_json_js_rule_id,
     description=avoid_json_js_description,
     tags=["size"],

@@ -5,11 +5,11 @@ let match_result_try_rule_id : String = "match_result_try"
 let match_result_try_description : String = "Prefer try/catch over match on try? results (covers constrained/as expressions)."
 
 ///|
-priv struct MatchResultTryEnv(Array[@moonlint.Diagnostic])
+priv struct MatchResultTryEnv(Array[@starlint.Diagnostic])
 
 ///|
 fn is_try_question_expr(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.TryOperator(kind=Question, ..) => true
     @syntax.Constraint(expr=inner, ..) => is_try_question_expr(inner)
     @syntax.As(expr=inner, ..) => is_try_question_expr(inner)
@@ -35,7 +35,7 @@ impl @syntax.IterVisitor for MatchResultTryEnv with visit_Expr(env, expr) {
           #|  value => <branch_ok>
           #|}
         env.0.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=match_result_try_rule_id,
             loc~,
             message~,
@@ -50,8 +50,8 @@ impl @syntax.IterVisitor for MatchResultTryEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn match_result_try_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn match_result_try_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=match_result_try_rule_id,
     description=match_result_try_description,
     run=input => {

@@ -6,7 +6,7 @@ let boolean_if_false_true_description : String = "Prefer !cond over if cond { fa
 
 ///|
 priv struct BooleanIfFalseTrueEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -14,8 +14,8 @@ priv struct BooleanIfFalseTrueEnv {
 impl @syntax.IterVisitor for BooleanIfFalseTrueEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.If(cond~, ifso~, ifnot=Some(ifnot), loc~) =>
-      if @moonlint.match_constant_bool(ifso) == Some(false) &&
-        @moonlint.match_constant_bool(ifnot) == Some(true) {
+      if @starlint.match_constant_bool(ifso) == Some(false) &&
+        @starlint.match_constant_bool(ifnot) == Some(true) {
         let message = "if cond { false } else { true } is redundant."
         let detail =
           #|if cond { false } else { true }
@@ -23,14 +23,14 @@ impl @syntax.IterVisitor for BooleanIfFalseTrueEnv with visit_Expr(env, expr) {
           #|Use the negated condition:
           #|
           #|!cond
-        let fix = match @moonlint.expr_source(env.source, cond) {
+        let fix = match @starlint.expr_source(env.source, cond) {
           Some(cond_src) =>
-            Some(@moonlint.Fix::new(range=loc, replacement="!(\{cond_src})"))
+            Some(@starlint.Fix::new(range=loc, replacement="!(\{cond_src})"))
           None => None
         }
         let diag = match fix {
           Some(fix) =>
-            @moonlint.Diagnostic::new(
+            @starlint.Diagnostic::new(
               rule_id=boolean_if_false_true_rule_id,
               loc~,
               message~,
@@ -39,7 +39,7 @@ impl @syntax.IterVisitor for BooleanIfFalseTrueEnv with visit_Expr(env, expr) {
               fix~,
             )
           None =>
-            @moonlint.Diagnostic::new(
+            @starlint.Diagnostic::new(
               rule_id=boolean_if_false_true_rule_id,
               loc~,
               message~,
@@ -55,8 +55,8 @@ impl @syntax.IterVisitor for BooleanIfFalseTrueEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn boolean_if_false_true_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn boolean_if_false_true_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=boolean_if_false_true_rule_id,
     description=boolean_if_false_true_description,
     run=input => {

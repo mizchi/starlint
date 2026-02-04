@@ -1,12 +1,12 @@
 ///|
-fn test_lint(source : String) -> Array[@moonlint.Diagnostic] raise {
+fn test_lint(source : String) -> Array[@starlint.Diagnostic] raise {
   let (impls, reports) = @parser.parse_string(source, name="<lint test>")
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }
-  let input = @moonlint.LintInput::new(impls~, source~, filename="<lint test>")
-  let config = @moonlint.LintConfig::enable_categories(["fp", "size", "perf"])
-  @moonlint.lint_with_config(input, @lint.rules(), config)
+  let input = @starlint.LintInput::new(impls~, source~, filename="<lint test>")
+  let config = @starlint.LintConfig::enable_categories(["fp", "size", "perf"])
+  @starlint.lint_with_config(input, @lint.rules(), config)
 }
 
 ///|

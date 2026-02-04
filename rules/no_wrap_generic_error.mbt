@@ -6,14 +6,14 @@ let no_wrap_generic_error_description : String = "Avoid wrapping generic Error i
 
 ///|
 priv struct NoWrapGenericErrorEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn is_error_type(ty : @syntax.Type) -> Bool {
   match ty {
     @syntax.Type::Name(constr_id~, tys=_, loc=_) =>
-      @moonlint.constr_id_right_name(constr_id) == "Error"
+      @starlint.constr_id_right_name(constr_id) == "Error"
     _ => false
   }
 }
@@ -29,7 +29,7 @@ fn push_no_wrap_generic_error_diag(
   let suggestion =
     #|suberror WrapA { ... }
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=no_wrap_generic_error_rule_id,
       loc~,
       message~,
@@ -52,11 +52,11 @@ impl @syntax.IterVisitor for NoWrapGenericErrorEnv with visit_TypeDecl(
             push_no_wrap_generic_error_diag(env, decl.loc)
           }
         @syntax.ExceptionDecl::EnumPayload(constrs) => {
-          let items = @moonlint.list_to_array(constrs)
+          let items = @starlint.list_to_array(constrs)
           for constr in items {
             match constr.args {
               Some(args) => {
-                let params = @moonlint.list_to_array(args)
+                let params = @starlint.list_to_array(args)
                 if params.length() == 1 && is_error_type(params[0].ty) {
                   push_no_wrap_generic_error_diag(env, constr.loc)
                 }
@@ -73,8 +73,8 @@ impl @syntax.IterVisitor for NoWrapGenericErrorEnv with visit_TypeDecl(
 }
 
 ///|
-fn no_wrap_generic_error_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn no_wrap_generic_error_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=no_wrap_generic_error_rule_id,
     description=no_wrap_generic_error_description,
     tags=["error"],

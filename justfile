@@ -1,7 +1,7 @@
 set shell := ["bash", "-cu"]
 
 home := env_var("HOME")
-bin := home + "/.local/bin/moonlint"
+bin := home + "/.local/bin/starlint"
 
 build:
   moon build --target native cli

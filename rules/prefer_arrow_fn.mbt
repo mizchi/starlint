@@ -6,7 +6,7 @@ let prefer_arrow_fn_description : String = "Prefer arrow functions for single-ex
 
 ///|
 priv struct PreferArrowFnEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -35,7 +35,7 @@ fn params_to_arrow_source(params : Array[@syntax.Parameter]) -> String? {
 fn single_expr_body(expr : @syntax.Expr) -> @syntax.Expr? {
   match expr {
     @syntax.Sequence(exprs~, last_expr~, loc=_) => {
-      let items = @moonlint.list_to_array(exprs)
+      let items = @starlint.list_to_array(exprs)
       if items.length() != 0 {
         return None
       }
@@ -80,12 +80,12 @@ impl @syntax.IterVisitor for PreferArrowFnEnv with visit_Expr(env, expr) {
           _ => false
         }
         if is_lambda && no_error {
-          let params = @moonlint.list_to_array(func.parameters)
+          let params = @starlint.list_to_array(func.parameters)
           match params_to_arrow_source(params) {
             Some(params_src) =>
               match single_expr_body(func.body) {
                 Some(body_expr) =>
-                  match @moonlint.expr_source(env.source, body_expr) {
+                  match @starlint.expr_source(env.source, body_expr) {
                     Some(body_src) if !body_src.contains("\n") &&
                       !body_src.contains(";") => {
                       let message = "Single-expression fn can be written with =>."
@@ -95,13 +95,13 @@ impl @syntax.IterVisitor for PreferArrowFnEnv with visit_Expr(env, expr) {
                       let replacement = suggestion
                       let fix = if loc.start.lnum == loc.end.lnum &&
                         !has_call_suffix(env.source, loc) {
-                        Some(@moonlint.Fix::new(range=loc, replacement~))
+                        Some(@starlint.Fix::new(range=loc, replacement~))
                       } else {
                         None
                       }
                       let diag = match fix {
                         Some(fix) =>
-                          @moonlint.Diagnostic::new(
+                          @starlint.Diagnostic::new(
                             rule_id=prefer_arrow_fn_rule_id,
                             loc~,
                             message~,
@@ -110,7 +110,7 @@ impl @syntax.IterVisitor for PreferArrowFnEnv with visit_Expr(env, expr) {
                             fix~,
                           )
                         None =>
-                          @moonlint.Diagnostic::new(
+                          @starlint.Diagnostic::new(
                             rule_id=prefer_arrow_fn_rule_id,
                             loc~,
                             message~,
@@ -134,8 +134,8 @@ impl @syntax.IterVisitor for PreferArrowFnEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn prefer_arrow_fn_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_arrow_fn_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_arrow_fn_rule_id,
     description=prefer_arrow_fn_description,
     tags=["fp"],

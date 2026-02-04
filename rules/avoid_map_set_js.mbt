@@ -6,12 +6,12 @@ let avoid_map_set_js_description : String = "Avoid Map/Set when JS bundle size i
 
 ///|
 priv struct AvoidMapSetJsEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn map_set_kind_from_type_name(type_name : @syntax.TypeName) -> String? {
-  let name = @moonlint.type_name_right_name(type_name)
+  let name = @starlint.type_name_right_name(type_name)
   if name == "Map" || name == "Set" {
     Some(name)
   } else {
@@ -21,7 +21,7 @@ fn map_set_kind_from_type_name(type_name : @syntax.TypeName) -> String? {
 
 ///|
 fn map_set_kind_from_constr_id(constr_id : @syntax.ConstrId) -> String? {
-  let name = @moonlint.constr_id_right_name(constr_id)
+  let name = @starlint.constr_id_right_name(constr_id)
   if name == "Map" || name == "Set" {
     Some(name)
   } else {
@@ -40,7 +40,7 @@ fn push_map_set_diag(
     #|JS target tends to pull in heavier runtime support for Map/Set.
   let suggestion =
     #|When size matters, consider Array[(K, V)] or a small custom record.
-  let diag = @moonlint.Diagnostic::new(
+  let diag = @starlint.Diagnostic::new(
     rule_id=avoid_map_set_js_rule_id,
     loc~,
     message~,
@@ -78,8 +78,8 @@ impl @syntax.IterVisitor for AvoidMapSetJsEnv with visit_Type(env, ty) {
 }
 
 ///|
-fn avoid_map_set_js_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_map_set_js_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_map_set_js_rule_id,
     description=avoid_map_set_js_description,
     tags=["size"],

@@ -6,7 +6,7 @@ let no_hole_placeholder_description : String = "Avoid placeholder holes (e.g. `.
 
 ///|
 priv struct NoHolePlaceholderEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
@@ -29,7 +29,7 @@ impl @syntax.IterVisitor for NoHolePlaceholderEnv with visit_Expr_Hole(
       let message = "Placeholder hole (\{hole_kind_label(kind)}) found."
       let suggestion = "Replace placeholder with implementation."
       env.diags.push(
-        @moonlint.Diagnostic::new(
+        @starlint.Diagnostic::new(
           rule_id=no_hole_placeholder_rule_id,
           loc~,
           message~,
@@ -43,8 +43,8 @@ impl @syntax.IterVisitor for NoHolePlaceholderEnv with visit_Expr_Hole(
 }
 
 ///|
-fn no_hole_placeholder_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn no_hole_placeholder_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=no_hole_placeholder_rule_id,
     description=no_hole_placeholder_description,
     tags=["error"],

@@ -9,7 +9,7 @@ let using_allowed_filename : String = "file.mbt"
 
 ///|
 priv struct UsingOnlyInFileEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   filename : String
 }
 
@@ -43,7 +43,7 @@ fn push_using_only_in_file_diag(
   let suggestion =
     #|Move this using to file.mbt
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=using_only_in_file_rule_id,
       loc~,
       message~,
@@ -66,8 +66,8 @@ impl @syntax.IterVisitor for UsingOnlyInFileEnv with visit_Impl(env, impl_) {
 }
 
 ///|
-fn using_only_in_file_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn using_only_in_file_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=using_only_in_file_rule_id,
     description=using_only_in_file_description,
     tags=["module"],

@@ -6,7 +6,7 @@ let dotdot_chain_sequence_description : String = "Consecutive method calls on th
 
 ///|
 priv struct DotdotChainSequenceEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -28,9 +28,9 @@ fn accessor_key(accessor : @syntax.Accessor) -> String {
 
 ///|
 fn receiver_key(expr : @syntax.Expr) -> String? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Ident(id=binding, ..) =>
-      Some(@moonlint.longident_full_name(binding.name))
+      Some(@starlint.longident_full_name(binding.name))
     @syntax.Constraint(expr=inner, ..) => receiver_key(inner)
     @syntax.As(expr=inner, ..) => receiver_key(inner)
     @syntax.Field(record~, accessor~, ..) =>
@@ -90,21 +90,21 @@ fn dotdot_chain_replacement(
     return None
   }
   let first = infos[0]
-  let receiver_src = match @moonlint.expr_source(source, first.receiver_expr) {
+  let receiver_src = match @starlint.expr_source(source, first.receiver_expr) {
     Some(src) => src
     None => return None
   }
   let suffixes = Array::new(capacity=infos.length())
   for info in infos {
     let info_receiver_src = match
-      @moonlint.expr_source(source, info.receiver_expr) {
+      @starlint.expr_source(source, info.receiver_expr) {
       Some(src) => src
       None => return None
     }
     if info_receiver_src != receiver_src {
       return None
     }
-    let call_src = match @moonlint.expr_source(source, info.call_expr) {
+    let call_src = match @starlint.expr_source(source, info.call_expr) {
       Some(src) => src
       None => return None
     }
@@ -127,7 +127,7 @@ fn sequence_items(
   exprs : @list.List[@syntax.Expr],
   last_expr : @syntax.Expr,
 ) -> Array[@syntax.Expr] {
-  let items = @moonlint.list_to_array(exprs)
+  let items = @starlint.list_to_array(exprs)
   match last_expr {
     @syntax.Unit(faked=true, ..) => items
     _ => {
@@ -190,7 +190,7 @@ impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
           let fix = if has_trailing_semicolon(env.source, loc) {
             match dotdot_chain_replacement(env.source, infos) {
               Some(replacement) =>
-                Some(@moonlint.Fix::new(range=loc, replacement~))
+                Some(@starlint.Fix::new(range=loc, replacement~))
               None => None
             }
           } else {
@@ -198,7 +198,7 @@ impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
           }
           let diag = match fix {
             Some(fix) =>
-              @moonlint.Diagnostic::new(
+              @starlint.Diagnostic::new(
                 rule_id=dotdot_chain_sequence_rule_id,
                 loc~,
                 message~,
@@ -207,7 +207,7 @@ impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
                 fix~,
               )
             None =>
-              @moonlint.Diagnostic::new(
+              @starlint.Diagnostic::new(
                 rule_id=dotdot_chain_sequence_rule_id,
                 loc~,
                 message~,
@@ -225,8 +225,8 @@ impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn dotdot_chain_sequence_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn dotdot_chain_sequence_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=dotdot_chain_sequence_rule_id,
     description=dotdot_chain_sequence_description,
     run=input => {

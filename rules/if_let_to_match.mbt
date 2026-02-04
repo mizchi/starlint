@@ -6,7 +6,7 @@ let if_let_to_match_description : String = "Prefer match when if-let has both br
 
 ///|
 priv struct IfLetToMatchEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
   skip_locs : Map[String, Bool]
 }
@@ -30,20 +30,20 @@ fn push_if_let_to_match_diag(
     #|}
   let fix = match
     (
-      @moonlint.expr_source(env.source, subject),
-      @moonlint.pattern_source(env.source, pat),
-      @moonlint.expr_source(env.source, ifso),
-      @moonlint.expr_source(env.source, ifnot),
+      @starlint.expr_source(env.source, subject),
+      @starlint.pattern_source(env.source, pat),
+      @starlint.expr_source(env.source, ifso),
+      @starlint.expr_source(env.source, ifnot),
     ) {
     (Some(subject_src), Some(pattern_src), Some(ifso_src), Some(ifnot_src)) => {
       let replacement = "match (\{subject_src}) { \{pattern_src} => \{ifso_src}  None => \{ifnot_src} }"
-      Some(@moonlint.Fix::new(range=loc, replacement~))
+      Some(@starlint.Fix::new(range=loc, replacement~))
     }
     _ => None
   }
   let diag = match fix {
     Some(fix) =>
-      @moonlint.Diagnostic::new(
+      @starlint.Diagnostic::new(
         rule_id=if_let_to_match_rule_id,
         loc~,
         message~,
@@ -52,7 +52,7 @@ fn push_if_let_to_match_diag(
         fix~,
       )
     None =>
-      @moonlint.Diagnostic::new(
+      @starlint.Diagnostic::new(
         rule_id=if_let_to_match_rule_id,
         loc~,
         message~,
@@ -69,7 +69,7 @@ fn push_if_let_to_match_diag(
 impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Sequence(exprs~, last_expr=_, loc=_) => {
-      let items = @moonlint.list_to_array(exprs)
+      let items = @starlint.list_to_array(exprs)
       for item in items {
         match item {
           @syntax.If(
@@ -78,15 +78,15 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
             ifnot=Some(_),
             loc~
           ) =>
-            if @moonlint.is_some_pattern(pat) {
-              env.skip_locs.set(@moonlint.location_key(loc), true)
+            if @starlint.is_some_pattern(pat) {
+              env.skip_locs.set(@starlint.location_key(loc), true)
             }
           _ => ()
         }
       }
     }
     @syntax.Let(pattern~, expr=bound, body=_, loc=_) =>
-      if @moonlint.is_discard_pattern(pattern) {
+      if @starlint.is_discard_pattern(pattern) {
         match bound {
           @syntax.If(
             cond=@syntax.Is(expr=_, pat~, loc=_),
@@ -94,8 +94,8 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
             ifnot=Some(_),
             loc~
           ) =>
-            if @moonlint.is_some_pattern(pat) {
-              env.skip_locs.set(@moonlint.location_key(loc), true)
+            if @starlint.is_some_pattern(pat) {
+              env.skip_locs.set(@starlint.location_key(loc), true)
             }
           _ => ()
         }
@@ -109,8 +109,8 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
             ifnot=Some(_),
             loc~
           ) =>
-            if @moonlint.is_some_pattern(pat) {
-              env.skip_locs.set(@moonlint.location_key(loc), true)
+            if @starlint.is_some_pattern(pat) {
+              env.skip_locs.set(@starlint.location_key(loc), true)
             }
           _ => ()
         }
@@ -121,8 +121,8 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
       ifnot=Some(ifnot),
       loc~
     ) =>
-      if @moonlint.is_some_pattern(pat) &&
-        env.skip_locs.get(@moonlint.location_key(loc)) is None {
+      if @starlint.is_some_pattern(pat) &&
+        env.skip_locs.get(@starlint.location_key(loc)) is None {
         push_if_let_to_match_diag(env, subject, pat, ifso, ifnot, loc)
       }
     _ => ()
@@ -131,8 +131,8 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn if_let_to_match_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn if_let_to_match_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=if_let_to_match_rule_id,
     description=if_let_to_match_description,
     run=input => {

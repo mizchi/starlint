@@ -6,16 +6,16 @@ let match_option_unwrap_or_description : String = "Prefer unwrap_or for match on
 
 ///|
 priv struct MatchOptionUnwrapOrEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
 ///|
 fn is_safe_unwrap_or_default(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Constant(..) => true
     @syntax.MultilineString(..) => true
-    _ => @moonlint.is_none_expr(expr) || @moonlint.is_unit_expr(expr)
+    _ => @starlint.is_none_expr(expr) || @starlint.is_unit_expr(expr)
   }
 }
 
@@ -23,20 +23,20 @@ fn is_safe_unwrap_or_default(expr : @syntax.Expr) -> Bool {
 impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) => {
-      let cases_array = @moonlint.list_to_array(cases)
+      let cases_array = @starlint.list_to_array(cases)
       if cases_array.length() == 2 {
         let mut some_case : @syntax.Case? = None
         let mut none_case : @syntax.Case? = None
         let mut binder_name : String? = None
         for case_ in cases_array {
           if case_.guard_ is None {
-            match @moonlint.some_binder_name(case_.pattern) {
+            match @starlint.some_binder_name(case_.pattern) {
               Some(name) => {
                 some_case = Some(case_)
                 binder_name = Some(name)
               }
               None =>
-                if @moonlint.is_none_pattern(case_.pattern) {
+                if @starlint.is_none_pattern(case_.pattern) {
                   none_case = Some(case_)
                 }
             }
@@ -44,7 +44,7 @@ impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
         }
         match (some_case, none_case, binder_name) {
           (Some(some_case), Some(none_case), Some(name)) =>
-            if @moonlint.match_ident_name(some_case.body) == Some(name) &&
+            if @starlint.match_ident_name(some_case.body) == Some(name) &&
               is_safe_unwrap_or_default(none_case.body) {
               let message = "Match can be replaced with unwrap_or."
               let detail =
@@ -56,18 +56,18 @@ impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
                 #|opt.unwrap_or(default)
               let fix = match
                 (
-                  @moonlint.expr_source(env.source, subject),
-                  @moonlint.expr_source(env.source, none_case.body),
+                  @starlint.expr_source(env.source, subject),
+                  @starlint.expr_source(env.source, none_case.body),
                 ) {
                 (Some(subject_src), Some(default_src)) => {
                   let replacement = "\{subject_src}.unwrap_or(\{default_src})"
-                  Some(@moonlint.Fix::new(range=loc, replacement~))
+                  Some(@starlint.Fix::new(range=loc, replacement~))
                 }
                 _ => None
               }
               let diag = match fix {
                 Some(fix) =>
-                  @moonlint.Diagnostic::new(
+                  @starlint.Diagnostic::new(
                     rule_id=match_option_unwrap_or_rule_id,
                     loc~,
                     message~,
@@ -76,7 +76,7 @@ impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
                     fix~,
                   )
                 None =>
-                  @moonlint.Diagnostic::new(
+                  @starlint.Diagnostic::new(
                     rule_id=match_option_unwrap_or_rule_id,
                     loc~,
                     message~,
@@ -96,8 +96,8 @@ impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn match_option_unwrap_or_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn match_option_unwrap_or_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=match_option_unwrap_or_rule_id,
     description=match_option_unwrap_or_description,
     run=input => {

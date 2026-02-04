@@ -1,5 +1,5 @@
 import {
-  "myfreess/moonlint",
-  "myfreess/moonlint/rules",
+  "mizchi/starlint",
+  "mizchi/starlint/rules",
   "moonbitlang/parser/syntax",
 }

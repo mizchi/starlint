@@ -6,19 +6,19 @@ let prefer_option_map_or_else_description : String = "Prefer map_or_else when de
 
 ///|
 priv struct PreferOptionMapOrElseEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn default_arg_from_map_or(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, @basic.Location)? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.DotApply(method_name~, args~, loc~, ..) =>
-      if @moonlint.label_name(method_name) != "map_or" {
+      if @starlint.label_name(method_name) != "map_or" {
         None
       } else {
-        let args_array = @moonlint.list_to_array(args)
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() != 2 {
           None
         } else {
@@ -36,14 +36,14 @@ fn default_arg_from_map_or(
 ///|
 impl @syntax.IterVisitor for PreferOptionMapOrElseEnv with visit_Expr(env, expr) {
   match default_arg_from_map_or(expr) {
-    Some((default_expr, loc)) if @moonlint.is_call_expr(default_expr) => {
+    Some((default_expr, loc)) if @starlint.is_call_expr(default_expr) => {
       let message = "map_or default is evaluated eagerly; use map_or_else for lazy evaluation."
       let detail =
         #|opt.map_or(expensive(), f)
       let suggestion =
         #|opt.map_or_else(() => expensive(), f)
       env.diags.push(
-        @moonlint.Diagnostic::new(
+        @starlint.Diagnostic::new(
           rule_id=prefer_option_map_or_else_rule_id,
           loc~,
           message~,
@@ -58,8 +58,8 @@ impl @syntax.IterVisitor for PreferOptionMapOrElseEnv with visit_Expr(env, expr)
 }
 
 ///|
-fn prefer_option_map_or_else_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_option_map_or_else_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_option_map_or_else_rule_id,
     description=prefer_option_map_or_else_description,
     tags=["perf"],

@@ -6,14 +6,14 @@ let avoid_trivial_assert_description : String = "Avoid trivial assertions in tes
 
 ///|
 priv struct AvoidTrivialAssertEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
   mut in_test : Bool
 }
 
 ///|
 fn is_simple_expr(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Ident(..) => true
     @syntax.Constant(..) => true
     @syntax.Unit(..) => true
@@ -28,7 +28,7 @@ fn is_same_source(
   rhs : @syntax.Expr,
 ) -> Bool {
   match
-    (@moonlint.expr_source(source, lhs), @moonlint.expr_source(source, rhs)) {
+    (@starlint.expr_source(source, lhs), @starlint.expr_source(source, rhs)) {
     (Some(a), Some(b)) => a == b
     _ => false
   }
@@ -43,7 +43,7 @@ fn push_trivial_assert_diag(
   suggestion : String,
 ) -> Unit {
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=avoid_trivial_assert_rule_id,
       loc~,
       message~,
@@ -70,12 +70,12 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Impl(env, impl_) {
 
 ///|
 impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
-  match @moonlint.match_call_info(expr) {
+  match @starlint.match_call_info(expr) {
     Some((name, args, loc)) if env.in_test =>
       if name == "assert_true" || name == "assert_false" {
-        match @moonlint.first_positional_arg(args) {
+        match @starlint.first_positional_arg(args) {
           Some(arg) =>
-            match @moonlint.match_constant_bool(arg) {
+            match @starlint.match_constant_bool(arg) {
               Some(value) => {
                 let always_ok = (name == "assert_true" && value) ||
                   (name == "assert_false" && !value)
@@ -97,7 +97,7 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
           None => ()
         }
       } else if name == "assert_eq" {
-        match @moonlint.first_two_positional_args(args) {
+        match @starlint.first_two_positional_args(args) {
           Some((lhs, rhs)) =>
             if is_simple_expr(lhs) &&
               is_simple_expr(rhs) &&
@@ -116,8 +116,8 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn avoid_trivial_assert_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_trivial_assert_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_trivial_assert_rule_id,
     description=avoid_trivial_assert_description,
     tags=["test"],

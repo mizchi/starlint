@@ -8,7 +8,7 @@ struct WarningFixture {
 ///|
 fn test_lint_for_warning_fixtures(
   source : String,
-) -> Array[@moonlint.Diagnostic] raise {
+) -> Array[@starlint.Diagnostic] raise {
   test_lint_for_warning_fixtures_with_categories(source, ["fp"])
 }
 
@@ -16,18 +16,18 @@ fn test_lint_for_warning_fixtures(
 fn test_lint_for_warning_fixtures_with_categories(
   source : String,
   categories : Array[String],
-) -> Array[@moonlint.Diagnostic] raise {
+) -> Array[@starlint.Diagnostic] raise {
   let (impls, reports) = @parser.parse_string(source, name="<warning fixture>")
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }
-  let input = @moonlint.LintInput::new(
+  let input = @starlint.LintInput::new(
     impls~,
     source~,
     filename="<warning fixture>",
   )
-  let config = @moonlint.LintConfig::enable_categories(categories)
-  @moonlint.lint_with_config(input, @lint.rules(), config)
+  let config = @starlint.LintConfig::enable_categories(categories)
+  @starlint.lint_with_config(input, @lint.rules(), config)
 }
 
 ///|
@@ -35,14 +35,14 @@ fn test_lint_for_warning_fixtures_with_categories_and_filename(
   source : String,
   categories : Array[String],
   filename : String,
-) -> Array[@moonlint.Diagnostic] raise {
+) -> Array[@starlint.Diagnostic] raise {
   let (impls, reports) = @parser.parse_string(source, name=filename)
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }
-  let input = @moonlint.LintInput::new(impls~, source~, filename~)
-  let config = @moonlint.LintConfig::enable_categories(categories)
-  @moonlint.lint_with_config(input, @lint.rules(), config)
+  let input = @starlint.LintInput::new(impls~, source~, filename~)
+  let config = @starlint.LintConfig::enable_categories(categories)
+  @starlint.lint_with_config(input, @lint.rules(), config)
 }
 
 ///|

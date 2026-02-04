@@ -7,21 +7,21 @@ struct FixFixture {
 }
 
 ///|
-fn test_lint_for_fixtures(source : String) -> Array[@moonlint.Diagnostic] raise {
+fn test_lint_for_fixtures(source : String) -> Array[@starlint.Diagnostic] raise {
   let (impls, reports) = @parser.parse_string(source, name="<fix test>")
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }
-  let input = @moonlint.LintInput::new(impls~, source~, filename="<fix test>")
-  let config = @moonlint.LintConfig::enable_categories(["fp"])
-  @moonlint.lint_with_config(input, @lint.rules(), config)
+  let input = @starlint.LintInput::new(impls~, source~, filename="<fix test>")
+  let config = @starlint.LintConfig::enable_categories(["fp"])
+  @starlint.lint_with_config(input, @lint.rules(), config)
 }
 
 ///|
 fn collect_fixes(
-  diagnostics : Array[@moonlint.Diagnostic],
+  diagnostics : Array[@starlint.Diagnostic],
   rule_ids : Array[String],
-) -> Array[@moonlint.Fix] {
+) -> Array[@starlint.Fix] {
   let fixes = []
   for diag in diagnostics {
     if rule_ids.contains(diag.rule_id) {
@@ -38,7 +38,7 @@ fn collect_fixes(
 ///|
 fn apply_fixes_to_source(
   source : String,
-  fixes : Array[@moonlint.Fix],
+  fixes : Array[@starlint.Fix],
 ) -> String {
   if fixes.is_empty() {
     return source

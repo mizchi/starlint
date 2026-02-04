@@ -6,18 +6,18 @@ let prefer_string_builder_for_concat_description : String = "Prefer StringBuilde
 
 ///|
 priv struct PreferStringBuilderForConcatEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   mut loop_depth : Int
 }
 
 ///|
 fn is_self_concat_with_literal(name : String, expr : @syntax.Expr) -> Bool {
-  match @moonlint.match_infix(expr, "+") {
+  match @starlint.match_infix(expr, "+") {
     Some((lhs, rhs, _)) => {
-      let lhs_is_name = @moonlint.match_ident_name(lhs) == Some(name)
-      let rhs_is_name = @moonlint.match_ident_name(rhs) == Some(name)
-      (lhs_is_name && @moonlint.is_string_literal_expr(rhs)) ||
-      (rhs_is_name && @moonlint.is_string_literal_expr(lhs))
+      let lhs_is_name = @starlint.match_ident_name(lhs) == Some(name)
+      let rhs_is_name = @starlint.match_ident_name(rhs) == Some(name)
+      (lhs_is_name && @starlint.is_string_literal_expr(rhs)) ||
+      (rhs_is_name && @starlint.is_string_literal_expr(lhs))
     }
     None => false
   }
@@ -26,7 +26,7 @@ fn is_self_concat_with_literal(name : String, expr : @syntax.Expr) -> Bool {
 ///|
 fn is_augmented_plus(op : @syntax.Var?) -> Bool {
   match op {
-    Some(var_) => @moonlint.longident_right_name(var_.name) == "+"
+    Some(var_) => @starlint.longident_right_name(var_.name) == "+"
     None => false
   }
 }
@@ -48,9 +48,9 @@ impl @syntax.IterVisitor for PreferStringBuilderForConcatEnv with visit_Expr(
     }
     @syntax.Assign(var_~, expr=rhs, augmented_by~, loc~) =>
       if env.loop_depth > 0 {
-        let name = @moonlint.longident_right_name(var_.name)
+        let name = @starlint.longident_right_name(var_.name)
         if is_augmented_plus(augmented_by) &&
-          @moonlint.is_string_literal_expr(rhs) {
+          @starlint.is_string_literal_expr(rhs) {
           let message = "Repeated string concatenation can be costly; use StringBuilder/Buffer."
           let detail =
             #|s += "..."
@@ -58,7 +58,7 @@ impl @syntax.IterVisitor for PreferStringBuilderForConcatEnv with visit_Expr(
             #|let sb = StringBuilder::new()
             #|sb.write_string("...")
           env.diags.push(
-            @moonlint.Diagnostic::new(
+            @starlint.Diagnostic::new(
               rule_id=prefer_string_builder_for_concat_rule_id,
               loc~,
               message~,
@@ -74,7 +74,7 @@ impl @syntax.IterVisitor for PreferStringBuilderForConcatEnv with visit_Expr(
             #|let sb = StringBuilder::new()
             #|sb.write_string("...")
           env.diags.push(
-            @moonlint.Diagnostic::new(
+            @starlint.Diagnostic::new(
               rule_id=prefer_string_builder_for_concat_rule_id,
               loc~,
               message~,
@@ -89,8 +89,8 @@ impl @syntax.IterVisitor for PreferStringBuilderForConcatEnv with visit_Expr(
 }
 
 ///|
-fn prefer_string_builder_for_concat_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_string_builder_for_concat_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_string_builder_for_concat_rule_id,
     description=prefer_string_builder_for_concat_description,
     tags=["perf"],

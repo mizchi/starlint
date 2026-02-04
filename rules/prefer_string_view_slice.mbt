@@ -6,7 +6,7 @@ let prefer_string_view_slice_description : String = "Prefer StringView slicing o
 
 ///|
 priv struct PreferStringViewSliceEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
@@ -16,9 +16,9 @@ fn is_substring_name(name : String) -> Bool {
 
 ///|
 impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr) {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.DotApply(method_name~, loc~, ..) =>
-      if is_substring_name(@moonlint.label_name(method_name)) {
+      if is_substring_name(@starlint.label_name(method_name)) {
         let message = "Substring allocates; prefer StringView slicing."
         let detail =
           #|text.substring(start=1, end=3)
@@ -26,7 +26,7 @@ impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr)
           #|let view = text[:][1:3]
           #|// keep view as StringView when possible
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_string_view_slice_rule_id,
             loc~,
             message~,
@@ -41,8 +41,8 @@ impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr)
       loc~,
       ..
     ) =>
-      if @moonlint.type_name_right_name(type_name) == "String" &&
-        is_substring_name(@moonlint.label_name(method_name)) {
+      if @starlint.type_name_right_name(type_name) == "String" &&
+        is_substring_name(@starlint.label_name(method_name)) {
         let message = "Substring allocates; prefer StringView slicing."
         let detail =
           #|String::substring(text, start=1, end=3)
@@ -50,7 +50,7 @@ impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr)
           #|let view = text[:][1:3]
           #|// keep view as StringView when possible
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_string_view_slice_rule_id,
             loc~,
             message~,
@@ -65,8 +65,8 @@ impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr)
 }
 
 ///|
-fn prefer_string_view_slice_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_string_view_slice_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_string_view_slice_rule_id,
     description=prefer_string_view_slice_description,
     tags=["perf"],

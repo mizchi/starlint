@@ -9,13 +9,13 @@ let min_rebind_steps : Int = 4
 
 ///|
 priv struct PreferPipelineRebindEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
 ///|
 fn rebind_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(func) {
+  match @starlint.unwrap_paren(func) {
     @syntax.Ident(..) => true
     @syntax.Method(..) => true
     @syntax.Constr(..) => true
@@ -25,7 +25,7 @@ fn rebind_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
 
 ///|
 fn rebind_match_ident_like(expr : @syntax.Expr) -> String? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Ident(id={ name: Ident(name~), .. }, ..) => Some(name)
     @syntax.Constraint(expr=inner, ..) => rebind_match_ident_like(inner)
     @syntax.As(expr=inner, ..) => rebind_match_ident_like(inner)
@@ -37,9 +37,9 @@ fn rebind_match_ident_like(expr : @syntax.Expr) -> String? {
 fn rebind_parse_simple_apply(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, Array[@syntax.Argument], @basic.Location)? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, attr=NoAttr, loc~) =>
-      Some((func, @moonlint.list_to_array(args), loc))
+      Some((func, @starlint.list_to_array(args), loc))
     _ => None
   }
 }
@@ -79,7 +79,7 @@ fn rebind_call_rhs(
   func : @syntax.Expr,
   args : Array[@syntax.Argument],
 ) -> String? {
-  let func_src = match @moonlint.expr_source(source, func) {
+  let func_src = match @starlint.expr_source(source, func) {
     Some(src) => src
     None => return None
   }
@@ -94,7 +94,7 @@ fn rebind_call_rhs(
       @syntax.ArgumentKind::Positional => ()
       _ => return None
     }
-    let arg_src = match @moonlint.expr_source(source, arg.value) {
+    let arg_src = match @starlint.expr_source(source, arg.value) {
       Some(src) => src
       None => return None
     }
@@ -115,7 +115,7 @@ fn rebind_pipeline_suggestion(
   base : @syntax.Expr,
   steps : Array[(String, @syntax.Expr)],
 ) -> String? {
-  let base_src = match @moonlint.expr_source(source, base) {
+  let base_src = match @starlint.expr_source(source, base) {
     Some(src) => src
     None => return None
   }
@@ -211,7 +211,7 @@ impl @syntax.IterVisitor for PreferPipelineRebindEnv with visit_Expr(env, expr) 
                 #|let c = g(b, 111)
                 #|let d = h(c, 222, 333)
               let suggestion = suggestion
-              let diag = @moonlint.Diagnostic::new(
+              let diag = @starlint.Diagnostic::new(
                 rule_id=prefer_pipeline_rebind_rule_id,
                 loc~,
                 message~,
@@ -233,8 +233,8 @@ impl @syntax.IterVisitor for PreferPipelineRebindEnv with visit_Expr(env, expr) 
 }
 
 ///|
-fn prefer_pipeline_rebind_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_pipeline_rebind_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_pipeline_rebind_rule_id,
     description=prefer_pipeline_rebind_description,
     tags=["fp"],

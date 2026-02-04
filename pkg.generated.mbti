@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "myfreess/moonlint"
+package "mizchi/starlint"
 
 import {
   "moonbitlang/core/list",

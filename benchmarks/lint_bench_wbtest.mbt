@@ -57,16 +57,16 @@ fn parse_impls_for_bench(source : String, filename : String) -> @syntax.Impls {
 
 ///|
 fn take_rules(
-  rules : Array[@moonlint.Rule],
+  rules : Array[@starlint.Rule],
   size : Int,
-) -> Array[@moonlint.Rule] {
+) -> Array[@starlint.Rule] {
   let length = rules.length()
   let limit = if size < 0 { 0 } else if size > length { length } else { size }
   rules[0:limit].to_array()
 }
 
 ///|
-fn rule_has_any_tag(rule : @moonlint.Rule, tags : Array[String]) -> Bool {
+fn rule_has_any_tag(rule : @starlint.Rule, tags : Array[String]) -> Bool {
   for tag in tags {
     if rule.tags.contains(tag) {
       return true
@@ -77,9 +77,9 @@ fn rule_has_any_tag(rule : @moonlint.Rule, tags : Array[String]) -> Bool {
 
 ///|
 fn filter_rules_by_tag(
-  rules : Array[@moonlint.Rule],
+  rules : Array[@starlint.Rule],
   tag : String,
-) -> Array[@moonlint.Rule] {
+) -> Array[@starlint.Rule] {
   let out = []
   for rule in rules {
     if rule.tags.contains(tag) {
@@ -92,9 +92,9 @@ fn filter_rules_by_tag(
 
 ///|
 fn filter_rules_by_tags(
-  rules : Array[@moonlint.Rule],
+  rules : Array[@starlint.Rule],
   tags : Array[String],
-) -> Array[@moonlint.Rule] {
+) -> Array[@starlint.Rule] {
   let out = []
   for rule in rules {
     if rule_has_any_tag(rule, tags) {
@@ -108,15 +108,15 @@ fn filter_rules_by_tags(
 ///|
 fn bench_lint_rules(
   bench : @bench.T,
-  input : @moonlint.LintInput,
-  rules : Array[@moonlint.Rule],
+  input : @starlint.LintInput,
+  rules : Array[@starlint.Rule],
   name : String,
   count : UInt,
 ) -> Unit {
-  let config = @moonlint.LintConfig::empty()
+  let config = @starlint.LintConfig::empty()
   bench.bench(
     fn() {
-      let diagnostics = @moonlint.lint_with_config(input, rules, config)
+      let diagnostics = @starlint.lint_with_config(input, rules, config)
       bench.keep(diagnostics.length())
     },
     name~,
@@ -127,8 +127,8 @@ fn bench_lint_rules(
 ///|
 fn bench_lint_prefix_rules(
   bench : @bench.T,
-  input : @moonlint.LintInput,
-  rules : Array[@moonlint.Rule],
+  input : @starlint.LintInput,
+  rules : Array[@starlint.Rule],
   size : Int,
   count : UInt,
 ) -> Unit {
@@ -141,7 +141,7 @@ test (bench : @bench.T) {
   let count = bench_count()
   let (filename, source) = load_lint_bench_source()
   let impls = parse_impls_for_bench(source, filename)
-  let input = @moonlint.LintInput::new(impls~, source~, filename~)
+  let input = @starlint.LintInput::new(impls~, source~, filename~)
   let all_rules = @lint.rules()
   bench_lint_rules(bench, input, all_rules, "lint_all_rules", count)
   bench_lint_prefix_rules(bench, input, all_rules, 1, count)

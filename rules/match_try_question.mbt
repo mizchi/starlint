@@ -5,12 +5,12 @@ let match_try_question_rule_id : String = "match_try_question"
 let match_try_question_description : String = "Prefer try/catch over match on try? results."
 
 ///|
-priv struct MatchTryQuestionEnv(Array[@moonlint.Diagnostic])
+priv struct MatchTryQuestionEnv(Array[@starlint.Diagnostic])
 
 ///|
 impl @syntax.IterVisitor for MatchTryQuestionEnv with visit_Expr(env, expr) {
-  if @moonlint.match_match_expr(expr) is Some((subject, loc)) &&
-    @moonlint.match_try_question(subject) is Some(_) {
+  if @starlint.match_match_expr(expr) is Some((subject, loc)) &&
+    @starlint.match_try_question(subject) is Some(_) {
     let message = "Avoid match (try? ...) for error handling."
     let detail =
       #|match (try? expr) {
@@ -24,7 +24,7 @@ impl @syntax.IterVisitor for MatchTryQuestionEnv with visit_Expr(env, expr) {
       #|  value => <branch_ok>
       #|}
     env.0.push(
-      @moonlint.Diagnostic::new(
+      @starlint.Diagnostic::new(
         rule_id=match_try_question_rule_id,
         loc~,
         message~,
@@ -37,8 +37,8 @@ impl @syntax.IterVisitor for MatchTryQuestionEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn match_try_question_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn match_try_question_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=match_try_question_rule_id,
     description=match_try_question_description,
     run=input => {

@@ -6,13 +6,13 @@ let prefer_expression_over_return_description : String = "Prefer tail expression
 
 ///|
 priv struct PreferExpressionOverReturnEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
 ///|
 fn tail_return_expr(expr : @syntax.Expr) -> (@basic.Location, @syntax.Expr)? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Return(return_value=Some(value), loc~) => Some((loc, value))
     @syntax.Sequence(exprs=_, last_expr~, loc=_) => tail_return_expr(last_expr)
     @syntax.Let(pattern=_, expr=_, body~, loc=_) => tail_return_expr(body)
@@ -32,7 +32,7 @@ fn push_prefer_expression_over_return_diag(
   loc : @basic.Location,
   value : @syntax.Expr,
 ) -> Unit {
-  match @moonlint.expr_source(env.source, value) {
+  match @starlint.expr_source(env.source, value) {
     Some(value_src) => {
       let message = "Return at the tail position is redundant."
       let detail =
@@ -41,13 +41,13 @@ fn push_prefer_expression_over_return_diag(
         #|}
       let suggestion = value_src
       let fix = if loc.start.lnum == loc.end.lnum && !value_src.contains("\n") {
-        Some(@moonlint.Fix::new(range=loc, replacement=value_src))
+        Some(@starlint.Fix::new(range=loc, replacement=value_src))
       } else {
         None
       }
       let diag = match fix {
         Some(fix) =>
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_expression_over_return_rule_id,
             loc~,
             message~,
@@ -56,7 +56,7 @@ fn push_prefer_expression_over_return_diag(
             fix~,
           )
         None =>
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_expression_over_return_rule_id,
             loc~,
             message~,
@@ -109,8 +109,8 @@ impl @syntax.IterVisitor for PreferExpressionOverReturnEnv with visit_Expr(
 }
 
 ///|
-fn prefer_expression_over_return_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_expression_over_return_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_expression_over_return_rule_id,
     description=prefer_expression_over_return_description,
     tags=["fp"],

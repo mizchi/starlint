@@ -6,7 +6,7 @@ let prefer_eta_reduce_description : String = "Prefer eta-reduction for lambdas t
 
 ///|
 priv struct PreferEtaReduceEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -32,7 +32,7 @@ fn params_to_names(params : Array[@syntax.Parameter]) -> Array[String]? {
 fn eta_reduce_single_expr_body(expr : @syntax.Expr) -> @syntax.Expr? {
   match expr {
     @syntax.Sequence(exprs~, last_expr~, loc=_) => {
-      let items = @moonlint.list_to_array(exprs)
+      let items = @starlint.list_to_array(exprs)
       if items.length() != 0 {
         return None
       }
@@ -47,7 +47,7 @@ fn eta_reduce_single_expr_body(expr : @syntax.Expr) -> @syntax.Expr? {
 
 ///|
 fn is_eta_target(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Ident(..) => true
     @syntax.Method(..) => true
     @syntax.Constr(..) => true
@@ -60,12 +60,12 @@ fn eta_call_target(
   expr : @syntax.Expr,
   params : Array[String],
 ) -> @syntax.Expr? {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, attr=NoAttr, ..) => {
       if !is_eta_target(func) {
         return None
       }
-      let args_array = @moonlint.list_to_array(args)
+      let args_array = @starlint.list_to_array(args)
       if args_array.length() != params.length() {
         return None
       }
@@ -75,7 +75,7 @@ fn eta_call_target(
           @syntax.ArgumentKind::Positional => ()
           _ => return None
         }
-        match @moonlint.match_ident_name(arg.value) {
+        match @starlint.match_ident_name(arg.value) {
           Some(name) if name == params[i] => ()
           _ => return None
         }
@@ -119,14 +119,14 @@ impl @syntax.IterVisitor for PreferEtaReduceEnv with visit_Expr(env, expr) {
           _ => false
         }
         if is_lambda && no_error {
-          let params = @moonlint.list_to_array(func.parameters)
+          let params = @starlint.list_to_array(func.parameters)
           match params_to_names(params) {
             Some(param_names) =>
               match eta_reduce_single_expr_body(func.body) {
                 Some(body_expr) =>
                   match eta_call_target(body_expr, param_names) {
                     Some(target_expr) =>
-                      match @moonlint.expr_source(env.source, target_expr) {
+                      match @starlint.expr_source(env.source, target_expr) {
                         Some(target_src) => {
                           let message = "Lambda can be eta-reduced."
                           let detail =
@@ -136,7 +136,7 @@ impl @syntax.IterVisitor for PreferEtaReduceEnv with visit_Expr(env, expr) {
                             !eta_reduce_has_call_suffix(env.source, loc) &&
                             !target_src.contains("\n") {
                             Some(
-                              @moonlint.Fix::new(
+                              @starlint.Fix::new(
                                 range=loc,
                                 replacement=target_src,
                               ),
@@ -146,7 +146,7 @@ impl @syntax.IterVisitor for PreferEtaReduceEnv with visit_Expr(env, expr) {
                           }
                           let diag = match fix {
                             Some(fix) =>
-                              @moonlint.Diagnostic::new(
+                              @starlint.Diagnostic::new(
                                 rule_id=prefer_eta_reduce_rule_id,
                                 loc~,
                                 message~,
@@ -155,7 +155,7 @@ impl @syntax.IterVisitor for PreferEtaReduceEnv with visit_Expr(env, expr) {
                                 fix~,
                               )
                             None =>
-                              @moonlint.Diagnostic::new(
+                              @starlint.Diagnostic::new(
                                 rule_id=prefer_eta_reduce_rule_id,
                                 loc~,
                                 message~,
@@ -181,8 +181,8 @@ impl @syntax.IterVisitor for PreferEtaReduceEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn prefer_eta_reduce_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_eta_reduce_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_eta_reduce_rule_id,
     description=prefer_eta_reduce_description,
     tags=["fp"],

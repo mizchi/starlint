@@ -6,7 +6,7 @@ let prefer_input_expected_assert_description : String = "Prefer input/expected v
 
 ///|
 priv struct PreferInputExpectedAssertEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   mut in_test : Bool
 }
 
@@ -24,7 +24,7 @@ fn push_prefer_input_expected_diag(
     #|let actual = f(input)
     #|assert_eq(actual, expected)
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=prefer_input_expected_assert_rule_id,
       loc~,
       message~,
@@ -57,11 +57,11 @@ impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with visit_Expr(
   env,
   expr,
 ) {
-  match @moonlint.match_call_info(expr) {
+  match @starlint.match_call_info(expr) {
     Some((name, args, loc)) if env.in_test && name == "assert_eq" =>
-      match @moonlint.first_two_positional_args(args) {
+      match @starlint.first_two_positional_args(args) {
         Some((lhs, _rhs)) =>
-          if !@moonlint.is_trivial_expr(lhs) && @moonlint.is_call_expr(lhs) {
+          if !@starlint.is_trivial_expr(lhs) && @starlint.is_call_expr(lhs) {
             push_prefer_input_expected_diag(env, loc)
           }
         None => ()
@@ -72,8 +72,8 @@ impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with visit_Expr(
 }
 
 ///|
-fn prefer_input_expected_assert_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_input_expected_assert_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_input_expected_assert_rule_id,
     description=prefer_input_expected_assert_description,
     tags=["test"],

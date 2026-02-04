@@ -6,7 +6,7 @@ let prefer_map_get_pattern_description : String = "Prefer map.get + pattern matc
 
 ///|
 priv struct PreferMapGetPatternEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   bindings : Array[MapBinding]
 }
 
@@ -18,12 +18,12 @@ priv struct MapBinding {
 
 ///|
 fn is_string_key_expr(expr : @syntax.Expr) -> Bool {
-  @moonlint.is_string_literal_expr(expr)
+  @starlint.is_string_literal_expr(expr)
 }
 
 ///|
 fn is_map_literal_expr(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Map(..) => true
     _ => false
   }
@@ -34,7 +34,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
   if is_map_literal_expr(expr) {
     true
   } else {
-    match @moonlint.unwrap_paren(expr) {
+    match @starlint.unwrap_paren(expr) {
       @syntax.If(cond=_, ifso~, ifnot=Some(else_expr), loc=_) =>
         is_map_like_expr(env, ifso) && is_map_like_expr(env, else_expr)
       @syntax.Try(
@@ -57,7 +57,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
             ok = false
           }
         }
-        let catch_array = @moonlint.list_to_array(catch_)
+        let catch_array = @starlint.list_to_array(catch_)
         for case_ in catch_array {
           if ok && !is_non_value_expr(case_.body) {
             if is_map_like_expr(env, case_.body) {
@@ -69,7 +69,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
         }
         match try_else {
           Some(else_cases) => {
-            let else_array = @moonlint.list_to_array(else_cases)
+            let else_array = @starlint.list_to_array(else_cases)
             for case_ in else_array {
               if ok && !is_non_value_expr(case_.body) {
                 if is_map_like_expr(env, case_.body) {
@@ -85,7 +85,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
         ok && has_map
       }
       @syntax.Match(expr=_, cases~, match_loc=_, loc=_) => {
-        let cases_array = @moonlint.list_to_array(cases)
+        let cases_array = @starlint.list_to_array(cases)
         if cases_array.length() == 0 {
           false
         } else {
@@ -104,7 +104,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
         }
       }
       _ =>
-        match @moonlint.match_ident_name(expr) {
+        match @starlint.match_ident_name(expr) {
           Some(name) =>
             match lookup_is_map(env, name) {
               Some(true) => true
@@ -118,7 +118,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
 
 ///|
 fn is_non_value_expr(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Raise(..) => true
     @syntax.Return(..) => true
     @syntax.Break(..) => true
@@ -128,17 +128,17 @@ fn is_non_value_expr(expr : @syntax.Expr) -> Bool {
       args=_,
       attr=NoAttr,
       loc=_
-    ) => is_non_value_name(@moonlint.label_name(label))
+    ) => is_non_value_name(@starlint.label_name(label))
     @syntax.Apply(
       func=@syntax.Method(type_name=_, method_name~, ..),
       args=_,
       attr=NoAttr,
       loc=_
-    ) => is_non_value_name(@moonlint.label_name(method_name))
+    ) => is_non_value_name(@starlint.label_name(method_name))
     @syntax.Apply(func=@syntax.Ident(id=ident, ..), args=_, attr=NoAttr, loc=_) =>
-      is_non_value_name(@moonlint.longident_right_name(ident.name))
+      is_non_value_name(@starlint.longident_right_name(ident.name))
     @syntax.DotApply(method_name~, ..) =>
-      is_non_value_name(@moonlint.label_name(method_name))
+      is_non_value_name(@starlint.label_name(method_name))
     _ => false
   }
 }
@@ -221,7 +221,7 @@ fn push_param_bindings(
   params : @list.List[@syntax.Parameter],
 ) -> Int {
   let mut count = 0
-  let params_array = @moonlint.list_to_array(params)
+  let params_array = @starlint.list_to_array(params)
   for param in params_array {
     match param {
       @syntax.Parameter::Positional(binder~, ty=_)
@@ -271,7 +271,7 @@ impl @syntax.IterVisitor for PreferMapGetPatternEnv with visit_Expr(env, expr) {
     }
     @syntax.Assign(var_~, expr=rhs, augmented_by=_, loc=_) => {
       env.visit_Expr(rhs)
-      let name = @moonlint.longident_right_name(var_.name)
+      let name = @starlint.longident_right_name(var_.name)
       ignore(update_binding(env, name, is_map_like_expr(env, rhs)))
     }
     @syntax.LetFn(name~, func~, body~, loc=_) => {
@@ -286,7 +286,7 @@ impl @syntax.IterVisitor for PreferMapGetPatternEnv with visit_Expr(env, expr) {
       pop_bindings(env, count)
     }
     @syntax.LetRec(bindings~, body~, loc=_) => {
-      let bindings_array = @moonlint.list_to_array(bindings)
+      let bindings_array = @starlint.list_to_array(bindings)
       for binding in bindings_array {
         let (_, func) = binding
         visit_func_body(env, func)
@@ -303,7 +303,7 @@ impl @syntax.IterVisitor for PreferMapGetPatternEnv with visit_Expr(env, expr) {
       pop_bindings(env, count)
     }
     @syntax.LetAnd(bindings~, body~, loc=_) => {
-      let bindings_array = @moonlint.list_to_array(bindings)
+      let bindings_array = @starlint.list_to_array(bindings)
       for binding in bindings_array {
         let (_, _, func) = binding
         visit_func_body(env, func)
@@ -332,7 +332,7 @@ impl @syntax.IterVisitor for PreferMapGetPatternEnv with visit_Expr(env, expr) {
             #|  None => ...
             #|}
           env.diags.push(
-            @moonlint.Diagnostic::new(
+            @starlint.Diagnostic::new(
               rule_id=prefer_map_get_pattern_rule_id,
               loc~,
               message~,
@@ -349,8 +349,8 @@ impl @syntax.IterVisitor for PreferMapGetPatternEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn prefer_map_get_pattern_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_map_get_pattern_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_map_get_pattern_rule_id,
     description=prefer_map_get_pattern_description,
     tags=["perf"],

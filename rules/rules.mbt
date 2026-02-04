@@ -1,5 +1,5 @@
 ///|
-pub fn rules() -> Array[@moonlint.Rule] {
+pub fn rules() -> Array[@starlint.Rule] {
   [
     match_try_question_rule(),
     string_literal_multiply_number_rule(),

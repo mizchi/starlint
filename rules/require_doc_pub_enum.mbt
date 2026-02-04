@@ -6,12 +6,12 @@ let require_doc_pub_enum_description : String = "Public enums should have doc co
 
 ///|
 priv struct RequireDocPubEnumEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn has_doc_content_pub_enum(doc : @syntax.DocString) -> Bool {
-  let lines = @moonlint.list_to_array(doc.content)
+  let lines = @starlint.list_to_array(doc.content)
   for line in lines {
     if !line.is_blank() {
       return true
@@ -33,7 +33,7 @@ fn push_require_doc_pub_enum_diag(
     #|/// Description
     #|pub enum E { A }
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=require_doc_pub_enum_rule_id,
       loc~,
       message~,
@@ -60,8 +60,8 @@ impl @syntax.IterVisitor for RequireDocPubEnumEnv with visit_TypeDecl(env, decl)
 }
 
 ///|
-fn require_doc_pub_enum_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn require_doc_pub_enum_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=require_doc_pub_enum_rule_id,
     description=require_doc_pub_enum_description,
     tags=["module"],

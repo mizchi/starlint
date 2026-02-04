@@ -6,17 +6,17 @@ let prefer_string_pattern_description : String = "Prefer string pattern matching
 
 ///|
 priv struct PreferStringPatternEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn is_empty_string_expr(expr : @syntax.Expr) -> Bool {
-  @moonlint.match_constant_string(expr) == Some("")
+  @starlint.match_constant_string(expr) == Some("")
 }
 
 ///|
 fn match_empty_string_compare(expr : @syntax.Expr) -> @syntax.Expr? {
-  match @moonlint.match_infix(expr, "==") {
+  match @starlint.match_infix(expr, "==") {
     Some((lhs, rhs, _)) =>
       if is_empty_string_expr(lhs) {
         Some(rhs)
@@ -26,7 +26,7 @@ fn match_empty_string_compare(expr : @syntax.Expr) -> @syntax.Expr? {
         None
       }
     None =>
-      match @moonlint.match_infix(expr, "!=") {
+      match @starlint.match_infix(expr, "!=") {
         Some((lhs, rhs, _)) =>
           if is_empty_string_expr(lhs) {
             Some(rhs)
@@ -42,19 +42,19 @@ fn match_empty_string_compare(expr : @syntax.Expr) -> @syntax.Expr? {
 
 ///|
 fn match_starts_with(expr : @syntax.Expr) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.DotApply(self=_, method_name~, args~, return_self=_, attr=_, loc=_) =>
-      if @moonlint.label_name(method_name) != "starts_with" {
+      if @starlint.label_name(method_name) != "starts_with" {
         false
       } else {
-        let args_array = @moonlint.list_to_array(args)
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() != 1 {
           false
         } else {
           let arg = args_array[0]
           match arg.kind {
             @syntax.ArgumentKind::Positional =>
-              match @moonlint.match_constant_string(arg.value) {
+              match @starlint.match_constant_string(arg.value) {
                 Some(prefix) if prefix != "" => true
                 _ => false
               }
@@ -80,7 +80,7 @@ impl @syntax.IterVisitor for PreferStringPatternEnv with visit_Expr(env, expr) {
           #|  _ => { ... }
           #|}
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_string_pattern_rule_id,
             loc~,
             message~,
@@ -98,7 +98,7 @@ impl @syntax.IterVisitor for PreferStringPatternEnv with visit_Expr(env, expr) {
           #|  _ => { ... }
           #|}
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_string_pattern_rule_id,
             loc~,
             message~,
@@ -113,8 +113,8 @@ impl @syntax.IterVisitor for PreferStringPatternEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn prefer_string_pattern_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_string_pattern_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_string_pattern_rule_id,
     description=prefer_string_pattern_description,
     tags=["fp"],

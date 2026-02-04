@@ -6,7 +6,7 @@ let async_cancellation_must_propagate_description : String = "Async catch should
 
 ///|
 priv struct AsyncCancellationMustPropagateEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   mut in_async : Bool
 }
 
@@ -50,7 +50,7 @@ fn push_async_cancellation_diag(
     #|  None
     #|}
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=async_cancellation_must_propagate_rule_id,
       loc~,
       message~,
@@ -113,7 +113,7 @@ impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Expr(
   match expr {
     @syntax.Try(catch_~, catch_loc~, ..) =>
       if env.in_async {
-        let cases_array = @moonlint.list_to_array(catch_)
+        let cases_array = @starlint.list_to_array(catch_)
         let mut should_warn = false
         for case_ in cases_array {
           if !contains_raise(case_.body) {
@@ -130,8 +130,8 @@ impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Expr(
 }
 
 ///|
-fn async_cancellation_must_propagate_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn async_cancellation_must_propagate_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=async_cancellation_must_propagate_rule_id,
     description=async_cancellation_must_propagate_description,
     tags=["async"],

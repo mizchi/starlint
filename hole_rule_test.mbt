@@ -13,13 +13,13 @@ test "no hole placeholder" {
       loc=@syntax.no_location,
     ),
   ])
-  let input = @moonlint.LintInput::new(
+  let input = @starlint.LintInput::new(
     impls~,
     source="",
     filename="<hole test>",
   )
-  let config = @moonlint.LintConfig::enable_categories(["error"])
-  let diagnostics = @moonlint.lint_with_config(input, @lint.rules(), config)
+  let config = @starlint.LintConfig::enable_categories(["error"])
+  let diagnostics = @starlint.lint_with_config(input, @lint.rules(), config)
   let summary = diagnostics.map(diag => diag.rule_id)
   inspect(summary, content="[\"no_hole_placeholder\"]")
 }

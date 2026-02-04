@@ -1,12 +1,12 @@
 ///|
 fn rule_enabled(
-  rules : Array[@moonlint.Rule],
-  config : @moonlint.LintConfig,
+  rules : Array[@starlint.Rule],
+  config : @starlint.LintConfig,
   id : String,
 ) -> Bool {
   for rule in rules {
     if rule.id == id {
-      let (enabled, _) = @moonlint.resolve_rule_settings(rule, config)
+      let (enabled, _) = @starlint.resolve_rule_settings(rule, config)
       return enabled
     }
   }
@@ -16,7 +16,7 @@ fn rule_enabled(
 ///|
 test "recommended preset categories" {
   let rules = @lint.rules()
-  let config = @moonlint.LintConfig::recommended()
+  let config = @starlint.LintConfig::recommended()
   inspect(
     rule_enabled(rules, config, "prefer_option_map_or_else"),
     content="false",
@@ -40,7 +40,7 @@ test "preset in config json" {
     #|{
     #|  "preset": "recommended"
     #|}
-  let config = @moonlint.LintConfig::from_json(text) catch {
+  let config = @starlint.LintConfig::from_json(text) catch {
     error => fail("\{error}")
   }
   inspect(
@@ -56,15 +56,15 @@ test "ignore patterns in config json" {
     #|{
     #|  "ignore": ["src/x/ir/parser_moonbit.mbt", "*.gen.mbt"]
     #|}
-  let config1 = @moonlint.LintConfig::from_json(text) catch {
+  let config1 = @starlint.LintConfig::from_json(text) catch {
     error => fail("\{error}")
   }
   inspect(config1.is_ignored("src/x/ir/parser_moonbit.mbt"), content="true")
-  let config2 = @moonlint.LintConfig::from_json(text) catch {
+  let config2 = @starlint.LintConfig::from_json(text) catch {
     error => fail("\{error}")
   }
   inspect(config2.is_ignored("src/x/ir/other.mbt"), content="false")
-  let config3 = @moonlint.LintConfig::from_json(text) catch {
+  let config3 = @starlint.LintConfig::from_json(text) catch {
     error => fail("\{error}")
   }
   inspect(config3.is_ignored("foo.gen.mbt"), content="true")
@@ -85,7 +85,7 @@ test "overrides by file patterns" {
     #|    }
     #|  ]
     #|}
-  let config = @moonlint.LintConfig::from_json(text) catch {
+  let config = @starlint.LintConfig::from_json(text) catch {
     error => fail("\{error}")
   }
   let test_config = config.for_file("tests/sample.mbt")

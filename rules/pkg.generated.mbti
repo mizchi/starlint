@@ -1,12 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "myfreess/moonlint/rules"
+package "mizchi/starlint/rules"
 
 import {
-  "myfreess/moonlint",
+  "mizchi/starlint",
 }
 
 // Values
-pub fn rules() -> Array[@moonlint.Rule]
+pub fn rules() -> Array[@starlint.Rule]
 
 // Errors
 

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "myfreess/moonlint/cli"
+package "mizchi/starlint/cli"
 
 // Values
 pub fn run(Array[String], start_dir? : String) -> Unit

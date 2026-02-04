@@ -6,12 +6,12 @@ let require_doc_pub_fn_description : String = "Public functions should have doc 
 
 ///|
 priv struct RequireDocPubFnEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
 fn has_doc_content_pub_fn(doc : @syntax.DocString) -> Bool {
-  let lines = @moonlint.list_to_array(doc.content)
+  let lines = @starlint.list_to_array(doc.content)
   for line in lines {
     if !line.is_blank() {
       return true
@@ -33,7 +33,7 @@ fn push_require_doc_pub_fn_diag(
     #|/// Description
     #|pub fn f() { ... }
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=require_doc_pub_fn_rule_id,
       loc~,
       message~,
@@ -60,8 +60,8 @@ impl @syntax.IterVisitor for RequireDocPubFnEnv with visit_Impl(env, impl_) {
 }
 
 ///|
-fn require_doc_pub_fn_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn require_doc_pub_fn_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=require_doc_pub_fn_rule_id,
     description=require_doc_pub_fn_description,
     tags=["module"],

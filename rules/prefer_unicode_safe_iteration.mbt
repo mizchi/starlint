@@ -6,7 +6,7 @@ let prefer_unicode_safe_iteration_description : String = "Prefer unicode-safe it
 
 ///|
 priv struct PreferUnicodeSafeIterationEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   mut loop_depth : Int
 }
 
@@ -34,14 +34,14 @@ impl @syntax.IterVisitor for PreferUnicodeSafeIterationEnv with visit_Expr(
       env.loop_depth = prev
     }
     @syntax.ArrayGet(array~, index=_, loc~) =>
-      if env.loop_depth > 0 && @moonlint.is_string_literal_expr(array) {
+      if env.loop_depth > 0 && @starlint.is_string_literal_expr(array) {
         let message = "Direct string indexing is UTF-16 based; prefer unicode-safe iteration."
         let detail =
           #|"text"[i]
         let suggestion =
           #|for c in text { ... } // or text.iter()
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_unicode_safe_iteration_rule_id,
             loc~,
             message~,
@@ -52,14 +52,14 @@ impl @syntax.IterVisitor for PreferUnicodeSafeIterationEnv with visit_Expr(
       }
     @syntax.DotApply(method_name~, loc~, ..) =>
       if env.loop_depth > 0 &&
-        is_char_access_method(@moonlint.label_name(method_name)) {
+        is_char_access_method(@starlint.label_name(method_name)) {
         let message = "Direct string indexing is UTF-16 based; prefer unicode-safe iteration."
         let detail =
           #|text.get_char(i)
         let suggestion =
           #|for c in text { ... } // or text.iter()
         env.diags.push(
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=prefer_unicode_safe_iteration_rule_id,
             loc~,
             message~,
@@ -73,8 +73,8 @@ impl @syntax.IterVisitor for PreferUnicodeSafeIterationEnv with visit_Expr(
 }
 
 ///|
-fn prefer_unicode_safe_iteration_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn prefer_unicode_safe_iteration_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=prefer_unicode_safe_iteration_rule_id,
     description=prefer_unicode_safe_iteration_description,
     tags=["perf"],

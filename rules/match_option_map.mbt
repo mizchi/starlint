@@ -6,7 +6,7 @@ let match_option_map_description : String = "Prefer map for match on Some/None r
 
 ///|
 priv struct MatchOptionMapEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -14,27 +14,27 @@ priv struct MatchOptionMapEnv {
 impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) => {
-      let cases_array = @moonlint.list_to_array(cases)
+      let cases_array = @starlint.list_to_array(cases)
       if cases_array.length() == 2 {
         let mut some_case : @syntax.Case? = None
         let mut none_case : @syntax.Case? = None
         let mut binder_name : String? = None
         for case_ in cases_array {
           if case_.guard_ is None {
-            match @moonlint.some_binder_name(case_.pattern) {
+            match @starlint.some_binder_name(case_.pattern) {
               Some(name) => {
                 some_case = Some(case_)
                 binder_name = Some(name)
               }
               None =>
-                if @moonlint.is_none_pattern(case_.pattern) {
+                if @starlint.is_none_pattern(case_.pattern) {
                   none_case = Some(case_)
                 }
             }
           }
         }
         match (some_case, none_case, binder_name) {
-          (Some(some_case), Some(none_case), Some(name)) if @moonlint.is_none_expr(
+          (Some(some_case), Some(none_case), Some(name)) if @starlint.is_none_expr(
               none_case.body,
             ) => {
             let message = "Match can be replaced with map."
@@ -47,18 +47,18 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
               #|opt.map(v => f(v))
             let fix = match
               (
-                @moonlint.expr_source(env.source, subject),
-                @moonlint.expr_source(env.source, some_case.body),
+                @starlint.expr_source(env.source, subject),
+                @starlint.expr_source(env.source, some_case.body),
               ) {
               (Some(subject_src), Some(body_src)) => {
                 let replacement = "\{subject_src}.map(\{name} => \{body_src})"
-                Some(@moonlint.Fix::new(range=loc, replacement~))
+                Some(@starlint.Fix::new(range=loc, replacement~))
               }
               _ => None
             }
             let diag = match fix {
               Some(fix) =>
-                @moonlint.Diagnostic::new(
+                @starlint.Diagnostic::new(
                   rule_id=match_option_map_rule_id,
                   loc~,
                   message~,
@@ -67,7 +67,7 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
                   fix~,
                 )
               None =>
-                @moonlint.Diagnostic::new(
+                @starlint.Diagnostic::new(
                   rule_id=match_option_map_rule_id,
                   loc~,
                   message~,
@@ -87,8 +87,8 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn match_option_map_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn match_option_map_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=match_option_map_rule_id,
     description=match_option_map_description,
     run=input => {

@@ -108,7 +108,7 @@ fn get_mbt_path_set_from_base(
   while not(path_set.is_empty()) {
     let (fs_path, rel_path) = path_set.unsafe_pop()
     if (fs_path |> @fs.path_exists |> not) {
-      println("invalid path construct by moonlint internal: \{fs_path}")
+      println("invalid path construct by starlint internal: \{fs_path}")
     }
     if is_directory(fs_path) {
       let new_path_set = @fs.read_dir(fs_path) catch {

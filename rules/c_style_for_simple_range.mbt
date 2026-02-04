@@ -6,7 +6,7 @@ let c_style_for_simple_range_description : String = "Prefer range for-loop for s
 
 ///|
 priv struct CStyleForSimpleRangeEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -49,10 +49,10 @@ fn[T] list_to_array_for(xs : @list.List[T]) -> Array[T] {
 
 ///|
 fn match_simple_update(binder_name : String, expr : @syntax.Expr) -> Bool {
-  match @moonlint.match_infix(expr, "+") {
+  match @starlint.match_infix(expr, "+") {
     Some((lhs, rhs, _)) =>
-      @moonlint.match_ident_name(lhs) == Some(binder_name) &&
-      @moonlint.match_constant_int(rhs) == Some("1")
+      @starlint.match_ident_name(lhs) == Some(binder_name) &&
+      @starlint.match_constant_int(rhs) == Some("1")
     None => false
   }
 }
@@ -82,15 +82,15 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
           !contains_continue(body) {
           let mut inclusive = false
           let mut bound_expr : @syntax.Expr? = None
-          match @moonlint.match_infix(condition, "<") {
-            Some((lhs, rhs, _)) if @moonlint.match_ident_name(lhs) ==
+          match @starlint.match_infix(condition, "<") {
+            Some((lhs, rhs, _)) if @starlint.match_ident_name(lhs) ==
               Some(binder_name) => {
               inclusive = false
               bound_expr = Some(rhs)
             }
             _ =>
-              match @moonlint.match_infix(condition, "<=") {
-                Some((lhs, rhs, _)) if @moonlint.match_ident_name(lhs) ==
+              match @starlint.match_infix(condition, "<=") {
+                Some((lhs, rhs, _)) if @starlint.match_ident_name(lhs) ==
                   Some(binder_name) => {
                   inclusive = true
                   bound_expr = Some(rhs)
@@ -107,20 +107,20 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
                 #|for i in start..<end { ... }
               let fix = match
                 (
-                  @moonlint.expr_source(env.source, init_expr),
-                  @moonlint.expr_source(env.source, bound_expr),
-                  @moonlint.expr_source(env.source, body),
+                  @starlint.expr_source(env.source, init_expr),
+                  @starlint.expr_source(env.source, bound_expr),
+                  @starlint.expr_source(env.source, body),
                 ) {
                 (Some(init_src), Some(bound_src), Some(body_src)) => {
                   let range_op = if inclusive { "..=" } else { "..<" }
                   let replacement = "for \{binder_name} in \{init_src}\{range_op}\{bound_src} { \{body_src} }"
-                  Some(@moonlint.Fix::new(range=loc, replacement~))
+                  Some(@starlint.Fix::new(range=loc, replacement~))
                 }
                 _ => None
               }
               let diag = match fix {
                 Some(fix) =>
-                  @moonlint.Diagnostic::new(
+                  @starlint.Diagnostic::new(
                     rule_id=c_style_for_simple_range_rule_id,
                     loc~,
                     message~,
@@ -129,7 +129,7 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
                     fix~,
                   )
                 None =>
-                  @moonlint.Diagnostic::new(
+                  @starlint.Diagnostic::new(
                     rule_id=c_style_for_simple_range_rule_id,
                     loc~,
                     message~,
@@ -150,8 +150,8 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
 }
 
 ///|
-fn c_style_for_simple_range_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn c_style_for_simple_range_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=c_style_for_simple_range_rule_id,
     description=c_style_for_simple_range_description,
     run=input => {

@@ -6,7 +6,7 @@ let spawn_result_must_be_used_description : String = "Do not ignore TaskGroup sp
 
 ///|
 priv struct SpawnResultMustBeUsedEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   task_group_names : Array[String]
 }
 
@@ -46,10 +46,10 @@ fn is_task_group_spawn_call(
   env : SpawnResultMustBeUsedEnv,
   expr : @syntax.Expr,
 ) -> Bool {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.DotApply(self~, method_name~, ..) =>
-      if @moonlint.label_name(method_name) == "spawn" {
-        match @moonlint.match_ident_name(self) {
+      if @starlint.label_name(method_name) == "spawn" {
+        match @starlint.match_ident_name(self) {
           Some(name) => is_task_group_name(env, name)
           None => false
         }
@@ -71,7 +71,7 @@ fn push_spawn_result_unused_diag(
   let suggestion =
     #|let task = group.spawn(() => { ... })
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=spawn_result_must_be_used_rule_id,
       loc~,
       message~,
@@ -83,10 +83,10 @@ fn push_spawn_result_unused_diag(
 
 ///|
 impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr) {
-  match @moonlint.unwrap_paren(expr) {
+  match @starlint.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, ..) =>
-      if @moonlint.is_async_with_task_group_call(func) {
-        let args_array = @moonlint.list_to_array(args)
+      if @starlint.is_async_with_task_group_call(func) {
+        let args_array = @starlint.list_to_array(args)
         if args_array.length() > 0 {
           let arg0 = args_array[0]
           match arg0 {
@@ -94,7 +94,7 @@ impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr)
               kind: @syntax.ArgumentKind::Positional,
               value: @syntax.Function(func~, ..),
             } => {
-              let names = @moonlint.func_param_names(func)
+              let names = @starlint.func_param_names(func)
               let count = names.length()
               if count > 0 {
                 push_task_group_names(env, names)
@@ -110,7 +110,7 @@ impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr)
         }
       }
     @syntax.Sequence(exprs~, ..) => {
-      let items = @moonlint.list_to_array(exprs)
+      let items = @starlint.list_to_array(exprs)
       for stmt in items {
         if is_task_group_spawn_call(env, stmt) {
           push_spawn_result_unused_diag(env, stmt.loc())
@@ -123,8 +123,8 @@ impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr)
 }
 
 ///|
-fn spawn_result_must_be_used_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn spawn_result_must_be_used_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=spawn_result_must_be_used_rule_id,
     description=spawn_result_must_be_used_description,
     tags=["async"],

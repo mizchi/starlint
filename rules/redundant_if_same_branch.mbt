@@ -6,7 +6,7 @@ let redundant_if_same_branch_description : String = "If both branches are identi
 
 ///|
 priv struct RedundantIfSameBranchEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -16,8 +16,8 @@ impl @syntax.IterVisitor for RedundantIfSameBranchEnv with visit_Expr(env, expr)
     @syntax.If(cond~, ifso~, ifnot=Some(ifnot), loc~) =>
       match
         (
-          @moonlint.expr_source(env.source, ifso),
-          @moonlint.expr_source(env.source, ifnot),
+          @starlint.expr_source(env.source, ifso),
+          @starlint.expr_source(env.source, ifnot),
         ) {
         (Some(ifso_src), Some(ifnot_src)) if ifso_src == ifnot_src => {
           let message = "Both branches are identical."
@@ -25,14 +25,14 @@ impl @syntax.IterVisitor for RedundantIfSameBranchEnv with visit_Expr(env, expr)
             #|if cond { expr } else { expr }
           let suggestion =
             #|Replace the if-expression with the shared branch.
-          let fix = if @moonlint.is_trivial_expr(cond) {
-            Some(@moonlint.Fix::new(range=loc, replacement=ifso_src))
+          let fix = if @starlint.is_trivial_expr(cond) {
+            Some(@starlint.Fix::new(range=loc, replacement=ifso_src))
           } else {
             None
           }
           let diag = match fix {
             Some(fix) =>
-              @moonlint.Diagnostic::new(
+              @starlint.Diagnostic::new(
                 rule_id=redundant_if_same_branch_rule_id,
                 loc~,
                 message~,
@@ -41,7 +41,7 @@ impl @syntax.IterVisitor for RedundantIfSameBranchEnv with visit_Expr(env, expr)
                 fix~,
               )
             None =>
-              @moonlint.Diagnostic::new(
+              @starlint.Diagnostic::new(
                 rule_id=redundant_if_same_branch_rule_id,
                 loc~,
                 message~,
@@ -59,8 +59,8 @@ impl @syntax.IterVisitor for RedundantIfSameBranchEnv with visit_Expr(env, expr)
 }
 
 ///|
-fn redundant_if_same_branch_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn redundant_if_same_branch_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=redundant_if_same_branch_rule_id,
     description=redundant_if_same_branch_description,
     run=input => {

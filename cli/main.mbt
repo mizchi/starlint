@@ -90,16 +90,16 @@ fn colorize(text : String, code : String) -> String {
 }
 
 ///|
-fn severity_color_code(severity : @moonlint.Severity) -> String {
+fn severity_color_code(severity : @starlint.Severity) -> String {
   match severity {
-    @moonlint.Severity::Error => "31"
-    @moonlint.Severity::Warning => "33"
-    @moonlint.Severity::Info => "34"
+    @starlint.Severity::Error => "31"
+    @starlint.Severity::Warning => "33"
+    @starlint.Severity::Info => "34"
   }
 }
 
 ///|
-fn format_diagnostic_colored(diag : @moonlint.Diagnostic) -> String {
+fn format_diagnostic_colored(diag : @starlint.Diagnostic) -> String {
   let sb = StringBuilder::new()
   let rule_text = colorize(diag.rule_id, "36")
   let sev_label = diag.severity.to_string()
@@ -137,7 +137,7 @@ fn format_diagnostic_colored(diag : @moonlint.Diagnostic) -> String {
 }
 
 ///|
-fn compare_by_file(a : @moonlint.Diagnostic, b : @moonlint.Diagnostic) -> Int {
+fn compare_by_file(a : @starlint.Diagnostic, b : @starlint.Diagnostic) -> Int {
   let fa = a.loc.start.fname
   let fb = b.loc.start.fname
   let cmp = fa.compare(fb)
@@ -152,7 +152,7 @@ fn compare_by_file(a : @moonlint.Diagnostic, b : @moonlint.Diagnostic) -> Int {
 }
 
 ///|
-fn compare_by_rule(a : @moonlint.Diagnostic, b : @moonlint.Diagnostic) -> Int {
+fn compare_by_rule(a : @starlint.Diagnostic, b : @starlint.Diagnostic) -> Int {
   let cmp = a.rule_id.compare(b.rule_id)
   if cmp != 0 {
     return cmp
@@ -161,7 +161,7 @@ fn compare_by_rule(a : @moonlint.Diagnostic, b : @moonlint.Diagnostic) -> Int {
 }
 
 ///|
-fn print_by_file(diagnostics : Array[@moonlint.Diagnostic]) -> Unit {
+fn print_by_file(diagnostics : Array[@starlint.Diagnostic]) -> Unit {
   if diagnostics.is_empty() {
     return
   }
@@ -181,7 +181,7 @@ fn print_by_file(diagnostics : Array[@moonlint.Diagnostic]) -> Unit {
 }
 
 ///|
-fn print_by_rule(diagnostics : Array[@moonlint.Diagnostic]) -> Unit {
+fn print_by_rule(diagnostics : Array[@starlint.Diagnostic]) -> Unit {
   if diagnostics.is_empty() {
     return
   }
@@ -241,20 +241,20 @@ fn string_array_inline(items : Array[String]) -> String {
 }
 
 ///|
-fn severity_label(severity : @moonlint.Severity) -> String {
+fn severity_label(severity : @starlint.Severity) -> String {
   severity.to_string().to_lower()
 }
 
 ///|
-fn print_rules_doc(rules : Array[@moonlint.Rule]) -> Unit {
+fn print_rules_doc(rules : Array[@starlint.Rule]) -> Unit {
   let sorted = []
   for rule in rules {
     sorted.push(rule)
   }
   sorted.sort_by((a, b) => a.id.compare(b.id))
-  let recommended = @moonlint.LintConfig::recommended()
+  let recommended = @starlint.LintConfig::recommended()
   for rule in sorted {
-    let (rec_enabled, rec_sev) = @moonlint.resolve_rule_settings(
+    let (rec_enabled, rec_sev) = @starlint.resolve_rule_settings(
       rule, recommended,
     )
     let tags = if rule.tags.is_empty() {
@@ -276,13 +276,13 @@ fn print_rules_doc(rules : Array[@moonlint.Rule]) -> Unit {
 }
 
 ///|
-fn default_rules_config_json(rules : Array[@moonlint.Rule]) -> String {
+fn default_rules_config_json(rules : Array[@starlint.Rule]) -> String {
   let sorted = []
   for rule in rules {
     sorted.push(rule)
   }
   sorted.sort_by((a, b) => a.id.compare(b.id))
-  let recommended = @moonlint.LintConfig::recommended()
+  let recommended = @starlint.LintConfig::recommended()
   let always_on = []
   let project_policy = []
   let async_rules = []
@@ -364,7 +364,7 @@ fn default_rules_config_json(rules : Array[@moonlint.Rule]) -> String {
   sb..write_string("  \"rules\": {\n")
   let mut index = 0
   for rule in sorted {
-    let (enabled, sev) = @moonlint.resolve_rule_settings(rule, recommended)
+    let (enabled, sev) = @starlint.resolve_rule_settings(rule, recommended)
     let value = if enabled { severity_label(sev) } else { "off" }
     sb..write_string("    \"")
     sb..write_string(rule.id)
@@ -383,20 +383,26 @@ fn default_rules_config_json(rules : Array[@moonlint.Rule]) -> String {
 }
 
 ///|
-fn run_init(rules : Array[@moonlint.Rule], module_root : String) -> Unit {
-  let config_path = join_path(module_root, "moonlint.json")
-  if @fs.path_exists(config_path) {
-    println("moonlint.json already exists.")
+fn run_init(rules : Array[@starlint.Rule], module_root : String) -> Unit {
+  let config_path = join_path(module_root, "starlint.json")
+  let hidden_config = join_path(module_root, ".starlint.json")
+  let legacy_config = join_path(module_root, "moonlint.json")
+  let legacy_hidden = join_path(module_root, ".moonlint.json")
+  if @fs.path_exists(config_path) ||
+    @fs.path_exists(hidden_config) ||
+    @fs.path_exists(legacy_config) ||
+    @fs.path_exists(legacy_hidden) {
+    println("config already exists (starlint.json or moonlint.json).")
     return
   }
   let text = default_rules_config_json(rules)
   @fs.write_string_to_file(config_path, text) catch {
     err => {
-      println("failed to write moonlint.json: \{err}")
+      println("failed to write starlint.json: \{err}")
       panic()
     }
   }
-  println("generated moonlint.json")
+  println("generated starlint.json")
 }
 
 ///|
@@ -420,17 +426,23 @@ fn read_mbt_file_to_impls(
 
 ///|
 fn default_config_path(module_root : String) -> String? {
-  let primary = join_path(module_root, "moonlint.json")
+  let primary = join_path(module_root, "starlint.json")
   if @fs.path_exists(primary) {
-    Some(primary)
-  } else {
-    let fallback = join_path(module_root, ".moonlint.json")
-    if @fs.path_exists(fallback) {
-      Some(fallback)
-    } else {
-      None
-    }
+    return Some(primary)
   }
+  let hidden = join_path(module_root, ".starlint.json")
+  if @fs.path_exists(hidden) {
+    return Some(hidden)
+  }
+  let legacy = join_path(module_root, "moonlint.json")
+  if @fs.path_exists(legacy) {
+    return Some(legacy)
+  }
+  let legacy_hidden = join_path(module_root, ".moonlint.json")
+  if @fs.path_exists(legacy_hidden) {
+    return Some(legacy_hidden)
+  }
+  None
 }
 
 ///|
@@ -446,28 +458,28 @@ fn resolve_config_path(module_root : String, path : String) -> String {
 }
 
 ///|
-fn load_config(path : String) -> @moonlint.LintConfig raise {
+fn load_config(path : String) -> @starlint.LintConfig raise {
   let text = @fs.read_file_to_string(path)
-  @moonlint.LintConfig::from_json(text)
+  @starlint.LintConfig::from_json(text)
 }
 
 ///|
 fn lint_file(
   fs_path : String,
   display_path : String,
-  rules : Array[@moonlint.Rule],
-  config : @moonlint.LintConfig,
-) -> Array[@moonlint.Diagnostic] raise {
+  rules : Array[@starlint.Rule],
+  config : @starlint.LintConfig,
+) -> Array[@starlint.Diagnostic] raise {
   let (impls, source) = read_mbt_file_to_impls(fs_path, display_path)
-  let input = @moonlint.LintInput::new(impls~, source~, filename=display_path)
-  return @moonlint.lint_with_config(input, rules, config)
+  let input = @starlint.LintInput::new(impls~, source~, filename=display_path)
+  return @starlint.lint_with_config(input, rules, config)
 }
 
 ///|
 fn collect_fixes(
-  diagnostics : Array[@moonlint.Diagnostic],
+  diagnostics : Array[@starlint.Diagnostic],
   filename : String,
-) -> Array[@moonlint.Fix] {
+) -> Array[@starlint.Fix] {
   let fixes = []
   for diag in diagnostics {
     match diag.fix {
@@ -485,7 +497,7 @@ fn collect_fixes(
 ///|
 fn apply_fixes_to_source(
   source : String,
-  fixes : Array[@moonlint.Fix],
+  fixes : Array[@starlint.Fix],
 ) -> (String, Int) {
   if fixes.is_empty() {
     return (source, 0)
@@ -523,7 +535,7 @@ fn apply_fixes_to_source(
 fn apply_fixes_to_file(
   fs_path : String,
   display_path : String,
-  diagnostics : Array[@moonlint.Diagnostic],
+  diagnostics : Array[@starlint.Diagnostic],
 ) -> Int raise {
   let fixes = collect_fixes(diagnostics, display_path)
   if fixes.is_empty() {
@@ -638,9 +650,9 @@ fn run_with_start_dir(argv : Array[String], start_dir : String) -> Unit {
   let filenames = []
   let usage =
     #| usage: 
-    #|   moonlint.exe [--fix] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
-    #|   moonlint.exe init
-    #|   moonlint.exe doc
+    #|   starlint [--fix] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
+    #|   starlint init
+    #|   starlint doc
   @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
     err => {
       println(err)
@@ -686,7 +698,7 @@ fn run_with_start_dir(argv : Array[String], start_dir : String) -> Unit {
               panic()
             }
           }
-        None => @moonlint.LintConfig::recommended()
+        None => @starlint.LintConfig::recommended()
       }
     path =>
       load_config(path) catch {

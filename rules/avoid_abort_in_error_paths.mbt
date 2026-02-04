@@ -6,7 +6,7 @@ let avoid_abort_in_error_paths_description : String = "Avoid abort/panic in catc
 
 ///|
 priv struct AvoidAbortInErrorPathsEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
 }
 
 ///|
@@ -19,7 +19,7 @@ impl @syntax.IterVisitor for AbortSearchEnv with visit_Expr(env, expr) {
   if env.found {
     return
   }
-  match @moonlint.match_call_name(expr) {
+  match @starlint.match_call_name(expr) {
     Some(name) if name == "abort" || name == "panic" => env.found = true
     _ => ()
   }
@@ -44,7 +44,7 @@ fn push_avoid_abort_diag(
   let suggestion =
     #|foo() catch { error => raise error }
   env.diags.push(
-    @moonlint.Diagnostic::new(
+    @starlint.Diagnostic::new(
       rule_id=avoid_abort_in_error_paths_rule_id,
       loc~,
       message~,
@@ -61,7 +61,7 @@ impl @syntax.IterVisitor for AvoidAbortInErrorPathsEnv with visit_Expr(
 ) {
   match expr {
     @syntax.Try(catch_~, catch_loc~, ..) => {
-      let cases_array = @moonlint.list_to_array(catch_)
+      let cases_array = @starlint.list_to_array(catch_)
       let mut should_warn = false
       for case_ in cases_array {
         if contains_abort(case_.body) {
@@ -78,8 +78,8 @@ impl @syntax.IterVisitor for AvoidAbortInErrorPathsEnv with visit_Expr(
 }
 
 ///|
-fn avoid_abort_in_error_paths_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn avoid_abort_in_error_paths_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=avoid_abort_in_error_paths_rule_id,
     description=avoid_abort_in_error_paths_description,
     tags=["error"],

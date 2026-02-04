@@ -6,7 +6,7 @@ let legacy_call_syntax_description : String = "Legacy call syntax f!(...) / f(..
 
 ///|
 priv struct LegacyCallSyntaxEnv {
-  diags : Array[@moonlint.Diagnostic]
+  diags : Array[@starlint.Diagnostic]
   source : String
 }
 
@@ -72,18 +72,18 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
         #|Use a normal call:
         #|
         #|f(args)
-      let fix = match @moonlint.expr_source(env.source, expr) {
+      let fix = match @starlint.expr_source(env.source, expr) {
         Some(call_src) =>
           match remove_bang_before_paren(call_src) {
             Some(replacement) =>
-              Some(@moonlint.Fix::new(range=loc, replacement~))
+              Some(@starlint.Fix::new(range=loc, replacement~))
             None => None
           }
         None => None
       }
       let diag = match fix {
         Some(fix) =>
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=legacy_call_syntax_rule_id,
             loc~,
             message~,
@@ -92,7 +92,7 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
             fix~,
           )
         None =>
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=legacy_call_syntax_rule_id,
             loc~,
             message~,
@@ -110,12 +110,12 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
         #|Use try? for Result conversion:
         #|
         #|try? f(args)
-      let fix = match @moonlint.expr_source(env.source, expr) {
+      let fix = match @starlint.expr_source(env.source, expr) {
         Some(call_src) =>
           match remove_question_mark(call_src) {
             Some(call_without_question) =>
               Some(
-                @moonlint.Fix::new(
+                @starlint.Fix::new(
                   range=loc,
                   replacement="try? \{call_without_question}",
                 ),
@@ -126,7 +126,7 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
       }
       let diag = match fix {
         Some(fix) =>
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=legacy_call_syntax_rule_id,
             loc~,
             message~,
@@ -135,7 +135,7 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
             fix~,
           )
         None =>
-          @moonlint.Diagnostic::new(
+          @starlint.Diagnostic::new(
             rule_id=legacy_call_syntax_rule_id,
             loc~,
             message~,
@@ -151,8 +151,8 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
 }
 
 ///|
-fn legacy_call_syntax_rule() -> @moonlint.Rule {
-  @moonlint.Rule::new(
+fn legacy_call_syntax_rule() -> @starlint.Rule {
+  @starlint.Rule::new(
     id=legacy_call_syntax_rule_id,
     description=legacy_call_syntax_description,
     run=input => {
