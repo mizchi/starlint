@@ -128,6 +128,227 @@ fn normalize_range_lt_inclusive(source : String) -> String {
 }
 
 ///|
+fn attach_docstrings_for_lint(
+  docstrings : Array[@list.List[(@basic.Location, @tokens.Comment)]],
+  toplevels : @syntax.Impls,
+) -> Unit {
+  fn skip_docstrings_before(
+    pos : @basic.Position,
+  ) -> @list.List[(@basic.Location, @tokens.Comment)]? {
+    let mut previous = None
+    while docstrings.last() is Some(comments) &&
+          comments.last().unwrap().0.end <= pos {
+      previous = docstrings.pop()
+    }
+    previous
+  }
+
+  fn make_doc(
+    comments : @list.List[(@basic.Location, @tokens.Comment)],
+  ) -> @syntax.DocString {
+    {
+      content: comments.map(p => match p.1.content {
+        [.. "///|", .. remain] | [.. "///", .. remain] => remain.to_string()
+        _ => panic()
+      }),
+      loc: {
+        start: comments.head().unwrap().0.start,
+        end: comments.last().unwrap().0.end,
+      },
+    }
+  }
+
+  for toplevel in toplevels {
+    let previous = skip_docstrings_before(toplevel.loc().start)
+    let doc = previous.map(make_doc).unwrap_or(@syntax.DocString::empty())
+    match toplevel {
+      @syntax.Impl::TopTypeDef(td) => {
+        td.doc = doc
+        match td.components {
+          @syntax.TypeDesc::Abstract
+          | @syntax.TypeDesc::Extern
+          | @syntax.TypeDesc::Newtype(_)
+          | @syntax.TypeDesc::Alias(_)
+          | @syntax.TypeDesc::Error(
+            @syntax.ExceptionDecl::NoPayload
+            | @syntax.ExceptionDecl::SinglePayload(_)
+          )
+          | @syntax.TypeDesc::TupleStruct(_) => ()
+          @syntax.TypeDesc::Error(@syntax.ExceptionDecl::EnumPayload(constrs))
+          | @syntax.TypeDesc::Variant(constrs) =>
+            constrs.each(constr => {
+              let previous = skip_docstrings_before(constr.loc.start)
+                .map(make_doc)
+                .unwrap_or(@syntax.DocString::empty())
+              constr.doc = previous
+            })
+          @syntax.TypeDesc::Record(fields) =>
+            fields.each(field => {
+              let previous = skip_docstrings_before(field.loc.start)
+                .map(make_doc)
+                .unwrap_or(@syntax.DocString::empty())
+              field.doc = previous
+            })
+        }
+      }
+      @syntax.Impl::TopFuncDef(fun_decl~, ..) => fun_decl.doc = doc
+      @syntax.Impl::TopFuncAlias(..) as fa => fa.doc = doc
+      @syntax.Impl::TopLetDef(..) as ld => ld.doc = doc
+      @syntax.Impl::TopExpr(..) => ()
+      @syntax.Impl::TopImplRelation(..) as imp => imp.doc = doc
+      @syntax.Impl::TopTest(..) as test_ => test_.doc = doc
+      @syntax.Impl::TopTrait(decl) => decl.doc = doc
+      @syntax.Impl::TopBatchTypeAlias(..) as decl => decl.doc = doc
+      @syntax.Impl::TopBatchTraitAlias(..) as decl => decl.doc = doc
+      @syntax.Impl::TopView(..) as view => view.doc = doc
+      @syntax.Impl::TopImpl(..) as imp => imp.doc = doc
+      @syntax.Impl::TopUsing(..) as using_stmt => using_stmt.doc = doc
+    }
+    skip_docstrings_before(toplevel.loc().end) |> ignore
+  }
+}
+
+///|
+fn scan_brace_block(tokens : @tokens.Triples, start_idx : Int) -> (Int?, Bool) {
+  let mut depth = 0
+  let mut has_arrow = false
+  let mut i = start_idx
+  while i < tokens.length() {
+    let (tok, _, _) = tokens[i]
+    if tok is @tokens.Token::LBRACE {
+      depth += 1
+    } else if tok is @tokens.Token::RBRACE {
+      depth -= 1
+      if depth == 0 {
+        return (Some(i), has_arrow)
+      }
+    } else if depth == 1 && tok is @tokens.Token::FAT_ARROW {
+      has_arrow = true
+    }
+    i += 1
+  }
+  (None, has_arrow)
+}
+
+///|
+fn find_match_body_end(tokens : @tokens.Triples, match_idx : Int) -> Int? {
+  let mut first_end : Int? = None
+  let mut i = match_idx + 1
+  while i < tokens.length() {
+    let (tok, _, _) = tokens[i]
+    if tok is @tokens.Token::LBRACE {
+      let (end_idx, has_arrow) = scan_brace_block(tokens, i)
+      match end_idx {
+        Some(end) => {
+          if first_end is None {
+            first_end = Some(end)
+          }
+          if has_arrow {
+            return Some(end)
+          }
+          i = end + 1
+          continue
+        }
+        None => return None
+      }
+    }
+    i += 1
+  }
+  first_end
+}
+
+///|
+fn insert_match_parens_tokens(tokens : @tokens.Triples) -> @tokens.Triples {
+  let insertions : Array[(Int, @tokens.Triple)] = Array::new(capacity=0)
+  for i in 0..<tokens.length() {
+    let (tok, start, _) = tokens[i]
+    if tok is @tokens.Token::MATCH {
+      match find_match_body_end(tokens, i) {
+        Some(end_idx) => {
+          let (_, _, end_pos) = tokens[end_idx]
+          insertions.push((i, (@tokens.Token::LPAREN, start, start)))
+          insertions.push(
+            (end_idx + 1, (@tokens.Token::RPAREN, end_pos, end_pos)),
+          )
+        }
+        None => ()
+      }
+    }
+  }
+  if insertions.length() == 0 {
+    return tokens
+  }
+  insertions.sort_by((a, b) => a.0 - b.0)
+  let out = Array::new(capacity=tokens.length() + insertions.length())
+  let mut ins_idx = 0
+  for idx in 0..<tokens.length() {
+    while ins_idx < insertions.length() && insertions[ins_idx].0 == idx {
+      out.push(insertions[ins_idx].1)
+      ins_idx += 1
+    }
+    out.push(tokens[idx])
+  }
+  while ins_idx < insertions.length() {
+    out.push(insertions[ins_idx].1)
+    ins_idx += 1
+  }
+  out
+}
+
+///|
+fn parse_moonyacc_tokens(
+  tokens : @tokens.Triples,
+) -> (@syntax.Impls, Array[@basic.Report]) {
+  (@yacc_parser.structure(tokens), []) catch {
+    @yacc_parser.UnexpectedEndOfInput(pos, _) =>
+      (
+        @list.empty(),
+        [
+          @basic.Report::{
+            loc: { start: pos, end: pos },
+            msg: "Unexpected end of file.",
+          },
+        ],
+      )
+    @yacc_parser.UnexpectedToken(token, (start, end), _) =>
+      (
+        @list.empty(),
+        [@basic.Report::{ loc: { start, end }, msg: "Unexpected `\{token}`." }],
+      )
+  }
+}
+
+///|
+fn parse_moonyacc_with_match_parens(
+  source : String,
+  name : String,
+) -> (@syntax.Impls, Array[@basic.Report]) {
+  let { tokens, docstrings, .. } = @lexer.tokens_from_string(
+    source,
+    comment=true,
+    name~,
+  )
+  let tokens = tokens.filter(fn(triple) {
+    !(triple.0 is @tokens.Token::NEWLINE ||
+    triple.0 is @tokens.Token::COMMENT(_))
+  })
+  let tokens = insert_match_parens_tokens(tokens)
+  let (impls, reports) = parse_moonyacc_tokens(tokens)
+  attach_docstrings_for_lint(docstrings, impls)
+  (impls, reports)
+}
+
+///|
+fn has_unexpected_match(reports : Array[@basic.Report]) -> Bool {
+  for _, report in reports {
+    if report.msg.find("Unexpected `MATCH`") is Some(_) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub fn parse_string_for_lint(
   source : String,
   name? : String = "",
@@ -136,5 +357,21 @@ pub fn parse_string_for_lint(
   let normalized = normalize_range_lt_inclusive(
     normalize_using_type_keyword(source),
   )
-  @parser.parse_string(normalized, name~, parser~)
+  let (impls, reports) = @parser.parse_string(normalized, name~, parser~)
+  if reports.length() > 0 {
+    match parser {
+      @parser.Parser::MoonYacc =>
+        if has_unexpected_match(reports) {
+          // Retry with match expressions wrapped in parens for infix contexts.
+          let (retry_impls, retry_reports) = parse_moonyacc_with_match_parens(
+            normalized, name,
+          )
+          if retry_reports.length() == 0 {
+            return (retry_impls, retry_reports)
+          }
+        }
+      _ => ()
+    }
+  }
+  (impls, reports)
 }

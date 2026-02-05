@@ -6,6 +6,7 @@ import {
   "moonbitlang/parser/syntax",
   "moonbitlang/parser/basic",
   "moonbitlang/parser/tokens",
+  "moonbitlang/parser/yacc_parser",
 }
 
 import "test" {

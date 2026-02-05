@@ -1317,3 +1317,98 @@ test "avoid unnecessary mut used" {
   let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
   inspect(summary, content="[]")
 }
+
+///|
+fn test_lint_with_filename(
+  source : String,
+  filename : String,
+) -> Array[@starlint.Diagnostic] raise {
+  let (impls, reports) = parse_string_for_lint(source, name=filename)
+  if reports.length() > 0 {
+    fail(reports.to_json().stringify(indent=2))
+  }
+  let input = @starlint.LintInput::new(impls~, source~, filename~)
+  let config = @starlint.LintConfig::enable_categories(["module"])
+  @starlint.lint_with_config(input, @lint.rules(), config)
+}
+
+///|
+let empty_source =
+  #|fn main { () }
+
+///|
+test "require snake_case pkg: camelCase detected" {
+  let diagnostics = test_lint_with_filename(
+    empty_source,
+    "myPackage/foo.mbt",
+  )
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"require_snake_case_pkg\"]")
+}
+
+///|
+test "require snake_case pkg: snake_case ok" {
+  let diagnostics = test_lint_with_filename(
+    empty_source,
+    "my_package/foo.mbt",
+  )
+  let summary = diagnostics.filter(
+    fn(d) { d.rule_id == "require_snake_case_pkg" },
+  )
+  inspect(summary.length(), content="0")
+}
+
+///|
+test "require snake_case pkg: root file no dir" {
+  let diagnostics = test_lint_with_filename(empty_source, "foo.mbt")
+  let summary = diagnostics.filter(
+    fn(d) { d.rule_id == "require_snake_case_pkg" },
+  )
+  inspect(summary.length(), content="0")
+}
+
+///|
+test "require snake_case pkg: kebab-case detected" {
+  let diagnostics = test_lint_with_filename(
+    empty_source,
+    "my-package/foo.mbt",
+  )
+  let summary = diagnostics.map(diag => diag.rule_id)
+  inspect(summary, content="[\"require_snake_case_pkg\"]")
+}
+
+///|
+test "require snake_case pkg: camelCase file name detected" {
+  let diagnostics = test_lint_with_filename(
+    empty_source,
+    "pkg/myFile.mbt",
+  )
+  let summary = diagnostics.map(diag => diag.message)
+  inspect(summary, content=(
+    #|["File name 'myFile.mbt' is not snake_case."]
+  ))
+}
+
+///|
+test "require snake_case pkg: snake_case file name ok" {
+  let diagnostics = test_lint_with_filename(
+    empty_source,
+    "pkg/my_file.mbt",
+  )
+  let summary = diagnostics.filter(
+    fn(d) { d.rule_id == "require_snake_case_pkg" },
+  )
+  inspect(summary.length(), content="0")
+}
+
+///|
+test "require snake_case pkg: both dir and file bad" {
+  let diagnostics = test_lint_with_filename(
+    empty_source,
+    "myPkg/myFile.mbt",
+  )
+  let summary = diagnostics.map(diag => diag.message)
+  inspect(summary, content=(
+    #|["Package directory name 'myPkg' is not snake_case.", "File name 'myFile.mbt' is not snake_case."]
+  ))
+}
