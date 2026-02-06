@@ -29,6 +29,6 @@ pub fn format_diagnostic(diag : Diagnostic) -> String {
       ..write_string(fix.replacement)
     None => ()
   }
-  sb..write_string("\n")
+  sb.write_string("\n")
   sb.to_string()
 }

@@ -53,7 +53,7 @@ fn format_diagnostic_colored(diag : @starlint.Diagnostic) -> String {
       ..write_string(fix.replacement)
     None => ()
   }
-  sb..write_string("\n")
+  sb.write_string("\n")
   sb.to_string()
 }
 
@@ -132,9 +132,9 @@ fn join_strings(items : Array[String], sep : String) -> String {
     if first {
       first = false
     } else {
-      sb..write_string(sep)
+      sb.write_string(sep)
     }
-    sb..write_string(item)
+    sb.write_string(item)
   }
   sb.to_string()
 }
@@ -145,19 +145,19 @@ fn string_array_inline(items : Array[String]) -> String {
     return "[]"
   }
   let sb = StringBuilder::new()
-  sb..write_string("[")
+  sb.write_string("[")
   let mut first = true
   for item in items {
     if first {
       first = false
     } else {
-      sb..write_string(", ")
+      sb.write_string(", ")
     }
-    sb..write_string("\"")
-    sb..write_string(item)
-    sb..write_string("\"")
+    sb.write_string("\"")
+    sb.write_string(item)
+    sb.write_string("\"")
   }
-  sb..write_string("]")
+  sb.write_string("]")
   sb.to_string()
 }
 
@@ -230,76 +230,76 @@ fn default_rules_config_json(rules : Array[@starlint.Rule]) -> String {
     }
   }
   let sb = StringBuilder::new()
-  sb..write_string("{\n")
-  sb..write_string("  \"preset\": \"recommended\",\n")
-  sb..write_string("  \"ignore\": [\"target/*\", \"_build/*\"],\n")
-  sb..write_string("  \"rule_groups\": {\n")
-  sb..write_string("    \"always_on\": ")
-  sb..write_string(string_array_inline(always_on))
-  sb..write_string(",\n")
-  sb..write_string("    \"project_policy\": ")
-  sb..write_string(string_array_inline(project_policy))
-  sb..write_string(",\n")
-  sb..write_string("    \"async\": ")
-  sb..write_string(string_array_inline(async_rules))
-  sb..write_string(",\n")
-  sb..write_string("    \"error\": ")
-  sb..write_string(string_array_inline(error_rules))
-  sb..write_string(",\n")
-  sb..write_string("    \"fp\": ")
-  sb..write_string(string_array_inline(fp_rules))
-  sb..write_string(",\n")
-  sb..write_string("    \"size\": ")
-  sb..write_string(string_array_inline(size_rules))
-  sb..write_string(",\n")
-  sb..write_string("    \"perf_sensitive\": ")
-  sb..write_string(string_array_inline(perf_sensitive))
-  sb..write_string("\n")
-  sb..write_string("  },\n")
-  sb..write_string("  \"_notes\": {\n")
-  sb..write_string(
+  sb.write_string("{\n")
+  sb.write_string("  \"preset\": \"recommended\",\n")
+  sb.write_string("  \"ignore\": [\"target/*\", \"_build/*\"],\n")
+  sb.write_string("  \"rule_groups\": {\n")
+  sb.write_string("    \"always_on\": ")
+  sb.write_string(string_array_inline(always_on))
+  sb.write_string(",\n")
+  sb.write_string("    \"project_policy\": ")
+  sb.write_string(string_array_inline(project_policy))
+  sb.write_string(",\n")
+  sb.write_string("    \"async\": ")
+  sb.write_string(string_array_inline(async_rules))
+  sb.write_string(",\n")
+  sb.write_string("    \"error\": ")
+  sb.write_string(string_array_inline(error_rules))
+  sb.write_string(",\n")
+  sb.write_string("    \"fp\": ")
+  sb.write_string(string_array_inline(fp_rules))
+  sb.write_string(",\n")
+  sb.write_string("    \"size\": ")
+  sb.write_string(string_array_inline(size_rules))
+  sb.write_string(",\n")
+  sb.write_string("    \"perf_sensitive\": ")
+  sb.write_string(string_array_inline(perf_sensitive))
+  sb.write_string("\n")
+  sb.write_string("  },\n")
+  sb.write_string("  \"_notes\": {\n")
+  sb.write_string(
     "    \"always_on\": \"Safe defaults with low false positives.\",\n",
   )
-  sb..write_string(
+  sb.write_string(
     "    \"project_policy\": \"Team policy (docs/tests) depends on project conventions.\",\n",
   )
-  sb..write_string(
+  sb.write_string(
     "    \"async\": \"Enable when the project uses async/task patterns.\",\n",
   )
-  sb..write_string(
+  sb.write_string(
     "    \"error\": \"Enable to enforce consistent error-handling patterns.\",\n",
   )
-  sb..write_string(
+  sb.write_string(
     "    \"fp\": \"Functional style improvements; enable when desired.\",\n",
   )
-  sb..write_string(
+  sb.write_string(
     "    \"size\": \"Enable when JS bundle size is important.\",\n",
   )
-  sb..write_string(
+  sb.write_string(
     "    \"perf_sensitive\": \"Low-level performance guidance; enable only where perf is critical.\",\n",
   )
-  sb..write_string(
+  sb.write_string(
     "    \"preset\": \"recommended enables fp/size/async/error categories by default.\"\n",
   )
-  sb..write_string("  },\n")
-  sb..write_string("  \"rules\": {\n")
+  sb.write_string("  },\n")
+  sb.write_string("  \"rules\": {\n")
   let mut index = 0
   for rule in sorted {
     let (enabled, sev) = @starlint.resolve_rule_settings(rule, recommended)
     let value = if enabled { severity_label(sev) } else { "off" }
-    sb..write_string("    \"")
-    sb..write_string(rule.id)
-    sb..write_string("\": \"")
-    sb..write_string(value)
-    sb..write_string("\"")
+    sb.write_string("    \"")
+    sb.write_string(rule.id)
+    sb.write_string("\": \"")
+    sb.write_string(value)
+    sb.write_string("\"")
     index += 1
     if index < sorted.length() {
-      sb..write_string(",")
+      sb.write_string(",")
     }
-    sb..write_string("\n")
+    sb.write_string("\n")
   }
-  sb..write_string("  }\n")
-  sb..write_string("}\n")
+  sb.write_string("  }\n")
+  sb.write_string("}\n")
   sb.to_string()
 }
 
@@ -379,9 +379,9 @@ fn package_name_for_file(module_name : String, display_path : String) -> String 
 fn type_short_name(ty : @syntax.Type) -> String? {
   match ty {
     @syntax.Type::Name(constr_id~, ..) =>
-      Some(@starlint.constr_id_right_name(constr_id))
+      (constr_id |> @starlint.constr_id_right_name |> Some)
     @syntax.Type::Object(constr_id) =>
-      Some(@starlint.constr_id_right_name(constr_id))
+      (constr_id |> @starlint.constr_id_right_name |> Some)
     _ => None
   }
 }
@@ -646,32 +646,32 @@ fn[FS : @vfs.VFS] print_ai_metadata(
         ..write_string("  package: ")
         ..write_string(package_name)
         ..write_string("\n")
-        sb..write_string("  public functions:\n")
+        sb.write_string("  public functions:\n")
         if names.pub_functions.is_empty() {
-          sb..write_string("    - (none)\n")
+          sb.write_string("    - (none)\n")
         } else {
           for name in names.pub_functions {
             sb..write_string("    - ")..write_string(name)..write_string("\n")
           }
         }
-        sb..write_string("  private functions:\n")
+        sb.write_string("  private functions:\n")
         if names.priv_functions.is_empty() {
-          sb..write_string("    - (none)\n")
+          sb.write_string("    - (none)\n")
         } else {
           for name in names.priv_functions {
             sb..write_string("    - ")..write_string(name)..write_string("\n")
           }
         }
-        sb..write_string("  tests:\n")
+        sb.write_string("  tests:\n")
         if names.tests.is_empty() {
-          sb..write_string("    - (none)\n")
+          sb.write_string("    - (none)\n")
         } else {
           for name in names.tests {
             sb..write_string("    - ")..write_string(name)..write_string("\n")
           }
         }
         if names.unnamed_tests > 0 || !names.check_style_tests.is_empty() {
-          sb..write_string("  test name warnings:\n")
+          sb.write_string("  test name warnings:\n")
           if names.unnamed_tests > 0 {
             sb
             ..write_string("    - unnamed tests: ")
@@ -689,14 +689,14 @@ fn[FS : @vfs.VFS] print_ai_metadata(
         if doc_info.block_count > 0 {
           doc_info.tests.sort_by((a, b) => a.compare(b))
           doc_info.check_style_tests.sort_by((a, b) => a.compare(b))
-          sb..write_string("  doc tests:\n")
+          sb.write_string("  doc tests:\n")
           sb
           ..write_string("    code_blocks: ")
           ..write_string(doc_info.block_count.to_string())
           ..write_string("\n")
-          sb..write_string("    tests:\n")
+          sb.write_string("    tests:\n")
           if doc_info.tests.is_empty() {
-            sb..write_string("      - (none)\n")
+            sb.write_string("      - (none)\n")
           } else {
             for name in doc_info.tests {
               sb
@@ -707,7 +707,7 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           }
           if doc_info.unnamed_tests > 0 ||
             !doc_info.check_style_tests.is_empty() {
-            sb..write_string("    test name warnings:\n")
+            sb.write_string("    test name warnings:\n")
             if doc_info.unnamed_tests > 0 {
               sb
               ..write_string("      - unnamed tests: ")
@@ -733,13 +733,13 @@ fn[FS : @vfs.VFS] print_ai_metadata(
         ..write_string(package_name)
         ..write_string("\n")
         sb..write_string("  parse_error: ")..write_string(err.to_string())
-        sb..write_string("\n")
+        sb.write_string("\n")
       }
     }
   }
-  sb..write_string("\ndoc_tests:\n")
+  sb.write_string("\ndoc_tests:\n")
   if doc_entries.is_empty() {
-    sb..write_string("  - (none)\n")
+    sb.write_string("  - (none)\n")
   } else {
     let mut printed = false
     for doc_path in doc_entries {
@@ -762,16 +762,16 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           ..write_string("  code_blocks: ")
           ..write_string(info.block_count.to_string())
           ..write_string("\n")
-          sb..write_string("  tests:\n")
+          sb.write_string("  tests:\n")
           if info.tests.is_empty() {
-            sb..write_string("    - (none)\n")
+            sb.write_string("    - (none)\n")
           } else {
             for name in info.tests {
               sb..write_string("    - ")..write_string(name)..write_string("\n")
             }
           }
           if info.unnamed_tests > 0 || !info.check_style_tests.is_empty() {
-            sb..write_string("  test name warnings:\n")
+            sb.write_string("  test name warnings:\n")
             if info.unnamed_tests > 0 {
               sb
               ..write_string("    - unnamed tests: ")
@@ -793,12 +793,12 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           ..write_string(doc_path)
           ..write_string("\n")
           sb..write_string("  read_error: ")..write_string(err.to_string())
-          sb..write_string("\n")
+          sb.write_string("\n")
         }
       }
     }
     if !printed {
-      sb..write_string("  - (none)\n")
+      sb.write_string("  - (none)\n")
     }
   }
   println(sb.to_string())

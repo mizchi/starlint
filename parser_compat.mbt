@@ -120,7 +120,7 @@ fn normalize_range_lt_inclusive(source : String) -> String {
   let suffix_result : Result[StringView, Error] = try? source[last:]
   match suffix_result {
     Ok(suffix) => {
-      sb..write_view(suffix)
+      sb.write_view(suffix)
       sb.to_string()
     }
     Err(_) => source
@@ -354,9 +354,7 @@ pub fn parse_string_for_lint(
   name? : String = "",
   parser? : @parser.Parser = Handrolled,
 ) -> (@syntax.Impls, Array[@basic.Report]) {
-  let normalized = normalize_range_lt_inclusive(
-    normalize_using_type_keyword(source),
-  )
+  let normalized = source |> normalize_using_type_keyword |> normalize_range_lt_inclusive
   let (impls, reports) = @parser.parse_string(normalized, name~, parser~)
   if reports.length() > 0 {
     match parser {
