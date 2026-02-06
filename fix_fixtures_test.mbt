@@ -727,6 +727,25 @@ test "fix fixtures" {
       rules: ["match_option_map"],
     },
     FixFixture::{
+      name: "match_option_map_some_body_fix",
+      input: (
+        #|fn main {
+        #|  let opt = foo()
+        #|  let value = match opt {
+        #|    Some(v) => Some(f(v))
+        #|    None => None
+        #|  }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let opt = foo()
+        #|  let value = opt.map(v => f(v))
+        #|}
+      ),
+      rules: ["match_option_map"],
+    },
+    FixFixture::{
       name: "match_option_map_guard_no_fix",
       input: (
         #|fn main {

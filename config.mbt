@@ -32,7 +32,7 @@ pub fn LintConfig::empty() -> LintConfig {
 
 ///|
 pub fn LintConfig::recommended() -> LintConfig {
-  LintConfig::enable_categories(["fp", "size", "async", "error"])
+  LintConfig::enable_categories(["fp", "async", "error"])
 }
 
 ///|

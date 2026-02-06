@@ -288,6 +288,27 @@ pub fn is_none_pattern(pat : @syntax.Pattern) -> Bool {
 }
 
 ///|
+pub fn match_some_apply(expr : @syntax.Expr) -> @syntax.Expr? {
+  match unwrap_paren(expr) {
+    @syntax.Apply(
+      func=@syntax.Constr(constr={ name: { name: "Some", .. }, .. }, ..),
+      args~,
+      attr=NoAttr,
+      ..
+    ) => {
+      let args_array = list_to_array(args)
+      if args_array.length() == 1 &&
+        args_array[0].kind is @syntax.ArgumentKind::Positional {
+        Some(args_array[0].value)
+      } else {
+        None
+      }
+    }
+    _ => None
+  }
+}
+
+///|
 pub fn is_none_expr(expr : @syntax.Expr) -> Bool {
   match unwrap_paren(expr) {
     @syntax.Constr(constr={ name: { name: "None", .. }, .. }, ..) => true

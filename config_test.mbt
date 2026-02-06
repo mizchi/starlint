@@ -21,7 +21,7 @@ test "recommended preset categories" {
     rule_enabled(rules, config, "prefer_option_map_or_else"),
     content="false",
   )
-  inspect(rule_enabled(rules, config, "avoid_json_js"), content="true")
+  inspect(rule_enabled(rules, config, "avoid_json_js"), content="false")
   inspect(
     rule_enabled(rules, config, "async_cancellation_must_propagate"),
     content="true",
