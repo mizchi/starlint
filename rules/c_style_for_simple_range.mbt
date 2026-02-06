@@ -111,11 +111,14 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
                   @starlint.expr_source(env.source, bound_expr),
                   @starlint.expr_source(env.source, body),
                 ) {
-                (Some(init_src), Some(bound_src), Some(body_src)) => {
-                  let range_op = if inclusive { "..=" } else { "..<" }
-                  let replacement = "for \{binder_name} in \{init_src}\{range_op}\{bound_src} { \{body_src} }"
-                  Some(@starlint.Fix::new(range=loc, replacement~))
-                }
+                (Some(init_src), Some(bound_src), Some(body_src)) =>
+                  if !body_src.contains("\n") {
+                    let range_op = if inclusive { "..=" } else { "..<" }
+                    let replacement = "for \{binder_name} in \{init_src}\{range_op}\{bound_src} { \{body_src} }"
+                    Some(@starlint.Fix::new(range=loc, replacement~))
+                  } else {
+                    None
+                  }
                 _ => None
               }
               let diag = match fix {

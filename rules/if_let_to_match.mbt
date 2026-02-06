@@ -1,4 +1,43 @@
 ///|
+fn stmt_indent(source : String, loc : @basic.Location) -> String {
+  if source == "" {
+    return ""
+  }
+  let start = loc.start.cnum
+  if start <= 0 || start > source.length() {
+    return ""
+  }
+  let prefix_result : Result[StringView, Error] = try? source[:start]
+  match prefix_result {
+    Ok(prefix) => {
+      let line_start = match prefix.rev_find("\n") {
+        Some(idx) => idx + 1
+        None => 0
+      }
+      let line_text_result : Result[StringView, Error] = try? source[line_start:start]
+      match line_text_result {
+        Ok(line_text) => {
+          let trimmed = line_text.trim_start()
+          let ws_len = line_text.length() - trimmed.length()
+          if ws_len == 0 {
+            ""
+          } else {
+            let ws_result : Result[StringView, Error] = try? source[line_start:line_start +
+                ws_len]
+            match ws_result {
+              Ok(ws) => ws.to_string()
+              Err(_) => ""
+            }
+          }
+        }
+        Err(_) => ""
+      }
+    }
+    Err(_) => ""
+  }
+}
+
+///|
 let if_let_to_match_rule_id : String = "if_let_to_match"
 
 ///|
@@ -35,10 +74,16 @@ fn push_if_let_to_match_diag(
       @starlint.expr_source(env.source, ifso),
       @starlint.expr_source(env.source, ifnot),
     ) {
-    (Some(subject_src), Some(pattern_src), Some(ifso_src), Some(ifnot_src)) => {
-      let replacement = "match (\{subject_src}) { \{pattern_src} => \{ifso_src}  None => \{ifnot_src} }"
-      Some(@starlint.Fix::new(range=loc, replacement~))
-    }
+    (Some(subject_src), Some(pattern_src), Some(ifso_src), Some(ifnot_src)) =>
+      if loc.start.lnum == loc.end.lnum &&
+        !ifso_src.contains("\n") &&
+        !ifnot_src.contains("\n") {
+        let indent = stmt_indent(env.source, loc)
+        let replacement = "match \{subject_src} {\n\{indent}  \{pattern_src} => \{ifso_src}\n\{indent}  None => \{ifnot_src}\n\{indent}}"
+        Some(@starlint.Fix::new(range=loc, replacement~))
+      } else {
+        None
+      }
     _ => None
   }
   let diag = match fix {

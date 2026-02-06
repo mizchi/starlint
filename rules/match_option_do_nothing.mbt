@@ -60,10 +60,13 @@ fn push_match_option_do_nothing_diag(
           pattern_text,
           @starlint.expr_source(env.source, some_case.body),
         ) {
-        (Some(subject_src), Some(pattern_src), Some(body_src)) => {
-          let replacement = "if (\{subject_src}) is \{pattern_src} { \{body_src} }"
-          Some(@starlint.Fix::new(range=loc, replacement~))
-        }
+        (Some(subject_src), Some(pattern_src), Some(body_src)) =>
+          if !body_src.contains("\n") {
+            let replacement = "if (\{subject_src}) is \{pattern_src} { \{body_src} }"
+            Some(@starlint.Fix::new(range=loc, replacement~))
+          } else {
+            None
+          }
         _ => None
       }
       let diag = match fix {

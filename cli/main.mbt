@@ -918,6 +918,13 @@ fn[FS : @vfs.VFS] apply_fixes_to_file(
   let source = fs.read_string(fs_path)
   let (new_source, applied) = apply_fixes_to_source(source, fixes)
   if applied > 0 && new_source != source {
+    let (_, reports) = @starlint.parse_string_for_lint(
+      new_source,
+      name=display_path,
+    )
+    if reports.length() > 0 {
+      return 0
+    }
     fs.write_string(fs_path, new_source)
   }
   applied
@@ -1013,6 +1020,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
   }
   let apply_fix = @ref.new(false)
   let config_path = @ref.new("")
+  let rule_filter = @ref.new("")
   let ai_mode = @ref.new(false)
   let by_file = @ref.new(false)
   let by_rule = @ref.new(false)
@@ -1024,6 +1032,12 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       @ArgParser.Spec::Set_string(config_path),
       "config file path",
     ),
+    (
+      "--rule",
+      "-r",
+      @ArgParser.Spec::Set_string(rule_filter),
+      "filter by rule id",
+    ),
     ("--ai", "", @ArgParser.Spec::Set(ai_mode), "output AI review metadata"),
     ("--by-file", "", @ArgParser.Spec::Set(by_file), "group by file (default)"),
     ("--by-rule", "", @ArgParser.Spec::Set(by_rule), "group by rule"),
@@ -1031,10 +1045,14 @@ fn[FS : @vfs.VFS] run_with_start_dir(
   let filenames = []
   let usage =
     #| usage:
-    #|   starlint [--ai] [--fix] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
+    #|   starlint [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
     #|   starlint init
     #|   starlint doc
   @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
+    @ArgParser.ErrorMsg(msg) => {
+      println(msg)
+      return
+    }
     err => {
       println(err)
       panic()
@@ -1117,6 +1135,11 @@ fn[FS : @vfs.VFS] run_with_start_dir(
         panic()
       }
     }
+    if rule_filter.val != "" {
+      file_diagnostics = file_diagnostics.filter(
+        diag => diag.rule_id == rule_filter.val,
+      )
+    }
     if apply_fix.val {
       let applied = apply_fixes_to_file(fs, fs_path, display_path, file_diagnostics) catch {
         err => {
@@ -1133,6 +1156,11 @@ fn[FS : @vfs.VFS] run_with_start_dir(
             println(err)
             panic()
           }
+        }
+        if rule_filter.val != "" {
+          file_diagnostics = file_diagnostics.filter(
+            diag => diag.rule_id == rule_filter.val,
+          )
         }
         println("Applied \{applied} fixes in \{display_path}")
       }

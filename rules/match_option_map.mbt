@@ -50,10 +50,13 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
                 @starlint.expr_source(env.source, subject),
                 @starlint.expr_source(env.source, some_case.body),
               ) {
-              (Some(subject_src), Some(body_src)) => {
-                let replacement = "\{subject_src}.map(\{name} => \{body_src})"
-                Some(@starlint.Fix::new(range=loc, replacement~))
-              }
+              (Some(subject_src), Some(body_src)) =>
+                if !body_src.contains("\n") {
+                  let replacement = "\{subject_src}.map(\{name} => \{body_src})"
+                  Some(@starlint.Fix::new(range=loc, replacement~))
+                } else {
+                  None
+                }
               _ => None
             }
             let diag = match fix {

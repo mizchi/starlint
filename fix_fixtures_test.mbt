@@ -966,6 +966,45 @@ test "fix fixtures" {
       ),
       rules: ["legacy_call_syntax"],
     },
+    FixFixture::{
+      name: "if_let_to_match_fix",
+      input: (
+        #|fn main {
+        #|  let x = if (opt) is Some(v) { f(v) } else { g() }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let x = match (opt) {
+        #|    Some(v) => f(v)
+        #|    None => g()
+        #|  }
+        #|}
+      ),
+      rules: ["if_let_to_match"],
+    },
+    FixFixture::{
+      name: "if_let_to_match_multiline_no_fix",
+      input: (
+        #|fn main {
+        #|  let x = if (opt) is Some(v) {
+        #|    f(v)
+        #|  } else {
+        #|    g()
+        #|  }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let x = if (opt) is Some(v) {
+        #|    f(v)
+        #|  } else {
+        #|    g()
+        #|  }
+        #|}
+      ),
+      rules: ["if_let_to_match"],
+    },
   ]
   for fixture in fixtures {
     let output = apply_fixes_for_rules(fixture.input, fixture.rules) catch {

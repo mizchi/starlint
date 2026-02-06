@@ -60,10 +60,13 @@ fn push_match_to_if_let_diag(
             @starlint.expr_source(env.source, some_case.body),
             @starlint.expr_source(env.source, none_case.body),
           ) {
-          (Some(subject_src), Some(pattern_src), Some(some_src), Some(none_src)) => {
-            let replacement = "if (\{subject_src}) is \{pattern_src} { \{some_src} } else { \{none_src} }"
-            Some(@starlint.Fix::new(range=loc, replacement~))
-          }
+          (Some(subject_src), Some(pattern_src), Some(some_src), Some(none_src)) =>
+            if !some_src.contains("\n") && !none_src.contains("\n") {
+              let replacement = "if (\{subject_src}) is \{pattern_src} { \{some_src} } else { \{none_src} }"
+              Some(@starlint.Fix::new(range=loc, replacement~))
+            } else {
+              None
+            }
           _ => None
         }
         let diag = match fix {
