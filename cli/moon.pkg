@@ -1,13 +1,13 @@
 import {
   "mizchi/starlint",
   "mizchi/starlint/tasks/lint",
+  "mizchi/starlint/vfs",
   "moonbitlang/parser",
   "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",
   "moonbitlang/core/queue",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
-  "moonbitlang/x/fs",
   "Yoorkin/ArgParser",
   "moonbitlang/x/sys",
 }

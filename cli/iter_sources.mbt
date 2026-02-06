@@ -1,7 +1,11 @@
 ///|
 #callsite(autofill(loc))
-fn is_directory(path : String, loc~ : SourceLoc) -> Bool raise Error {
-  @fs.is_dir(path) catch {
+fn[FS : @vfs.VFS] is_directory(
+  fs : FS,
+  path : String,
+  loc~ : SourceLoc
+) -> Bool raise Error {
+  fs.is_dir(path) catch {
     err => fail("failed to check if \{path} is a directory: \{err}", loc~)
   }
 }
@@ -67,14 +71,14 @@ fn parent_dir(path : String) -> String? {
 }
 
 ///|
-fn find_module_root(start_dir : String) -> String? {
+fn[FS : @vfs.VFS] find_module_root(fs : FS, start_dir : String) -> String? {
   let mut current = strip_trailing_slash(start_dir)
   if current == "" {
     current = "."
   }
   while true {
     let candidate = join_path(current, "moon.mod.json")
-    if @fs.path_exists(candidate) {
+    if fs.path_exists(candidate) {
       return Some(current)
     }
     match parent_dir(current) {
@@ -86,12 +90,13 @@ fn find_module_root(start_dir : String) -> String? {
 }
 
 ///|
-fn get_mbt_path_set_from_base(
+fn[FS : @vfs.VFS] get_mbt_path_set_from_base(
+  fs : FS,
   base_fs : String,
-  base_rel : String,
+  base_rel : String
 ) -> Array[String] raise Error {
   let mbt_set = Array::new(capacity=20)
-  let path_set = @fs.read_dir(base_fs) catch {
+  let path_set = fs.read_dir(base_fs) catch {
     err => fail("failed to read directory \{base_fs}: \{err}")
   }
   let path_set = {
@@ -107,11 +112,11 @@ fn get_mbt_path_set_from_base(
   }
   while not(path_set.is_empty()) {
     let (fs_path, rel_path) = path_set.unsafe_pop()
-    if (fs_path |> @fs.path_exists |> not) {
+    if not(fs.path_exists(fs_path)) {
       println("invalid path construct by starlint internal: \{fs_path}")
     }
-    if is_directory(fs_path) {
-      let new_path_set = @fs.read_dir(fs_path) catch {
+    if is_directory(fs, fs_path) {
+      let new_path_set = fs.read_dir(fs_path) catch {
         err => fail("failed to read directory \{base_fs}: \{err}")
       }
       for new_path in new_path_set {
@@ -128,12 +133,13 @@ fn get_mbt_path_set_from_base(
 }
 
 ///|
-fn get_mbt_md_path_set_from_base(
+fn[FS : @vfs.VFS] get_mbt_md_path_set_from_base(
+  fs : FS,
   base_fs : String,
-  base_rel : String,
+  base_rel : String
 ) -> Array[String] raise Error {
   let md_set = Array::new(capacity=8)
-  let path_set = @fs.read_dir(base_fs) catch {
+  let path_set = fs.read_dir(base_fs) catch {
     err => fail("failed to read directory \{base_fs}: \{err}")
   }
   let path_set = {
@@ -148,11 +154,11 @@ fn get_mbt_md_path_set_from_base(
   }
   while not(path_set.is_empty()) {
     let (fs_path, rel_path) = path_set.unsafe_pop()
-    if (fs_path |> @fs.path_exists |> not) {
+    if not(fs.path_exists(fs_path)) {
       println("invalid path construct by starlint internal: \{fs_path}")
     }
-    if is_directory(fs_path) {
-      let new_path_set = @fs.read_dir(fs_path) catch {
+    if is_directory(fs, fs_path) {
+      let new_path_set = fs.read_dir(fs_path) catch {
         err => fail("failed to read directory \{base_fs}: \{err}")
       }
       for new_path in new_path_set {
@@ -169,8 +175,8 @@ fn get_mbt_md_path_set_from_base(
 }
 
 ///|
-fn load_module_info(module_root : String) -> Json raise Error {
-  let text = @fs.read_file_to_string(join_path(module_root, "moon.mod.json"))
+fn[FS : @vfs.VFS] load_module_info(fs : FS, module_root : String) -> Json raise Error {
+  let text = fs.read_string(join_path(module_root, "moon.mod.json"))
   @json.parse(text)
 }
 
