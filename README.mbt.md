@@ -20,6 +20,8 @@ starlint --by-rule foo.mbt # group diagnostics by rule
 starlint doc # show rule list and defaults
 starlint init # generate starlint.json (with rule_groups guidance)
 starlint --ai # output AI review metadata (module/file/function/test names + doc tests)
+starlint analyze # baseline compare (default: .starlint/latest.json, fallback: .starlint/<git-hash>.json) + AI metadata dump
+starlint analyze --compare path/to/baseline.json
 ```
 
 ## ai metadata (--ai)

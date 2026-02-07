@@ -830,6 +830,29 @@ fn resolve_config_path(module_root : String, path : String) -> String {
 }
 
 ///|
+fn parse_compare_option(args : ArrayView[String]) -> String {
+  for i in 0..<args.length() {
+    if (args[i] == "--compare" || args[i] == "-c") && i + 1 < args.length() {
+      return args[i + 1]
+    }
+  }
+  ""
+}
+
+///|
+fn[FS : @vfs.VFS] analyze_compare_path(
+  fs : FS,
+  module_root : String,
+  compare_arg : String,
+) -> String {
+  if compare_arg == "" {
+    default_analyze_compare_path(fs, module_root)
+  } else {
+    resolve_config_path(module_root, compare_arg)
+  }
+}
+
+///|
 fn[FS : @vfs.VFS] load_config(
   fs : FS,
   path : String,
@@ -911,6 +934,53 @@ fn apply_fixes_to_source(
   } else {
     (output, applied)
   }
+}
+
+///|
+fn[FS : @vfs.VFS] run_analyze(
+  fs : FS,
+  module_root : String,
+  compare_arg : String,
+) -> Unit {
+  let compare_path = analyze_compare_path(fs, module_root, compare_arg)
+  if fs.path_exists(compare_path) {
+    println("== Baseline comparison ==")
+    run_baseline(fs, module_root, compare_path)
+  } else {
+    println("baseline file not found: \{compare_path}")
+    println("run `starlint baseline` to create baseline first.")
+  }
+  let module_info = load_module_info(fs, module_root) catch {
+    err => {
+      println("failed to load module info: \{err}")
+      panic()
+    }
+  }
+  let module_name = get_module_name(module_info)
+  let base_rel = get_src_location(module_info)
+  let base_fs = if base_rel == "." || base_rel == "" {
+    module_root
+  } else {
+    join_path(module_root, base_rel)
+  }
+  let file_entries = build_file_entries_from_module(
+    fs, module_root, base_fs, base_rel,
+  ) catch {
+    err => {
+      println("failed when finding source files: \{err}")
+      panic()
+    }
+  }
+  let doc_entries = get_mbt_md_path_set_from_base(fs, module_root, ".") catch {
+    err => {
+      println("failed when finding doc files: \{err}")
+      panic()
+    }
+  }
+  doc_entries.sort_by((a, b) => a.compare(b))
+  println("")
+  println("== AI analysis metadata ==")
+  print_ai_metadata(fs, file_entries, doc_entries, module_name, module_root)
 }
 
 ///|
@@ -1036,14 +1106,19 @@ fn[FS : @vfs.VFS] run_with_start_dir(
           panic()
         }
       }
-      let mut compare = ""
-      let rest = argv[1:]
-      for i in 0..<rest.length() {
-        if (rest[i] == "--compare" || rest[i] == "-c") && i + 1 < rest.length() {
-          compare = rest[i + 1]
+      let compare = parse_compare_option(argv[1:])
+      run_baseline(fs, module_root, compare)
+      return
+    }
+    if cmd == "analyze" {
+      let module_root = resolve_module_root(fs, start_dir) catch {
+        err => {
+          println("failed to find module root: \{err}")
+          panic()
         }
       }
-      run_baseline(fs, module_root, compare)
+      let compare = parse_compare_option(argv[1:])
+      run_analyze(fs, module_root, compare)
       return
     }
   }
@@ -1078,6 +1153,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
     #|   starlint init
     #|   starlint doc
     #|   starlint baseline [--compare <file>]
+    #|   starlint analyze [--compare <file>]
   @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
     @ArgParser.ErrorMsg(msg) => {
       println(msg)

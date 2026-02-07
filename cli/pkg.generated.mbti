@@ -7,6 +7,7 @@ pub fn run(Array[String], start_dir? : String) -> Unit
 // Errors
 
 // Types and methods
+type GitDirtyStatus
 
 // Type aliases
 
