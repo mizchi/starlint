@@ -54,5 +54,6 @@ pub fn rules() -> Array[@starlint.Rule] {
     using_only_in_file_rule(),
     no_hole_placeholder_rule(),
     require_snake_case_pkg_rule(),
+    prefer_test_mbt_for_multi_wbtest_rule(),
   ]
 }

@@ -307,7 +307,7 @@ fn default_rules_config_json(rules : Array[@starlint.Rule]) -> String {
 fn[FS : @vfs.VFS] run_init(
   fs : FS,
   rules : Array[@starlint.Rule],
-  module_root : String
+  module_root : String,
 ) -> Unit {
   let config_path = join_path(module_root, "starlint.json")
   let hidden_config = join_path(module_root, ".starlint.json")
@@ -329,7 +329,7 @@ fn[FS : @vfs.VFS] run_init(
 fn[FS : @vfs.VFS] read_mbt_file_to_impls(
   fs : FS,
   fs_path : String,
-  source_name : String
+  source_name : String,
 ) -> (@syntax.Impls, String) raise {
   let source = fs.read_string(fs_path)
   let (impls, reports) = @starlint.parse_string_for_lint(
@@ -379,9 +379,9 @@ fn package_name_for_file(module_name : String, display_path : String) -> String 
 fn type_short_name(ty : @syntax.Type) -> String? {
   match ty {
     @syntax.Type::Name(constr_id~, ..) =>
-      (constr_id |> @starlint.constr_id_right_name |> Some)
+      constr_id |> @starlint.constr_id_right_name |> Some
     @syntax.Type::Object(constr_id) =>
-      (constr_id |> @starlint.constr_id_right_name |> Some)
+      constr_id |> @starlint.constr_id_right_name |> Some
     _ => None
   }
 }
@@ -600,7 +600,7 @@ fn[FS : @vfs.VFS] print_ai_metadata(
   file_entries : Array[(String, String)],
   doc_entries : Array[String],
   module_name : String,
-  module_root : String
+  module_root : String,
 ) -> Unit {
   let sb = StringBuilder::new()
   sb
@@ -830,7 +830,10 @@ fn resolve_config_path(module_root : String, path : String) -> String {
 }
 
 ///|
-fn[FS : @vfs.VFS] load_config(fs : FS, path : String) -> @starlint.LintConfig raise {
+fn[FS : @vfs.VFS] load_config(
+  fs : FS,
+  path : String,
+) -> @starlint.LintConfig raise {
   let text = fs.read_string(path)
   @starlint.LintConfig::from_json(text)
 }
@@ -840,11 +843,17 @@ fn[FS : @vfs.VFS] lint_file(
   fs : FS,
   fs_path : String,
   display_path : String,
+  package_filenames : Array[String],
   rules : Array[@starlint.Rule],
-  config : @starlint.LintConfig
+  config : @starlint.LintConfig,
 ) -> Array[@starlint.Diagnostic] raise {
   let (impls, source) = read_mbt_file_to_impls(fs, fs_path, display_path)
-  let input = @starlint.LintInput::new(impls~, source~, filename=display_path)
+  let input = @starlint.LintInput::new(
+    impls~,
+    source~,
+    filename=display_path,
+    package_filenames~,
+  )
   return @starlint.lint_with_config(input, rules, config)
 }
 
@@ -909,7 +918,7 @@ fn[FS : @vfs.VFS] apply_fixes_to_file(
   fs : FS,
   fs_path : String,
   display_path : String,
-  diagnostics : Array[@starlint.Diagnostic]
+  diagnostics : Array[@starlint.Diagnostic],
 ) -> Int raise {
   let fixes = collect_fixes(diagnostics, display_path)
   if fixes.is_empty() {
@@ -951,7 +960,10 @@ fn resolve_start_dir(start_dir : String) -> String {
 }
 
 ///|
-fn[FS : @vfs.VFS] resolve_module_root(fs : FS, start_dir : String) -> String raise Error {
+fn[FS : @vfs.VFS] resolve_module_root(
+  fs : FS,
+  start_dir : String,
+) -> String raise Error {
   match find_module_root(fs, start_dir) {
     Some(root) => root
     None => fail("moon.mod.json not found from \{start_dir}")
@@ -982,7 +994,7 @@ fn[FS : @vfs.VFS] build_file_entries_from_module(
   fs : FS,
   module_root : String,
   base_fs : String,
-  base_rel : String
+  base_rel : String,
 ) -> Array[(String, String)] raise Error {
   let rel_paths = get_mbt_path_set_from_base(fs, base_fs, base_rel)
   let entries = []
@@ -998,7 +1010,7 @@ fn[FS : @vfs.VFS] build_file_entries_from_module(
 fn[FS : @vfs.VFS] run_with_start_dir(
   fs : FS,
   argv : Array[String],
-  start_dir : String
+  start_dir : String,
 ) -> Unit {
   if argv.length() > 0 && !argv[0].has_prefix("-") {
     let cmd = argv[0]
@@ -1015,6 +1027,23 @@ fn[FS : @vfs.VFS] run_with_start_dir(
         }
       }
       run_init(fs, rules, module_root)
+      return
+    }
+    if cmd == "baseline" {
+      let module_root = resolve_module_root(fs, start_dir) catch {
+        err => {
+          println("failed to find module root: \{err}")
+          panic()
+        }
+      }
+      let mut compare = ""
+      let rest = argv[1:]
+      for i in 0..<rest.length() {
+        if (rest[i] == "--compare" || rest[i] == "-c") && i + 1 < rest.length() {
+          compare = rest[i + 1]
+        }
+      }
+      run_baseline(fs, module_root, compare)
       return
     }
   }
@@ -1048,6 +1077,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
     #|   starlint [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
     #|   starlint init
     #|   starlint doc
+    #|   starlint baseline [--compare <file>]
   @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
     @ArgParser.ErrorMsg(msg) => {
       println(msg)
@@ -1120,6 +1150,11 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       }
   }
   let use_by_rule = if by_file.val { false } else { by_rule.val }
+  let package_filenames = []
+  for entry in file_entries {
+    let (_, display_path) = entry
+    package_filenames.push(display_path)
+  }
   let diagnostics = []
   for entry in file_entries {
     let (fs_path, display_path) = entry
@@ -1128,7 +1163,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       continue
     }
     let mut file_diagnostics = lint_file(
-      fs, fs_path, display_path, rules, file_config,
+      fs, fs_path, display_path, package_filenames, rules, file_config,
     ) catch {
       err => {
         println(err)
@@ -1136,12 +1171,13 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       }
     }
     if rule_filter.val != "" {
-      file_diagnostics = file_diagnostics.filter(
-        diag => diag.rule_id == rule_filter.val,
-      )
+      file_diagnostics = file_diagnostics.filter(diag => diag.rule_id ==
+        rule_filter.val)
     }
     if apply_fix.val {
-      let applied = apply_fixes_to_file(fs, fs_path, display_path, file_diagnostics) catch {
+      let applied = apply_fixes_to_file(
+        fs, fs_path, display_path, file_diagnostics,
+      ) catch {
         err => {
           println(err)
           panic()
@@ -1150,7 +1186,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       if applied > 0 {
         let refreshed_config = config.for_file(display_path)
         file_diagnostics = lint_file(
-          fs, fs_path, display_path, rules, refreshed_config,
+          fs, fs_path, display_path, package_filenames, rules, refreshed_config,
         ) catch {
           err => {
             println(err)
@@ -1158,9 +1194,8 @@ fn[FS : @vfs.VFS] run_with_start_dir(
           }
         }
         if rule_filter.val != "" {
-          file_diagnostics = file_diagnostics.filter(
-            diag => diag.rule_id == rule_filter.val,
-          )
+          file_diagnostics = file_diagnostics.filter(diag => diag.rule_id ==
+            rule_filter.val)
         }
         println("Applied \{applied} fixes in \{display_path}")
       }

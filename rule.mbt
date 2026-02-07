@@ -3,6 +3,7 @@ pub struct LintInput {
   impls : @syntax.Impls
   source : String
   filename : String
+  package_filenames : Array[String]
 }
 
 ///|
@@ -10,8 +11,9 @@ pub fn LintInput::new(
   impls~ : @syntax.Impls,
   source~ : String,
   filename~ : String,
+  package_filenames? : Array[String] = [],
 ) -> LintInput {
-  { impls, source, filename }
+  { impls, source, filename, package_filenames }
 }
 
 ///|
