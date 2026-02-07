@@ -1,6 +1,6 @@
 {
   "name": "mizchi/starlint",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "deps": {
     "moonbitlang/parser": "0.1.15",
     "moonbitlang/x": "0.4.38",
