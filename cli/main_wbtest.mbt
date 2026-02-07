@@ -23,6 +23,42 @@ test "parse_compare_option: missing value" {
 }
 
 ///|
+test "parse_meta_option: long help" {
+  let actual = parse_meta_option(["--help"][:])
+  inspect(actual, content="help")
+}
+
+///|
+test "parse_meta_option: short help" {
+  let actual = parse_meta_option(["-h"][:])
+  inspect(actual, content="help")
+}
+
+///|
+test "parse_meta_option: long version" {
+  let actual = parse_meta_option(["--version"][:])
+  inspect(actual, content="version")
+}
+
+///|
+test "parse_meta_option: short version" {
+  let actual = parse_meta_option(["-v"][:])
+  inspect(actual, content="version")
+}
+
+///|
+test "parse_meta_option: first hit wins" {
+  let actual = parse_meta_option(["-v", "--help"][:])
+  inspect(actual, content="version")
+}
+
+///|
+test "parse_meta_option: no option" {
+  let actual = parse_meta_option(["foo.mbt"][:])
+  inspect(actual, content="")
+}
+
+///|
 test "analyze_compare_path: default latest path" {
   let fs = @vfs.MemVFS::new()
   fs.write_string("/repo/.starlint/latest.json", "{}")

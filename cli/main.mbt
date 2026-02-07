@@ -830,6 +830,36 @@ fn resolve_config_path(module_root : String, path : String) -> String {
 }
 
 ///|
+let cli_version = "0.6.0"
+
+///|
+fn usage_text() -> String {
+  let text =
+    #| usage:
+    #|   starlint [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
+    #|   starlint init
+    #|   starlint doc
+    #|   starlint baseline [--compare <file>]
+    #|   starlint analyze [--compare <file>]
+    #|   starlint --help | -h
+    #|   starlint --version | -v
+  text
+}
+
+///|
+fn parse_meta_option(args : ArrayView[String]) -> String {
+  for arg in args {
+    if arg == "--help" || arg == "-h" {
+      return "help"
+    }
+    if arg == "--version" || arg == "-v" {
+      return "version"
+    }
+  }
+  ""
+}
+
+///|
 fn parse_compare_option(args : ArrayView[String]) -> String {
   for i in 0..<args.length() {
     if (args[i] == "--compare" || args[i] == "-c") && i + 1 < args.length() {
@@ -1082,6 +1112,17 @@ fn[FS : @vfs.VFS] run_with_start_dir(
   argv : Array[String],
   start_dir : String,
 ) -> Unit {
+  match parse_meta_option(argv[:]) {
+    "help" => {
+      println(usage_text())
+      return
+    }
+    "version" => {
+      println("starlint \{cli_version}")
+      return
+    }
+    _ => ()
+  }
   if argv.length() > 0 && !argv[0].has_prefix("-") {
     let cmd = argv[0]
     let rules = @lint.rules()
@@ -1147,14 +1188,12 @@ fn[FS : @vfs.VFS] run_with_start_dir(
     ("--by-rule", "", @ArgParser.Spec::Set(by_rule), "group by rule"),
   ]
   let filenames = []
-  let usage =
-    #| usage:
-    #|   starlint [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
-    #|   starlint init
-    #|   starlint doc
-    #|   starlint baseline [--compare <file>]
-    #|   starlint analyze [--compare <file>]
-  @ArgParser.parse(spec, filename => filenames.push(filename), usage, argv) catch {
+  @ArgParser.parse(
+    spec,
+    filename => filenames.push(filename),
+    usage_text(),
+    argv,
+  ) catch {
     @ArgParser.ErrorMsg(msg) => {
       println(msg)
       return
