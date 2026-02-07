@@ -3,7 +3,7 @@
 fn[FS : @vfs.VFS] is_directory(
   fs : FS,
   path : String,
-  loc~ : SourceLoc
+  loc~ : SourceLoc,
 ) -> Bool raise Error {
   fs.is_dir(path) catch {
     err => fail("failed to check if \{path} is a directory: \{err}", loc~)
@@ -93,7 +93,7 @@ fn[FS : @vfs.VFS] find_module_root(fs : FS, start_dir : String) -> String? {
 fn[FS : @vfs.VFS] get_mbt_path_set_from_base(
   fs : FS,
   base_fs : String,
-  base_rel : String
+  base_rel : String,
 ) -> Array[String] raise Error {
   let mbt_set = Array::new(capacity=20)
   let path_set = fs.read_dir(base_fs) catch {
@@ -136,7 +136,7 @@ fn[FS : @vfs.VFS] get_mbt_path_set_from_base(
 fn[FS : @vfs.VFS] get_mbt_md_path_set_from_base(
   fs : FS,
   base_fs : String,
-  base_rel : String
+  base_rel : String,
 ) -> Array[String] raise Error {
   let md_set = Array::new(capacity=8)
   let path_set = fs.read_dir(base_fs) catch {
@@ -175,7 +175,10 @@ fn[FS : @vfs.VFS] get_mbt_md_path_set_from_base(
 }
 
 ///|
-fn[FS : @vfs.VFS] load_module_info(fs : FS, module_root : String) -> Json raise Error {
+fn[FS : @vfs.VFS] load_module_info(
+  fs : FS,
+  module_root : String,
+) -> Json raise Error {
   let text = fs.read_string(join_path(module_root, "moon.mod.json"))
   @json.parse(text)
 }

@@ -1,0 +1,12 @@
+{
+  "source_files": [
+    {
+      "name": "foo.mbt",
+      "coverage": [null, 0, 2, null, 1]
+    },
+    {
+      "name": "bar.mbt",
+      "coverage": [null, null]
+    }
+  ]
+}

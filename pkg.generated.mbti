@@ -9,6 +9,12 @@ import {
 }
 
 // Values
+pub fn compare_baselines(Baseline, Baseline) -> BaselineComparison
+
+pub fn compute_complexity(@syntax.Expr) -> Int
+
+pub fn compute_file_complexity(@list.List[@syntax.Impl], String) -> Array[FunctionComplexity]
+
 pub fn constr_id_pkg_name(@syntax.ConstrId) -> String?
 
 pub fn constr_id_right_name(@syntax.ConstrId) -> String
@@ -17,13 +23,19 @@ pub fn constructor_name(@syntax.Constructor) -> String
 
 pub fn constructor_type_name(@syntax.Constructor) -> String?
 
+pub fn count_loc(String) -> Int
+
 pub fn expr_source(String, @syntax.Expr) -> String?
 
 pub fn first_positional_arg(Array[@syntax.Argument]) -> @syntax.Expr?
 
 pub fn first_two_positional_args(Array[@syntax.Argument]) -> (@syntax.Expr, @syntax.Expr)?
 
+pub fn format_comparison(BaselineComparison) -> String
+
 pub fn format_diagnostic(Diagnostic) -> String
+
+pub fn format_double(Double) -> String
 
 pub fn func_param_names(@syntax.Func) -> Array[String]
 
@@ -83,6 +95,8 @@ pub fn match_infix(@syntax.Expr, String) -> (@syntax.Expr, @syntax.Expr, @basic.
 
 pub fn match_match_expr(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
 
+pub fn match_some_apply(@syntax.Expr) -> @syntax.Expr?
+
 pub fn match_try_question(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
 
 pub fn parse_string_for_lint(String, name? : String, parser? : @parser.Parser) -> (@list.List[@syntax.Impl], Array[@basic.Report])
@@ -102,9 +116,46 @@ pub fn unwrap_paren(@syntax.Expr) -> @syntax.Expr
 // Errors
 
 // Types and methods
+pub(all) struct Baseline {
+  version : String
+  packages : Map[String, PackageBaseline]
+  files : Map[String, FileBaseline]
+  diagnostics : DiagnosticsSummary
+  summary : BaselineSummary
+}
+pub fn Baseline::from_json(String) -> Self raise
+pub fn Baseline::to_json(Self) -> String
+
+pub(all) struct BaselineComparison {
+  added_apis : Array[String]
+  removed_apis : Array[String]
+  loc_delta : Int
+  complexity_regressions : Array[ComplexityRegression]
+  diagnostic_changes : Map[String, Int]
+  summary_delta : SummaryDelta
+}
+
+pub(all) struct BaselineSummary {
+  total_files : Int
+  total_loc : Int
+  total_packages : Int
+  total_pub_apis : Int
+  total_tests : Int
+  total_diagnostics : Int
+  avg_complexity : Double
+  max_complexity : Int
+}
+
 pub struct CategoryConfig {
   enabled : Bool?
   severity : Severity?
+}
+
+pub(all) struct ComplexityRegression {
+  file : String
+  function_name : String
+  old_complexity : Int
+  new_complexity : Int
 }
 
 pub struct Diagnostic {
@@ -120,12 +171,32 @@ pub fn Diagnostic::new(rule_id~ : String, loc~ : @basic.Location, message~ : Str
 pub fn Diagnostic::with_severity(Self, Severity) -> Self
 pub impl Show for Diagnostic
 
+pub(all) struct DiagnosticsSummary {
+  total : Int
+  by_rule : Map[String, Int]
+}
+
+pub(all) struct FileBaseline {
+  package_name : String
+  loc : Int
+  functions : Array[FunctionComplexity]
+  complexity_avg : Double
+  complexity_max : Int
+}
+
 pub struct Fix {
   range : @basic.Location
   replacement : String
 }
 pub fn Fix::new(range~ : @basic.Location, replacement~ : String) -> Self
 pub impl Show for Fix
+
+pub(all) struct FunctionComplexity {
+  name : String
+  complexity : Int
+}
+pub impl Eq for FunctionComplexity
+pub impl Show for FunctionComplexity
 
 pub struct LintConfig {
   rules : Map[String, RuleConfig]
@@ -145,13 +216,22 @@ pub struct LintInput {
   impls : @list.List[@syntax.Impl]
   source : String
   filename : String
+  package_filenames : Array[String]
 }
-pub fn LintInput::new(impls~ : @list.List[@syntax.Impl], source~ : String, filename~ : String) -> Self
+pub fn LintInput::new(impls~ : @list.List[@syntax.Impl], source~ : String, filename~ : String, package_filenames? : Array[String]) -> Self
 
 pub struct OverrideConfig {
   files : Array[String]
   rules : Map[String, RuleConfig]
   categories : Map[String, CategoryConfig]
+}
+
+pub(all) struct PackageBaseline {
+  pub_fn_count : Int
+  pub_type_count : Int
+  pub_api_names : Array[String]
+  test_count : Int
+  loc : Int
 }
 
 pub struct Rule {
@@ -177,6 +257,16 @@ pub enum Severity {
 }
 pub impl Eq for Severity
 pub impl Show for Severity
+
+pub(all) struct SummaryDelta {
+  total_files : Int
+  total_loc : Int
+  total_packages : Int
+  total_pub_apis : Int
+  total_tests : Int
+  total_diagnostics : Int
+  max_complexity : Int
+}
 
 // Type aliases
 pub type RuleRunner = (LintInput) -> Array[Diagnostic]

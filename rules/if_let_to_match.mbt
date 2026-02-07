@@ -23,7 +23,7 @@ fn stmt_indent(source : String, loc : @basic.Location) -> String {
             ""
           } else {
             let ws_result : Result[StringView, Error] = try? source[line_start:line_start +
-                ws_len]
+              ws_len]
             match ws_result {
               Ok(ws) => ws.to_string()
               Err(_) => ""

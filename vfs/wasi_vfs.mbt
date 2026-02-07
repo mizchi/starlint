@@ -16,7 +16,7 @@ pub impl VFS for WasiVFS with read_string(self, path : String) -> String raise E
 pub impl VFS for WasiVFS with write_string(
   self,
   path : String,
-  content : String
+  content : String,
 ) -> Unit raise Error {
   ignore(self)
   @fs.write_string_to_file(path, content)

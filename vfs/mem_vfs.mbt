@@ -58,11 +58,7 @@ pub impl VFS for MemVFS with read_string(self, path : String) -> String raise Er
 }
 
 ///|
-pub impl VFS for MemVFS with write_string(
-  self,
-  path : String,
-  content : String
-) -> Unit raise Error {
+pub impl VFS for MemVFS with write_string(self, path : String, content : String) -> Unit raise Error {
   self.files[path] = content
   self.ensure_parent_dirs(path)
 }

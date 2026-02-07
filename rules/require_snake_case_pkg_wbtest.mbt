@@ -26,8 +26,14 @@ test "is_snake_case invalid" {
 test "extract_pkg_dir_name" {
   inspect(extract_pkg_dir_name("foo.mbt"), content="None")
   inspect(extract_pkg_dir_name("cli/main.mbt"), content="Some(\"cli\")")
-  inspect(extract_pkg_dir_name("src/foo_bar/baz.mbt"), content="Some(\"foo_bar\")")
-  inspect(extract_pkg_dir_name("myPackage/foo.mbt"), content="Some(\"myPackage\")")
+  inspect(
+    extract_pkg_dir_name("src/foo_bar/baz.mbt"),
+    content="Some(\"foo_bar\")",
+  )
+  inspect(
+    extract_pkg_dir_name("myPackage/foo.mbt"),
+    content="Some(\"myPackage\")",
+  )
   inspect(
     extract_pkg_dir_name("a/b/camelCase/test.mbt"),
     content="Some(\"camelCase\")",

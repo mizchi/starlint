@@ -354,7 +354,9 @@ pub fn parse_string_for_lint(
   name? : String = "",
   parser? : @parser.Parser = Handrolled,
 ) -> (@syntax.Impls, Array[@basic.Report]) {
-  let normalized = source |> normalize_using_type_keyword |> normalize_range_lt_inclusive
+  let normalized = source
+    |> normalize_using_type_keyword
+    |> normalize_range_lt_inclusive
   let (impls, reports) = @parser.parse_string(normalized, name~, parser~)
   if reports.length() > 0 {
     match parser {

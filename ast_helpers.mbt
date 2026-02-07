@@ -133,11 +133,11 @@ pub fn[T] list_to_array(xs : @list.List[T]) -> Array[T] {
 ///|
 pub fn match_callable_name(expr : @syntax.Expr) -> String? {
   match unwrap_paren(expr) {
-    @syntax.Ident(id=ident, ..) => (ident.name |> longident_right_name |> Some)
+    @syntax.Ident(id=ident, ..) => ident.name |> longident_right_name |> Some
     @syntax.Field(accessor=@syntax.Accessor::Label(label), ..) =>
-      (label |> label_name |> Some)
+      label |> label_name |> Some
     @syntax.Method(type_name=_, method_name~, ..) =>
-      (method_name |> label_name |> Some)
+      method_name |> label_name |> Some
     _ => None
   }
 }
@@ -146,7 +146,7 @@ pub fn match_callable_name(expr : @syntax.Expr) -> String? {
 pub fn match_call_name(expr : @syntax.Expr) -> String? {
   match unwrap_paren(expr) {
     @syntax.Apply(func~, ..) => match_callable_name(func)
-    @syntax.DotApply(method_name~, ..) => (method_name |> label_name |> Some)
+    @syntax.DotApply(method_name~, ..) => method_name |> label_name |> Some
     _ => None
   }
 }

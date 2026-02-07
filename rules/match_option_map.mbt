@@ -52,15 +52,13 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
               ) {
               (Some(subject_src), Some(body_src)) =>
                 if !body_src.contains("\n") {
-                  let replacement = match @starlint.match_some_apply(
-                      some_case.body,
-                    ) {
+                  let replacement = match
+                    @starlint.match_some_apply(some_case.body) {
                     Some(inner) =>
                       match @starlint.expr_source(env.source, inner) {
                         Some(inner_src) =>
                           "\{subject_src}.map(\{name} => \{inner_src})"
-                        None =>
-                          "\{subject_src}.map(\{name} => \{body_src})"
+                        None => "\{subject_src}.map(\{name} => \{body_src})"
                       }
                     None => "\{subject_src}.map(\{name} => \{body_src})"
                   }

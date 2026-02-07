@@ -1,0 +1,9 @@
+----- BEGIN MOON TEST RESULT -----
+{"package":"mizchi/starlint/benchmarks","filename":"bench_a.mbt","index":"0","test_name":"","message":"@BATCH_BENCH { \"summaries\": [{\"name\":\"alpha\",\"mean\":1.5,\"min\":1.2,\"max\":1.9,\"std_dev\":0.2,\"std_dev_pct\":13.3,\"median\":1.4,\"iqr\":0.5,\"runs\":5,\"batch_size\":1000},{\"name\":\"beta\",\"mean\":2.0,\"min\":1.8,\"max\":2.4,\"std_dev\":0.1,\"std_dev_pct\":5.0,\"median\":2.0,\"iqr\":0.2,\"runs\":4,\"batch_size\":2000}] }"}
+----- END MOON TEST RESULT -----
+----- BEGIN MOON TEST RESULT -----
+{"package":"mizchi/starlint/benchmarks","filename":"bench_b.mbt","index":"0","test_name":"","message":"plain test output"}
+----- END MOON TEST RESULT -----
+----- BEGIN MOON TEST RESULT -----
+{"package":"mizchi/starlint/benchmarks","filename":"bench_c.mbt","index":"0","test_name":"","message":"@BATCH_BENCH { \"summaries\": [{\"name\":\"gamma\",\"mean\":0.8,\"min\":0.7,\"max\":0.9,\"std_dev\":0.05,\"std_dev_pct\":6.25,\"median\":0.8,\"iqr\":0.1,\"runs\":3,\"batch_size\":500}] }"}
+----- END MOON TEST RESULT -----

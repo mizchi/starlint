@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/starlint/vfs"
+
+// Values
+
+// Errors
+pub suberror FileNotFoundError {
+  FileNotFoundError(String)
+}
+
+// Types and methods
+pub struct MemVFS {
+  files : Map[String, String]
+  dirs : Map[String, Bool]
+}
+pub fn MemVFS::add_dir(Self, String) -> Unit
+pub fn MemVFS::add_file(Self, String, String) -> Unit
+pub fn MemVFS::new() -> Self
+pub impl VFS for MemVFS
+
+pub struct WasiVFS {
+}
+pub fn WasiVFS::new() -> Self
+pub impl VFS for WasiVFS
+
+// Type aliases
+
+// Traits
+pub(open) trait VFS {
+  read_string(Self, String) -> String raise
+  write_string(Self, String, String) -> Unit raise
+  path_exists(Self, String) -> Bool
+  read_dir(Self, String) -> Array[String] raise
+  is_dir(Self, String) -> Bool raise
+}
+
