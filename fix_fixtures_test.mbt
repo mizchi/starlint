@@ -7,14 +7,22 @@ struct FixFixture {
 }
 
 ///|
-fn test_lint_for_fixtures(source : String) -> Array[@starlint.Diagnostic] raise {
+fn test_lint_for_fixtures_with_categories(
+  source : String,
+  categories : Array[String],
+) -> Array[@starlint.Diagnostic] raise {
   let (impls, reports) = parse_string_for_lint(source, name="<fix test>")
   if reports.length() > 0 {
     fail(reports.to_json().stringify(indent=2))
   }
   let input = @starlint.LintInput::new(impls~, source~, filename="<fix test>")
-  let config = @starlint.LintConfig::enable_categories(["fp"])
+  let config = @starlint.LintConfig::enable_categories(categories)
   @starlint.lint_with_config(input, @lint.rules(), config)
+}
+
+///|
+fn test_lint_for_fixtures(source : String) -> Array[@starlint.Diagnostic] raise {
+  test_lint_for_fixtures_with_categories(source, ["fp"])
 }
 
 ///|
@@ -75,7 +83,16 @@ fn apply_fixes_for_rules(
   source : String,
   rule_ids : Array[String],
 ) -> String raise {
-  let diagnostics = test_lint_for_fixtures(source)
+  apply_fixes_for_rules_with_categories(source, rule_ids, ["fp"])
+}
+
+///|
+fn apply_fixes_for_rules_with_categories(
+  source : String,
+  rule_ids : Array[String],
+  categories : Array[String],
+) -> String raise {
+  let diagnostics = test_lint_for_fixtures_with_categories(source, categories)
   let fixes = collect_fixes(diagnostics, rule_ids)
   apply_fixes_to_source(source, fixes)
 }
@@ -1023,6 +1040,247 @@ test "fix fixtures" {
         #|}
       ),
       rules: ["if_let_to_match"],
+    },
+  ]
+  for fixture in fixtures {
+    let output = apply_fixes_for_rules(fixture.input, fixture.rules) catch {
+      err => fail("fixture \{fixture.name} raised: \{err}")
+    }
+    if output != fixture.expected {
+      let diagnostics = test_lint_for_fixtures(fixture.input) catch {
+        err => fail("fixture \{fixture.name} lint failed: \{err}")
+      }
+      let fixes = collect_fixes(diagnostics, fixture.rules)
+      let mut diag_count = 0
+      for diag in diagnostics {
+        if fixture.rules.contains(diag.rule_id) {
+          diag_count += 1
+        }
+      }
+      let sb = StringBuilder::new()
+      sb
+      ..write_string("fixture ")
+      ..write_string(fixture.name)
+      ..write_string(" mismatch\n")
+      ..write_string("diagnostics: ")
+      ..write_string(diag_count.to_string())
+      ..write_string(", fixes: ")
+      ..write_string(fixes.length().to_string())
+      ..write_string("\n--- expected ---\n")
+      ..write_string(fixture.expected)
+      ..write_string("\n--- actual ---\n")
+      ..write_string(output)
+      fail(sb.to_string())
+    }
+  }
+}
+
+///|
+test "fix fixtures boolean match is pattern" {
+  let fixtures : Array[FixFixture] = [
+    FixFixture::{
+      name: "boolean_match_is_pattern_true_false_fix",
+      input: (
+        #|fn main {
+        #|  let ok = match expr {
+        #|    Some(_) => true
+        #|    _ => false
+        #|  }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let ok = (expr) is Some(_)
+        #|}
+      ),
+      rules: ["boolean_match_is_pattern"],
+    },
+    FixFixture::{
+      name: "boolean_match_is_pattern_false_true_fix",
+      input: (
+        #|fn main {
+        #|  let ok = match expr {
+        #|    Some(_) => false
+        #|    _ => true
+        #|  }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let ok = !((expr) is Some(_))
+        #|}
+      ),
+      rules: ["boolean_match_is_pattern"],
+    },
+    FixFixture::{
+      name: "boolean_match_is_pattern_same_bool_no_fix",
+      input: (
+        #|fn main {
+        #|  let ok = match expr {
+        #|    Some(_) => true
+        #|    _ => true
+        #|  }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let ok = match expr {
+        #|    Some(_) => true
+        #|    _ => true
+        #|  }
+        #|}
+      ),
+      rules: ["boolean_match_is_pattern"],
+    },
+  ]
+  for fixture in fixtures {
+    let output = apply_fixes_for_rules(fixture.input, fixture.rules) catch {
+      err => fail("fixture \{fixture.name} raised: \{err}")
+    }
+    if output != fixture.expected {
+      let diagnostics = test_lint_for_fixtures(fixture.input) catch {
+        err => fail("fixture \{fixture.name} lint failed: \{err}")
+      }
+      let fixes = collect_fixes(diagnostics, fixture.rules)
+      let mut diag_count = 0
+      for diag in diagnostics {
+        if fixture.rules.contains(diag.rule_id) {
+          diag_count += 1
+        }
+      }
+      let sb = StringBuilder::new()
+      sb
+      ..write_string("fixture ")
+      ..write_string(fixture.name)
+      ..write_string(" mismatch\n")
+      ..write_string("diagnostics: ")
+      ..write_string(diag_count.to_string())
+      ..write_string(", fixes: ")
+      ..write_string(fixes.length().to_string())
+      ..write_string("\n--- expected ---\n")
+      ..write_string(fixture.expected)
+      ..write_string("\n--- actual ---\n")
+      ..write_string(output)
+      fail(sb.to_string())
+    }
+  }
+}
+
+///|
+test "fix fixtures assert false not" {
+  let fixtures : Array[FixFixture] = [
+    FixFixture::{
+      name: "assert_false_not_to_assert_true_fix",
+      input: (
+        #|test "t" {
+        #|  assert_false(not(flag))
+        #|}
+      ),
+      expected: (
+        #|test "t" {
+        #|  assert_true(flag)
+        #|}
+      ),
+      rules: ["assert_false_not_to_assert_true"],
+    },
+    FixFixture::{
+      name: "assert_false_not_to_assert_true_no_fix",
+      input: (
+        #|test "t" {
+        #|  assert_false(flag)
+        #|}
+      ),
+      expected: (
+        #|test "t" {
+        #|  assert_false(flag)
+        #|}
+      ),
+      rules: ["assert_false_not_to_assert_true"],
+    },
+  ]
+  for fixture in fixtures {
+    let output = apply_fixes_for_rules_with_categories(
+      fixture.input,
+      fixture.rules,
+      ["test"],
+    ) catch {
+      err => fail("fixture \{fixture.name} raised: \{err}")
+    }
+    if output != fixture.expected {
+      let diagnostics = test_lint_for_fixtures_with_categories(fixture.input, [
+        "test",
+      ]) catch {
+        err => fail("fixture \{fixture.name} lint failed: \{err}")
+      }
+      let fixes = collect_fixes(diagnostics, fixture.rules)
+      let mut diag_count = 0
+      for diag in diagnostics {
+        if fixture.rules.contains(diag.rule_id) {
+          diag_count += 1
+        }
+      }
+      let sb = StringBuilder::new()
+      sb
+      ..write_string("fixture ")
+      ..write_string(fixture.name)
+      ..write_string(" mismatch\n")
+      ..write_string("diagnostics: ")
+      ..write_string(diag_count.to_string())
+      ..write_string(", fixes: ")
+      ..write_string(fixes.length().to_string())
+      ..write_string("\n--- expected ---\n")
+      ..write_string(fixture.expected)
+      ..write_string("\n--- actual ---\n")
+      ..write_string(output)
+      fail(sb.to_string())
+    }
+  }
+}
+
+///|
+test "fix fixtures not call to prefix not" {
+  let fixtures : Array[FixFixture] = [
+    FixFixture::{
+      name: "not_call_to_prefix_not_fix",
+      input: (
+        #|fn main {
+        #|  let ok = not(flag)
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let ok = !flag
+        #|}
+      ),
+      rules: ["not_call_to_prefix_not"],
+    },
+    FixFixture::{
+      name: "not_call_to_prefix_not_no_fix_multi_args",
+      input: (
+        #|fn main {
+        #|  let ok = not(flag, other)
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let ok = not(flag, other)
+        #|}
+      ),
+      rules: ["not_call_to_prefix_not"],
+    },
+    FixFixture::{
+      name: "not_call_to_prefix_not_infix_keeps_paren_fix",
+      input: (
+        #|fn main {
+        #|  let ok = not(x + y)
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let ok = !(x + y)
+        #|}
+      ),
+      rules: ["not_call_to_prefix_not"],
     },
   ]
   for fixture in fixtures {

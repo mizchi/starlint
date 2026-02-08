@@ -121,6 +121,69 @@ test "warning fixtures" {
       ),
       expected: "[\"prefer_guard_chain\"]",
     },
+    WarningFixture::{
+      name: "boolean_match_is_pattern_true_false",
+      input: (
+        #|fn main {
+        #|  let ok = match expr {
+        #|    Some(_) => true
+        #|    _ => false
+        #|  }
+        #|}
+      ),
+      expected: "[\"boolean_match_is_pattern\"]",
+    },
+    WarningFixture::{
+      name: "boolean_match_is_pattern_false_true",
+      input: (
+        #|fn main {
+        #|  let ok = match expr {
+        #|    Some(_) => false
+        #|    _ => true
+        #|  }
+        #|}
+      ),
+      expected: "[\"boolean_match_is_pattern\"]",
+    },
+    WarningFixture::{
+      name: "boolean_match_is_pattern_noop_same_bool",
+      input: (
+        #|fn main {
+        #|  let ok = match expr {
+        #|    Some(_) => true
+        #|    _ => true
+        #|  }
+        #|}
+      ),
+      expected: "[]",
+    },
+    WarningFixture::{
+      name: "not_call_to_prefix_not",
+      input: (
+        #|fn main {
+        #|  let ok = not(flag)
+        #|}
+      ),
+      expected: "[\"not_call_to_prefix_not\"]",
+    },
+    WarningFixture::{
+      name: "not_call_to_prefix_not_noop_multi_args",
+      input: (
+        #|fn main {
+        #|  let ok = not(flag, other)
+        #|}
+      ),
+      expected: "[]",
+    },
+    WarningFixture::{
+      name: "not_call_to_prefix_not_noop_already_prefix",
+      input: (
+        #|fn main {
+        #|  let ok = !(flag)
+        #|}
+      ),
+      expected: "[]",
+    },
   ]
   for fixture in fixtures {
     let _ = fixture.name
@@ -312,6 +375,24 @@ test "warning fixtures test category" {
         #|test "t" {
         #|  let actual = f(x)
         #|  assert_eq(actual, 1)
+        #|}
+      ),
+      expected: "[]",
+    },
+    WarningFixture::{
+      name: "assert_false_not_to_assert_true",
+      input: (
+        #|test "t" {
+        #|  assert_false(not(flag))
+        #|}
+      ),
+      expected: "[\"assert_false_not_to_assert_true\"]",
+    },
+    WarningFixture::{
+      name: "assert_false_not_to_assert_true_noop",
+      input: (
+        #|test "t" {
+        #|  assert_false(flag)
         #|}
       ),
       expected: "[]",
