@@ -830,7 +830,7 @@ fn resolve_config_path(module_root : String, path : String) -> String {
 }
 
 ///|
-let cli_version = "0.6.2"
+let cli_version = "0.7.0"
 
 ///|
 fn usage_text() -> String {
