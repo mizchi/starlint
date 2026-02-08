@@ -1,6 +1,14 @@
 {
   "preset": "recommended",
   "ignore": ["target/*", "_build/*"],
+  "overrides": [
+    {
+      "files": ["cli/*", "benchmarks/*"],
+      "rules": {
+        "avoid_abort_in_error_paths": "off"
+      }
+    }
+  ],
   "rules": {
     "match_try_question": "off",
     "string_literal_multiply_number": "off",

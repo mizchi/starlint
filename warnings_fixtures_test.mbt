@@ -158,16 +158,16 @@ test "warning fixtures" {
       expected: "[]",
     },
     WarningFixture::{
-      name: "not_call_to_prefix_not",
+      name: "prefer_prefix_not",
       input: (
         #|fn main {
         #|  let ok = not(flag)
         #|}
       ),
-      expected: "[\"not_call_to_prefix_not\"]",
+      expected: "[\"prefer_prefix_not\"]",
     },
     WarningFixture::{
-      name: "not_call_to_prefix_not_noop_multi_args",
+      name: "prefer_prefix_not_noop_multi_args",
       input: (
         #|fn main {
         #|  let ok = not(flag, other)
@@ -176,7 +176,7 @@ test "warning fixtures" {
       expected: "[]",
     },
     WarningFixture::{
-      name: "not_call_to_prefix_not_noop_already_prefix",
+      name: "prefer_prefix_not_noop_already_prefix",
       input: (
         #|fn main {
         #|  let ok = !(flag)

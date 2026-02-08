@@ -5,7 +5,7 @@ pub fn rules() -> Array[@starlint.Rule] {
     string_literal_multiply_number_rule(),
     boolean_if_true_false_rule(),
     boolean_if_false_true_rule(),
-    not_call_to_prefix_not_rule(),
+    prefer_prefix_not_rule(),
     redundant_if_same_branch_rule(),
     legacy_call_syntax_rule(),
     c_style_for_simple_range_rule(),

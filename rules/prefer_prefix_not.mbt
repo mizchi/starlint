@@ -1,8 +1,8 @@
 ///|
-let not_call_to_prefix_not_rule_id : String = "not_call_to_prefix_not"
+let prefer_prefix_not_rule_id : String = "prefer_prefix_not"
 
 ///|
-let not_call_to_prefix_not_description : String = "Prefer !expr over not(expr)."
+let prefer_prefix_not_description : String = "Prefer !expr over not(expr)."
 
 ///|
 priv struct NotCallToPrefixNotEnv {
@@ -35,7 +35,7 @@ fn match_unary_not_call(
 }
 
 ///|
-fn push_not_call_to_prefix_not_diag(
+fn push_prefer_prefix_not_diag(
   env : NotCallToPrefixNotEnv,
   loc : @basic.Location,
   arg : @syntax.Expr,
@@ -68,7 +68,7 @@ fn push_not_call_to_prefix_not_diag(
   let diag = match fix {
     Some(fix) =>
       @starlint.Diagnostic::new(
-        rule_id=not_call_to_prefix_not_rule_id,
+        rule_id=prefer_prefix_not_rule_id,
         loc~,
         message~,
         detail~,
@@ -77,7 +77,7 @@ fn push_not_call_to_prefix_not_diag(
       )
     None =>
       @starlint.Diagnostic::new(
-        rule_id=not_call_to_prefix_not_rule_id,
+        rule_id=prefer_prefix_not_rule_id,
         loc~,
         message~,
         detail~,
@@ -90,17 +90,17 @@ fn push_not_call_to_prefix_not_diag(
 ///|
 impl @syntax.IterVisitor for NotCallToPrefixNotEnv with visit_Expr(env, expr) {
   match match_unary_not_call(expr) {
-    Some((arg, loc)) => push_not_call_to_prefix_not_diag(env, loc, arg)
+    Some((arg, loc)) => push_prefer_prefix_not_diag(env, loc, arg)
     None => ()
   }
   env.base().visit_Expr(expr)
 }
 
 ///|
-fn not_call_to_prefix_not_rule() -> @starlint.Rule {
+fn prefer_prefix_not_rule() -> @starlint.Rule {
   @starlint.Rule::new(
-    id=not_call_to_prefix_not_rule_id,
-    description=not_call_to_prefix_not_description,
+    id=prefer_prefix_not_rule_id,
+    description=prefer_prefix_not_description,
     tags=["fp"],
     enabled_by_default=false,
     run=input => {

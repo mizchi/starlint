@@ -310,10 +310,7 @@ pub fn match_some_apply(expr : @syntax.Expr) -> @syntax.Expr? {
 
 ///|
 pub fn is_none_expr(expr : @syntax.Expr) -> Bool {
-  match unwrap_paren(expr) {
-    @syntax.Constr(constr={ name: { name: "None", .. }, .. }, ..) => true
-    _ => false
-  }
+  (unwrap_paren(expr)) is @syntax.Constr(constr={ name: { name: "None", .. }, .. }, ..)
 }
 
 ///|
@@ -337,10 +334,7 @@ pub fn match_constant_bool(expr : @syntax.Expr) -> Bool? {
 
 ///|
 pub fn is_unit_expr(expr : @syntax.Expr) -> Bool {
-  match unwrap_paren(expr) {
-    @syntax.Unit(..) => true
-    _ => false
-  }
+  (unwrap_paren(expr)) is @syntax.Unit(..)
 }
 
 ///|

@@ -110,9 +110,9 @@ fn[FS : @vfs.VFS] get_mbt_path_set_from_base(
       q
     }
   }
-  while not(path_set.is_empty()) {
+  while !(path_set.is_empty()) {
     let (fs_path, rel_path) = path_set.unsafe_pop()
-    if not(fs.path_exists(fs_path)) {
+    if !(fs.path_exists(fs_path)) {
       println("invalid path construct by starlint internal: \{fs_path}")
     }
     if is_directory(fs, fs_path) {
@@ -152,9 +152,9 @@ fn[FS : @vfs.VFS] get_mbt_md_path_set_from_base(
       q
     }
   }
-  while not(path_set.is_empty()) {
+  while !(path_set.is_empty()) {
     let (fs_path, rel_path) = path_set.unsafe_pop()
-    if not(fs.path_exists(fs_path)) {
+    if !(fs.path_exists(fs_path)) {
       println("invalid path construct by starlint internal: \{fs_path}")
     }
     if is_directory(fs, fs_path) {

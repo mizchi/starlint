@@ -188,14 +188,11 @@ pub fn LintConfig::from_json(text : String) -> LintConfig raise {
         Some(Array(items)) => {
           let list = []
           for item in items {
-            match item {
-              Object(override_obj) =>
-                match parse_override_config(override_obj) {
-                  Some(override_config) => list.push(override_config)
-                  None => ()
-                }
-              _ => ()
+            guard item is Object(override_obj) else { continue }
+            guard parse_override_config(override_obj) is Some(override_config) else {
+              continue
             }
+            list.push(override_config)
           }
           overrides = list
         }

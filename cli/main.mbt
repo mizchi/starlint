@@ -413,10 +413,7 @@ fn format_impl_method_name(
 
 ///|
 fn is_public_vis(vis : @syntax.Visibility) -> Bool {
-  match vis {
-    @syntax.Visibility::Pub(..) => true
-    _ => false
-  }
+  (vis) is @syntax.Visibility::Pub(..)
 }
 
 ///|
@@ -830,7 +827,7 @@ fn resolve_config_path(module_root : String, path : String) -> String {
 }
 
 ///|
-let cli_version = "0.7.0"
+let cli_version = "0.7.1"
 
 ///|
 fn usage_text() -> String {

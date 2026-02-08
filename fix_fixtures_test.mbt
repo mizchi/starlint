@@ -1238,10 +1238,10 @@ test "fix fixtures assert false not" {
 }
 
 ///|
-test "fix fixtures not call to prefix not" {
+test "fix fixtures prefer prefix not" {
   let fixtures : Array[FixFixture] = [
     FixFixture::{
-      name: "not_call_to_prefix_not_fix",
+      name: "prefer_prefix_not_fix",
       input: (
         #|fn main {
         #|  let ok = not(flag)
@@ -1252,10 +1252,10 @@ test "fix fixtures not call to prefix not" {
         #|  let ok = !flag
         #|}
       ),
-      rules: ["not_call_to_prefix_not"],
+      rules: ["prefer_prefix_not"],
     },
     FixFixture::{
-      name: "not_call_to_prefix_not_no_fix_multi_args",
+      name: "prefer_prefix_not_no_fix_multi_args",
       input: (
         #|fn main {
         #|  let ok = not(flag, other)
@@ -1266,10 +1266,10 @@ test "fix fixtures not call to prefix not" {
         #|  let ok = not(flag, other)
         #|}
       ),
-      rules: ["not_call_to_prefix_not"],
+      rules: ["prefer_prefix_not"],
     },
     FixFixture::{
-      name: "not_call_to_prefix_not_infix_keeps_paren_fix",
+      name: "prefer_prefix_not_infix_keeps_paren_fix",
       input: (
         #|fn main {
         #|  let ok = not(x + y)
@@ -1280,7 +1280,7 @@ test "fix fixtures not call to prefix not" {
         #|  let ok = !(x + y)
         #|}
       ),
-      rules: ["not_call_to_prefix_not"],
+      rules: ["prefer_prefix_not"],
     },
   ]
   for fixture in fixtures {
