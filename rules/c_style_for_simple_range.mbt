@@ -49,10 +49,10 @@ fn[T] list_to_array_for(xs : @list.List[T]) -> Array[T] {
 
 ///|
 fn match_simple_update(binder_name : String, expr : @syntax.Expr) -> Bool {
-  match @starlint.match_infix(expr, "+") {
+  match @internal.match_infix(expr, "+") {
     Some((lhs, rhs, _)) =>
-      @starlint.match_ident_name(lhs) == Some(binder_name) &&
-      @starlint.match_constant_int(rhs) == Some("1")
+      @internal.match_ident_name(lhs) == Some(binder_name) &&
+      @internal.match_constant_int(rhs) == Some("1")
     None => false
   }
 }
@@ -82,15 +82,15 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
           !contains_continue(body) {
           let mut inclusive = false
           let mut bound_expr : @syntax.Expr? = None
-          match @starlint.match_infix(condition, "<") {
-            Some((lhs, rhs, _)) if @starlint.match_ident_name(lhs) ==
+          match @internal.match_infix(condition, "<") {
+            Some((lhs, rhs, _)) if @internal.match_ident_name(lhs) ==
               Some(binder_name) => {
               inclusive = false
               bound_expr = Some(rhs)
             }
             _ =>
-              match @starlint.match_infix(condition, "<=") {
-                Some((lhs, rhs, _)) if @starlint.match_ident_name(lhs) ==
+              match @internal.match_infix(condition, "<=") {
+                Some((lhs, rhs, _)) if @internal.match_ident_name(lhs) ==
                   Some(binder_name) => {
                   inclusive = true
                   bound_expr = Some(rhs)
@@ -107,9 +107,9 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
                 #|for i in start..<end { ... }
               let fix = match
                 (
-                  @starlint.expr_source(env.source, init_expr),
-                  @starlint.expr_source(env.source, bound_expr),
-                  @starlint.expr_source(env.source, body),
+                  @internal.expr_source(env.source, init_expr),
+                  @internal.expr_source(env.source, bound_expr),
+                  @internal.expr_source(env.source, body),
                 ) {
                 (Some(init_src), Some(bound_src), Some(body_src)) =>
                   if !body_src.contains("\n") {

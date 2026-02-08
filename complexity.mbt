@@ -8,7 +8,7 @@ impl @syntax.IterVisitor for ComplexityEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.If(..) => env.count += 1
     @syntax.Match(cases~, ..) => {
-      let n = list_to_array(cases).length()
+      let n = @internal.list_to_array(cases).length()
       if n > 1 {
         env.count += n - 1
       }
@@ -101,7 +101,7 @@ pub fn count_loc(source : String) -> Int {
 fn format_fun_decl_name(fun_decl : @syntax.FunDecl) -> String {
   let base = fun_decl.name.name
   match fun_decl.type_name {
-    Some(type_name) => "\{type_name_right_name(type_name)}::\{base}"
+    Some(type_name) => "\{@internal.type_name_right_name(type_name)}::\{base}"
     None => base
   }
 }
@@ -126,8 +126,9 @@ fn format_impl_method_name(
 fn type_short_name(ty : @syntax.Type) -> String? {
   match ty {
     @syntax.Type::Name(constr_id~, ..) =>
-      constr_id |> constr_id_right_name |> Some
-    @syntax.Type::Object(constr_id) => constr_id |> constr_id_right_name |> Some
+      constr_id |> @internal.constr_id_right_name |> Some
+    @syntax.Type::Object(constr_id) =>
+      constr_id |> @internal.constr_id_right_name |> Some
     _ => None
   }
 }

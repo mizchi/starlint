@@ -1,5 +1,6 @@
 import {
   "mizchi/starlint",
   "mizchi/starlint/rules",
+  "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",
 }

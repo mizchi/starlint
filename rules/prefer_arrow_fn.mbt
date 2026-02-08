@@ -35,7 +35,7 @@ fn params_to_arrow_source(params : Array[@syntax.Parameter]) -> String? {
 fn single_expr_body(expr : @syntax.Expr) -> @syntax.Expr? {
   match expr {
     @syntax.Sequence(exprs~, last_expr~, loc=_) => {
-      let items = @starlint.list_to_array(exprs)
+      let items = @internal.list_to_array(exprs)
       if items.length() != 0 {
         return None
       }
@@ -80,12 +80,12 @@ impl @syntax.IterVisitor for PreferArrowFnEnv with visit_Expr(env, expr) {
           _ => false
         }
         if is_lambda && no_error {
-          let params = @starlint.list_to_array(func.parameters)
+          let params = @internal.list_to_array(func.parameters)
           match params_to_arrow_source(params) {
             Some(params_src) =>
               match single_expr_body(func.body) {
                 Some(body_expr) =>
-                  match @starlint.expr_source(env.source, body_expr) {
+                  match @internal.expr_source(env.source, body_expr) {
                     Some(body_src) if !body_src.contains("\n") &&
                       !body_src.contains(";") => {
                       let message = "Single-expression fn can be written with =>."

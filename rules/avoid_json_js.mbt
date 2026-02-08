@@ -11,22 +11,22 @@ priv struct AvoidJsonJsEnv {
 
 ///|
 fn is_json_type_name(type_name : @syntax.TypeName) -> Bool {
-  @starlint.type_name_right_name(type_name) == "Json"
+  @internal.type_name_right_name(type_name) == "Json"
 }
 
 ///|
 fn is_json_constr_id(constr_id : @syntax.ConstrId) -> Bool {
-  @starlint.constr_id_right_name(constr_id) == "Json"
+  @internal.constr_id_right_name(constr_id) == "Json"
 }
 
 ///|
 fn is_json_pkg_ident(binding : @syntax.Var) -> Bool {
-  @starlint.longident_pkg_name(binding.name) == Some("json")
+  @internal.longident_pkg_name(binding.name) == Some("json")
 }
 
 ///|
 fn is_json_constructor(constr : @syntax.Constructor) -> Bool {
-  @starlint.constructor_type_name(constr) == Some("Json")
+  @internal.constructor_type_name(constr) == Some("Json")
 }
 
 ///|

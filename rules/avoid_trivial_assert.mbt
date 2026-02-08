@@ -13,7 +13,7 @@ priv struct AvoidTrivialAssertEnv {
 
 ///|
 fn is_simple_expr(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Ident(..) => true
     @syntax.Constant(..) => true
     @syntax.Unit(..) => true
@@ -28,7 +28,7 @@ fn is_same_source(
   rhs : @syntax.Expr,
 ) -> Bool {
   match
-    (@starlint.expr_source(source, lhs), @starlint.expr_source(source, rhs)) {
+    (@internal.expr_source(source, lhs), @internal.expr_source(source, rhs)) {
     (Some(a), Some(b)) => a == b
     _ => false
   }
@@ -70,12 +70,12 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Impl(env, impl_) {
 
 ///|
 impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
-  match @starlint.match_call_info(expr) {
+  match @internal.match_call_info(expr) {
     Some((name, args, loc)) if env.in_test =>
       if name == "assert_true" || name == "assert_false" {
-        match @starlint.first_positional_arg(args) {
+        match @internal.first_positional_arg(args) {
           Some(arg) =>
-            match @starlint.match_constant_bool(arg) {
+            match @internal.match_constant_bool(arg) {
               Some(value) => {
                 let always_ok = (name == "assert_true" && value) ||
                   (name == "assert_false" && !value)
@@ -97,7 +97,7 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
           None => ()
         }
       } else if name == "assert_eq" {
-        match @starlint.first_two_positional_args(args) {
+        match @internal.first_two_positional_args(args) {
           Some((lhs, rhs)) =>
             if is_simple_expr(lhs) &&
               is_simple_expr(rhs) &&

@@ -4,13 +4,22 @@ package "mizchi/starlint/tasks/lint"
 import {
   "mizchi/starlint",
   "moonbitlang/core/list",
+  "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",
 }
 
 // Values
+pub fn compose_rules(Array[@starlint.Rule]) -> Array[@starlint.Rule]
+
 pub fn lint(@list.List[@syntax.Impl]) -> Array[@starlint.Diagnostic]
 
+pub fn lint_source(String, filename? : String, config? : @starlint.LintConfig) -> (Array[@starlint.Diagnostic], Array[@basic.Report])
+
+pub fn lint_source_with_extra_rules(String, Array[@starlint.Rule], filename? : String, config? : @starlint.LintConfig) -> (Array[@starlint.Diagnostic], Array[@basic.Report])
+
 pub fn lint_with_config(@list.List[@syntax.Impl], @starlint.LintConfig) -> Array[@starlint.Diagnostic]
+
+pub fn lint_with_extra_rules(@list.List[@syntax.Impl], Array[@starlint.Rule], config? : @starlint.LintConfig) -> Array[@starlint.Diagnostic]
 
 pub fn rules() -> Array[@starlint.Rule]
 

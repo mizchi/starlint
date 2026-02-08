@@ -11,17 +11,17 @@ priv struct MatchGuardToIfEnv {
 
 ///|
 fn is_guard_case(case_ : @syntax.Case) -> Bool {
-  case_.guard_ is Some(_) && @starlint.is_discard_pattern(case_.pattern)
+  case_.guard_ is Some(_) && @internal.is_discard_pattern(case_.pattern)
 }
 
 ///|
 fn is_else_case(case_ : @syntax.Case) -> Bool {
-  case_.guard_ is None && @starlint.is_discard_pattern(case_.pattern)
+  case_.guard_ is None && @internal.is_discard_pattern(case_.pattern)
 }
 
 ///|
 fn is_guard_chain_cases(cases : @list.List[@syntax.Case]) -> Bool {
-  let cases_array = @starlint.list_to_array(cases)
+  let cases_array = @internal.list_to_array(cases)
   if cases_array.length() < 2 {
     return false
   }

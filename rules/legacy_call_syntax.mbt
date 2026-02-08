@@ -72,7 +72,7 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
         #|Use a normal call:
         #|
         #|f(args)
-      let fix = match @starlint.expr_source(env.source, expr) {
+      let fix = match @internal.expr_source(env.source, expr) {
         Some(call_src) =>
           match remove_bang_before_paren(call_src) {
             Some(replacement) =>
@@ -110,7 +110,7 @@ impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
         #|Use try? for Result conversion:
         #|
         #|try? f(args)
-      let fix = match @starlint.expr_source(env.source, expr) {
+      let fix = match @internal.expr_source(env.source, expr) {
         Some(call_src) =>
           match remove_question_mark(call_src) {
             Some(call_without_question) =>

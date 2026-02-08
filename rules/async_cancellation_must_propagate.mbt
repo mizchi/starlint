@@ -113,7 +113,7 @@ impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Expr(
   match expr {
     @syntax.Try(catch_~, catch_loc~, ..) =>
       if env.in_async {
-        let cases_array = @starlint.list_to_array(catch_)
+        let cases_array = @internal.list_to_array(catch_)
         let mut should_warn = false
         for case_ in cases_array {
           if !contains_raise(case_.body) {

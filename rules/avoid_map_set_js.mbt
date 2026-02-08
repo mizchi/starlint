@@ -11,7 +11,7 @@ priv struct AvoidMapSetJsEnv {
 
 ///|
 fn map_set_kind_from_type_name(type_name : @syntax.TypeName) -> String? {
-  let name = @starlint.type_name_right_name(type_name)
+  let name = @internal.type_name_right_name(type_name)
   if name == "Map" || name == "Set" {
     Some(name)
   } else {
@@ -21,7 +21,7 @@ fn map_set_kind_from_type_name(type_name : @syntax.TypeName) -> String? {
 
 ///|
 fn map_set_kind_from_constr_id(constr_id : @syntax.ConstrId) -> String? {
-  let name = @starlint.constr_id_right_name(constr_id)
+  let name = @internal.constr_id_right_name(constr_id)
   if name == "Map" || name == "Set" {
     Some(name)
   } else {

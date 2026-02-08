@@ -11,7 +11,7 @@ priv struct AvoidDoubleToStringJsEnv {
 
 ///|
 fn is_double_literal(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Constant(c=@syntax.Constant::Double(_), ..) => true
     _ => false
   }
@@ -41,12 +41,12 @@ fn push_double_to_string_diag(
 impl @syntax.IterVisitor for AvoidDoubleToStringJsEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Method(type_name~, method_name~, loc~) =>
-      if @starlint.type_name_right_name(type_name) == "Double" &&
-        @starlint.label_name(method_name) == "to_string" {
+      if @internal.type_name_right_name(type_name) == "Double" &&
+        @internal.label_name(method_name) == "to_string" {
         push_double_to_string_diag(env, loc)
       }
     @syntax.DotApply(self~, method_name~, loc~, ..) =>
-      if @starlint.label_name(method_name) == "to_string" &&
+      if @internal.label_name(method_name) == "to_string" &&
         is_double_literal(self) {
         push_double_to_string_diag(env, loc)
       }

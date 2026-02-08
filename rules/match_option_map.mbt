@@ -14,27 +14,27 @@ priv struct MatchOptionMapEnv {
 impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) => {
-      let cases_array = @starlint.list_to_array(cases)
+      let cases_array = @internal.list_to_array(cases)
       if cases_array.length() == 2 {
         let mut some_case : @syntax.Case? = None
         let mut none_case : @syntax.Case? = None
         let mut binder_name : String? = None
         for case_ in cases_array {
           if case_.guard_ is None {
-            match @starlint.some_binder_name(case_.pattern) {
+            match @internal.some_binder_name(case_.pattern) {
               Some(name) => {
                 some_case = Some(case_)
                 binder_name = Some(name)
               }
               None =>
-                if @starlint.is_none_pattern(case_.pattern) {
+                if @internal.is_none_pattern(case_.pattern) {
                   none_case = Some(case_)
                 }
             }
           }
         }
         match (some_case, none_case, binder_name) {
-          (Some(some_case), Some(none_case), Some(name)) if @starlint.is_none_expr(
+          (Some(some_case), Some(none_case), Some(name)) if @internal.is_none_expr(
               none_case.body,
             ) => {
             let message = "Match can be replaced with map."
@@ -47,15 +47,15 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
               #|opt.map(v => f(v))
             let fix = match
               (
-                @starlint.expr_source(env.source, subject),
-                @starlint.expr_source(env.source, some_case.body),
+                @internal.expr_source(env.source, subject),
+                @internal.expr_source(env.source, some_case.body),
               ) {
               (Some(subject_src), Some(body_src)) =>
                 if !body_src.contains("\n") {
                   let replacement = match
-                    @starlint.match_some_apply(some_case.body) {
+                    @internal.match_some_apply(some_case.body) {
                     Some(inner) =>
-                      match @starlint.expr_source(env.source, inner) {
+                      match @internal.expr_source(env.source, inner) {
                         Some(inner_src) =>
                           "\{subject_src}.map(\{name} => \{inner_src})"
                         None => "\{subject_src}.map(\{name} => \{body_src})"

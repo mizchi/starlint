@@ -20,7 +20,7 @@ priv struct TupleLetInfo {
 
 ///|
 fn tuple_field_info(expr : @syntax.Expr) -> (@syntax.Expr, Int)? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Field(
       record~,
       accessor=@syntax.Accessor::Index(tuple_index~, loc=_),
@@ -46,7 +46,7 @@ fn collect_tuple_let_chain(
           @syntax.Pattern::Var(binder) if binder.name != "_" =>
             match tuple_field_info(bound) {
               Some((record, index)) => {
-                let rec_src = match @starlint.expr_source(env.source, record) {
+                let rec_src = match @internal.expr_source(env.source, record) {
                   Some(src) => src
                   None => return None
                 }
@@ -151,7 +151,7 @@ fn push_prefer_tuple_destructure_diag(
     #|let a = t.0
     #|let b = t.1
   let suggestion = "let \{tuple_pattern_src(lets)} = \{record_src}"
-  let fix = match @starlint.expr_source(env.source, body) {
+  let fix = match @internal.expr_source(env.source, body) {
     Some(body_src) => {
       let indent = line_indent(env.source, loc)
       let replacement = "let \{tuple_pattern_src(lets)} = \{record_src}\n\{indent}\{body_src}"
@@ -188,12 +188,12 @@ impl @syntax.IterVisitor for PreferTupleDestructureEnv with visit_Expr(
 ) {
   match expr {
     @syntax.Let(loc~, ..) =>
-      if env.skip_locs.get(@starlint.location_key(loc)) is None {
+      if env.skip_locs.get(@internal.location_key(loc)) is None {
         match collect_tuple_let_chain(env, expr) {
           Some((loc, record_src, lets, body)) =>
             if indices_are_consecutive(lets) && all_names_unique(lets) {
               for item in lets {
-                env.skip_locs.set(@starlint.location_key(item.loc), true)
+                env.skip_locs.set(@internal.location_key(item.loc), true)
               }
               push_prefer_tuple_destructure_diag(
                 env, loc, record_src, lets, body,

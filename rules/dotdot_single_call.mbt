@@ -17,11 +17,11 @@ fn dotdot_single_replacement(
   expr : @syntax.Expr,
   receiver : @syntax.Expr,
 ) -> String? {
-  let receiver_src = match @starlint.expr_source(source, receiver) {
+  let receiver_src = match @internal.expr_source(source, receiver) {
     Some(src) => src
     None => return None
   }
-  let call_src = match @starlint.expr_source(source, expr) {
+  let call_src = match @internal.expr_source(source, expr) {
     Some(src) => src
     None => return None
   }
@@ -41,10 +41,10 @@ impl @syntax.IterVisitor for DotdotSingleCallEnv with visit_Expr(env, expr) {
     @syntax.DotApply(self~, return_self=true, loc~, ..) => {
       match self {
         @syntax.DotApply(return_self=true, loc=inner_loc, ..) =>
-          env.skip_locs.set(@starlint.location_key(inner_loc), true)
+          env.skip_locs.set(@internal.location_key(inner_loc), true)
         _ => ()
       }
-      if env.skip_locs.get(@starlint.location_key(loc)) is None {
+      if env.skip_locs.get(@internal.location_key(loc)) is None {
         match self {
           @syntax.DotApply(return_self=true, ..) => ()
           _ => {

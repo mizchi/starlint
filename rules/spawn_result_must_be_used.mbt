@@ -46,10 +46,10 @@ fn is_task_group_spawn_call(
   env : SpawnResultMustBeUsedEnv,
   expr : @syntax.Expr,
 ) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.DotApply(self~, method_name~, ..) =>
-      if @starlint.label_name(method_name) == "spawn" {
-        match @starlint.match_ident_name(self) {
+      if @internal.label_name(method_name) == "spawn" {
+        match @internal.match_ident_name(self) {
           Some(name) => is_task_group_name(env, name)
           None => false
         }
@@ -83,10 +83,10 @@ fn push_spawn_result_unused_diag(
 
 ///|
 impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr) {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, ..) =>
-      if @starlint.is_async_with_task_group_call(func) {
-        let args_array = @starlint.list_to_array(args)
+      if @internal.is_async_with_task_group_call(func) {
+        let args_array = @internal.list_to_array(args)
         if args_array.length() > 0 {
           let arg0 = args_array[0]
           match arg0 {
@@ -94,7 +94,7 @@ impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr)
               kind: @syntax.ArgumentKind::Positional,
               value: @syntax.Function(func~, ..),
             } => {
-              let names = @starlint.func_param_names(func)
+              let names = @internal.func_param_names(func)
               let count = names.length()
               if count > 0 {
                 push_task_group_names(env, names)
@@ -110,7 +110,7 @@ impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr)
         }
       }
     @syntax.Sequence(exprs~, ..) => {
-      let items = @starlint.list_to_array(exprs)
+      let items = @internal.list_to_array(exprs)
       for stmt in items {
         if is_task_group_spawn_call(env, stmt) {
           push_spawn_result_unused_diag(env, stmt.loc())

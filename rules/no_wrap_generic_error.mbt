@@ -13,7 +13,7 @@ priv struct NoWrapGenericErrorEnv {
 fn is_error_type(ty : @syntax.Type) -> Bool {
   match ty {
     @syntax.Type::Name(constr_id~, tys=_, loc=_) =>
-      @starlint.constr_id_right_name(constr_id) == "Error"
+      @internal.constr_id_right_name(constr_id) == "Error"
     _ => false
   }
 }
@@ -52,11 +52,11 @@ impl @syntax.IterVisitor for NoWrapGenericErrorEnv with visit_TypeDecl(
             push_no_wrap_generic_error_diag(env, decl.loc)
           }
         @syntax.ExceptionDecl::EnumPayload(constrs) => {
-          let items = @starlint.list_to_array(constrs)
+          let items = @internal.list_to_array(constrs)
           for constr in items {
             match constr.args {
               Some(args) => {
-                let params = @starlint.list_to_array(args)
+                let params = @internal.list_to_array(args)
                 if params.length() == 1 && is_error_type(params[0].ty) {
                   push_no_wrap_generic_error_diag(env, constr.loc)
                 }

@@ -9,8 +9,8 @@ priv struct MatchTryQuestionEnv(Array[@starlint.Diagnostic])
 
 ///|
 impl @syntax.IterVisitor for MatchTryQuestionEnv with visit_Expr(env, expr) {
-  if @starlint.match_match_expr(expr) is Some((subject, loc)) &&
-    @starlint.match_try_question(subject) is Some(_) {
+  if @internal.match_match_expr(expr) is Some((subject, loc)) &&
+    @internal.match_try_question(subject) is Some(_) {
     let message = "Avoid match (try? ...) for error handling."
     let detail =
       #|match (try? expr) {

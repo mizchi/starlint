@@ -57,11 +57,11 @@ impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with visit_Expr(
   env,
   expr,
 ) {
-  match @starlint.match_call_info(expr) {
+  match @internal.match_call_info(expr) {
     Some((name, args, loc)) if env.in_test && name == "assert_eq" =>
-      match @starlint.first_two_positional_args(args) {
+      match @internal.first_two_positional_args(args) {
         Some((lhs, _rhs)) =>
-          if !@starlint.is_trivial_expr(lhs) && @starlint.is_call_expr(lhs) {
+          if !@internal.is_trivial_expr(lhs) && @internal.is_call_expr(lhs) {
             push_prefer_input_expected_diag(env, loc)
           }
         None => ()

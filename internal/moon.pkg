@@ -1,6 +1,4 @@
 import {
-  "mizchi/starlint",
-  "mizchi/starlint/internal",
   "moonbitlang/core/list",
   "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",

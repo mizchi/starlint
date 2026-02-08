@@ -14,7 +14,7 @@ fn is_option_type(ty : @syntax.Type) -> Bool {
   match ty {
     @syntax.Type::Option(..) => true
     @syntax.Type::Name(constr_id~, tys=_, loc=_) =>
-      @starlint.constr_id_right_name(constr_id) == "Option"
+      @internal.constr_id_right_name(constr_id) == "Option"
     _ => false
   }
 }

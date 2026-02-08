@@ -11,17 +11,17 @@ priv struct PreferStringViewUsageEnv {
 
 ///|
 fn is_string_view_producer(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.ArrayGetSlice(..) => true
     @syntax.DotApply(method_name~, ..) =>
-      @starlint.label_name(method_name) == "view"
+      @internal.label_name(method_name) == "view"
     @syntax.Apply(
       func=@syntax.Method(type_name~, method_name~, ..),
       attr=NoAttr,
       ..
     ) =>
-      @starlint.type_name_right_name(type_name) == "String" &&
-      @starlint.label_name(method_name) == "view"
+      @internal.type_name_right_name(type_name) == "String" &&
+      @internal.label_name(method_name) == "view"
     _ => false
   }
 }
@@ -50,9 +50,9 @@ fn push_string_view_usage_diag(
 
 ///|
 impl @syntax.IterVisitor for PreferStringViewUsageEnv with visit_Expr(env, expr) {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.DotApply(self~, method_name~, attr=NoAttr, loc~, ..) =>
-      if @starlint.label_name(method_name) == "to_string" &&
+      if @internal.label_name(method_name) == "to_string" &&
         is_string_view_producer(self) {
         push_string_view_usage_diag(env, loc)
       }
@@ -62,9 +62,9 @@ impl @syntax.IterVisitor for PreferStringViewUsageEnv with visit_Expr(env, expr)
       attr=NoAttr,
       loc~
     ) =>
-      if @starlint.type_name_right_name(type_name) == "StringView" &&
-        @starlint.label_name(method_name) == "to_string" {
-        let args_array = @starlint.list_to_array(args)
+      if @internal.type_name_right_name(type_name) == "StringView" &&
+        @internal.label_name(method_name) == "to_string" {
+        let args_array = @internal.list_to_array(args)
         if args_array.length() == 1 &&
           args_array[0].kind is @syntax.ArgumentKind::Positional &&
           is_string_view_producer(args_array[0].value) {

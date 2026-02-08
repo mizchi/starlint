@@ -11,8 +11,8 @@ priv struct AvoidStringFromArrayLargeEnv {
 
 ///|
 fn should_warn_from_array_arg(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
-    @syntax.Array(exprs~, ..) => @starlint.list_to_array(exprs).length() >= 8
+  match @internal.unwrap_paren(expr) {
+    @syntax.Array(exprs~, ..) => @internal.list_to_array(exprs).length() >= 8
     @syntax.ArraySpread(..) => true
     _ => false
   }
@@ -23,16 +23,16 @@ impl @syntax.IterVisitor for AvoidStringFromArrayLargeEnv with visit_Expr(
   env,
   expr,
 ) {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(
       func=@syntax.Method(type_name~, method_name~, ..),
       args~,
       attr=NoAttr,
       loc~
     ) =>
-      if @starlint.type_name_right_name(type_name) == "String" &&
-        @starlint.label_name(method_name) == "from_array" {
-        let args_array = @starlint.list_to_array(args)
+      if @internal.type_name_right_name(type_name) == "String" &&
+        @internal.label_name(method_name) == "from_array" {
+        let args_array = @internal.list_to_array(args)
         if args_array.length() == 1 {
           let arg = args_array[0]
           match arg.kind {

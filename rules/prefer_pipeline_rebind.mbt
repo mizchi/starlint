@@ -15,7 +15,7 @@ priv struct PreferPipelineRebindEnv {
 
 ///|
 fn rebind_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(func) {
+  match @internal.unwrap_paren(func) {
     @syntax.Ident(..) => true
     @syntax.Method(..) => true
     @syntax.Constr(..) => true
@@ -25,7 +25,7 @@ fn rebind_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
 
 ///|
 fn rebind_match_ident_like(expr : @syntax.Expr) -> String? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Ident(id={ name: Ident(name~), .. }, ..) => Some(name)
     @syntax.Constraint(expr=inner, ..) => rebind_match_ident_like(inner)
     @syntax.As(expr=inner, ..) => rebind_match_ident_like(inner)
@@ -37,9 +37,9 @@ fn rebind_match_ident_like(expr : @syntax.Expr) -> String? {
 fn rebind_parse_simple_apply(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, Array[@syntax.Argument], @basic.Location)? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, attr=NoAttr, loc~) =>
-      Some((func, @starlint.list_to_array(args), loc))
+      Some((func, @internal.list_to_array(args), loc))
     _ => None
   }
 }
@@ -79,7 +79,7 @@ fn rebind_call_rhs(
   func : @syntax.Expr,
   args : Array[@syntax.Argument],
 ) -> String? {
-  let func_src = match @starlint.expr_source(source, func) {
+  let func_src = match @internal.expr_source(source, func) {
     Some(src) => src
     None => return None
   }
@@ -94,7 +94,7 @@ fn rebind_call_rhs(
       @syntax.ArgumentKind::Positional => ()
       _ => return None
     }
-    let arg_src = match @starlint.expr_source(source, arg.value) {
+    let arg_src = match @internal.expr_source(source, arg.value) {
       Some(src) => src
       None => return None
     }
@@ -115,7 +115,7 @@ fn rebind_pipeline_suggestion(
   base : @syntax.Expr,
   steps : Array[(String, @syntax.Expr)],
 ) -> String? {
-  let base_src = match @starlint.expr_source(source, base) {
+  let base_src = match @internal.expr_source(source, base) {
     Some(src) => src
     None => return None
   }

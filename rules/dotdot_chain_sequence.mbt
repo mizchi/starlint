@@ -28,9 +28,9 @@ fn accessor_key(accessor : @syntax.Accessor) -> String {
 
 ///|
 fn receiver_key(expr : @syntax.Expr) -> String? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Ident(id=binding, ..) =>
-      Some(@starlint.longident_full_name(binding.name))
+      Some(@internal.longident_full_name(binding.name))
     @syntax.Constraint(expr=inner, ..) => receiver_key(inner)
     @syntax.As(expr=inner, ..) => receiver_key(inner)
     @syntax.Field(record~, accessor~, ..) =>
@@ -90,21 +90,21 @@ fn dotdot_chain_replacement(
     return None
   }
   let first = infos[0]
-  let receiver_src = match @starlint.expr_source(source, first.receiver_expr) {
+  let receiver_src = match @internal.expr_source(source, first.receiver_expr) {
     Some(src) => src
     None => return None
   }
   let suffixes = Array::new(capacity=infos.length())
   for info in infos {
     let info_receiver_src = match
-      @starlint.expr_source(source, info.receiver_expr) {
+      @internal.expr_source(source, info.receiver_expr) {
       Some(src) => src
       None => return None
     }
     if info_receiver_src != receiver_src {
       return None
     }
-    let call_src = match @starlint.expr_source(source, info.call_expr) {
+    let call_src = match @internal.expr_source(source, info.call_expr) {
       Some(src) => src
       None => return None
     }
@@ -127,7 +127,7 @@ fn sequence_items(
   exprs : @list.List[@syntax.Expr],
   last_expr : @syntax.Expr,
 ) -> Array[@syntax.Expr] {
-  let items = @starlint.list_to_array(exprs)
+  let items = @internal.list_to_array(exprs)
   match last_expr {
     @syntax.Unit(faked=true, ..) => items
     _ => {

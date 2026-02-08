@@ -16,9 +16,9 @@ fn is_substring_name(name : String) -> Bool {
 
 ///|
 impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr) {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.DotApply(method_name~, loc~, ..) =>
-      if is_substring_name(@starlint.label_name(method_name)) {
+      if is_substring_name(@internal.label_name(method_name)) {
         let message = "Substring allocates; prefer StringView slicing."
         let detail =
           #|text.substring(start=1, end=3)
@@ -41,8 +41,8 @@ impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr)
       loc~,
       ..
     ) =>
-      if @starlint.type_name_right_name(type_name) == "String" &&
-        is_substring_name(@starlint.label_name(method_name)) {
+      if @internal.type_name_right_name(type_name) == "String" &&
+        is_substring_name(@internal.label_name(method_name)) {
         let message = "Substring allocates; prefer StringView slicing."
         let detail =
           #|String::substring(text, start=1, end=3)

@@ -14,13 +14,13 @@ priv struct NotCallToPrefixNotEnv {
 fn match_unary_not_call(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, @basic.Location)? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(func=@syntax.Ident(id=ident, ..), args~, loc~, ..) => {
-      if @starlint.longident_pkg_name(ident.name) is Some(_) ||
-        @starlint.longident_right_name(ident.name) != "not" {
+      if @internal.longident_pkg_name(ident.name) is Some(_) ||
+        @internal.longident_right_name(ident.name) != "not" {
         return None
       }
-      let args_array = @starlint.list_to_array(args)
+      let args_array = @internal.list_to_array(args)
       if args_array.length() != 1 {
         return None
       }
@@ -46,12 +46,12 @@ fn push_not_call_to_prefix_not_diag(
   let suggestion =
     #|!(expr)
   let replacement_from_arg = fn(arg_src : String) {
-    match @starlint.unwrap_paren(arg) {
+    match @internal.unwrap_paren(arg) {
       @syntax.Ident(..) => "!\{arg_src}"
       _ => "!(\{arg_src})"
     }
   }
-  let fix = match @starlint.expr_source(env.source, arg) {
+  let fix = match @internal.expr_source(env.source, arg) {
     Some(arg_src) =>
       if !arg_src.contains("\n") {
         Some(

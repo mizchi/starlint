@@ -12,7 +12,7 @@ priv struct PreferPipelineEnv {
 
 ///|
 fn is_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(func) {
+  match @internal.unwrap_paren(func) {
     @syntax.Ident(..) => true
     @syntax.Method(..) => true
     @syntax.Constr(..) => true
@@ -24,9 +24,9 @@ fn is_allowed_pipe_rhs(func : @syntax.Expr) -> Bool {
 fn simple_apply(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, @syntax.Expr, @basic.Location)? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, attr=NoAttr, loc~) => {
-      let args_array = @starlint.list_to_array(args)
+      let args_array = @internal.list_to_array(args)
       if args_array.length() != 1 {
         return None
       }
@@ -76,11 +76,11 @@ fn pipeline_suggestion(
   base : @syntax.Expr,
   funcs : Array[@syntax.Expr],
 ) -> String? {
-  let base_src = match @starlint.expr_source(source, base) {
+  let base_src = match @internal.expr_source(source, base) {
     Some(src) => src
     None => return None
   }
-  let base_text = match @starlint.unwrap_paren(base) {
+  let base_text = match @internal.unwrap_paren(base) {
     @syntax.Ident(..) => base_src
     @syntax.Constant(..) => base_src
     @syntax.Field(..) => base_src
@@ -95,7 +95,7 @@ fn pipeline_suggestion(
   let mut idx = funcs.length()
   while idx > 0 {
     idx = idx - 1
-    let func_src = match @starlint.expr_source(source, funcs[idx]) {
+    let func_src = match @internal.expr_source(source, funcs[idx]) {
       Some(src) => src
       None => return None
     }
@@ -106,9 +106,9 @@ fn pipeline_suggestion(
 
 ///|
 impl @syntax.IterVisitor for PreferPipelineEnv with visit_Expr(env, expr) {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(args~, ..) => {
-      let args_array = @starlint.list_to_array(args)
+      let args_array = @internal.list_to_array(args)
       if args_array.length() != 1 {
         return
       }

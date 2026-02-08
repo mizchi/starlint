@@ -52,10 +52,10 @@ fn is_task_group_spawn_bg_call(
   env : SpawnBgLongRunningRequiresNoWaitEnv,
   expr : @syntax.Expr,
 ) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.DotApply(self~, method_name~, ..) =>
-      if @starlint.label_name(method_name) == "spawn_bg" {
-        match @starlint.match_ident_name(self) {
+      if @internal.label_name(method_name) == "spawn_bg" {
+        match @internal.match_ident_name(self) {
           Some(name) => spawn_bg_is_task_group_name(env, name)
           None => false
         }
@@ -74,7 +74,7 @@ fn has_no_wait_arg(args : Array[@syntax.Argument]) -> Bool {
       | @syntax.ArgumentKind::LabelledPun(label)
       | @syntax.ArgumentKind::LabelledOption(label~, ..)
       | @syntax.ArgumentKind::LabelledOptionPun(label~, ..) =>
-        if @starlint.label_name(label) == "no_wait" {
+        if @internal.label_name(label) == "no_wait" {
           return true
         }
       _ => ()
@@ -85,13 +85,13 @@ fn has_no_wait_arg(args : Array[@syntax.Argument]) -> Bool {
 
 ///|
 fn is_infinite_loop_expr(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Sequence(exprs~, last_expr~, ..) => {
-      let _ = @starlint.list_to_array(exprs)
+      let _ = @internal.list_to_array(exprs)
       is_infinite_loop_expr(last_expr)
     }
     @syntax.While(loop_cond~, while_else~, ..) =>
-      match @starlint.match_constant_bool(loop_cond) {
+      match @internal.match_constant_bool(loop_cond) {
         Some(true) => while_else is None
         _ => false
       }
@@ -125,10 +125,10 @@ impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with visit_Expr
   env,
   expr,
 ) {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, ..) =>
-      if @starlint.is_async_with_task_group_call(func) {
-        let args_array = @starlint.list_to_array(args)
+      if @internal.is_async_with_task_group_call(func) {
+        let args_array = @internal.list_to_array(args)
         if args_array.length() > 0 {
           let arg0 = args_array[0]
           match arg0 {
@@ -136,7 +136,7 @@ impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with visit_Expr
               kind: @syntax.ArgumentKind::Positional,
               value: @syntax.Function(func~, ..),
             } => {
-              let names = @starlint.func_param_names(func)
+              let names = @internal.func_param_names(func)
               let count = names.length()
               if count > 0 {
                 spawn_bg_push_task_group_names(env, names)
@@ -153,9 +153,9 @@ impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with visit_Expr
       }
     @syntax.DotApply(args~, ..) =>
       if is_task_group_spawn_bg_call(env, expr) {
-        let args_array = @starlint.list_to_array(args)
+        let args_array = @internal.list_to_array(args)
         if !has_no_wait_arg(args_array) {
-          match @starlint.first_positional_arg(args_array) {
+          match @internal.first_positional_arg(args_array) {
             Some(@syntax.Function(func~, ..)) =>
               if is_infinite_loop_expr(func.body) {
                 push_spawn_bg_no_wait_diag(env, expr.loc())

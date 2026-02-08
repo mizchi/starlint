@@ -11,12 +11,12 @@ priv struct PreferStringPatternEnv {
 
 ///|
 fn is_empty_string_expr(expr : @syntax.Expr) -> Bool {
-  @starlint.match_constant_string(expr) == Some("")
+  @internal.match_constant_string(expr) == Some("")
 }
 
 ///|
 fn match_empty_string_compare(expr : @syntax.Expr) -> @syntax.Expr? {
-  match @starlint.match_infix(expr, "==") {
+  match @internal.match_infix(expr, "==") {
     Some((lhs, rhs, _)) =>
       if is_empty_string_expr(lhs) {
         Some(rhs)
@@ -26,7 +26,7 @@ fn match_empty_string_compare(expr : @syntax.Expr) -> @syntax.Expr? {
         None
       }
     None =>
-      match @starlint.match_infix(expr, "!=") {
+      match @internal.match_infix(expr, "!=") {
         Some((lhs, rhs, _)) =>
           if is_empty_string_expr(lhs) {
             Some(rhs)
@@ -42,19 +42,19 @@ fn match_empty_string_compare(expr : @syntax.Expr) -> @syntax.Expr? {
 
 ///|
 fn match_starts_with(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.DotApply(self=_, method_name~, args~, return_self=_, attr=_, loc=_) =>
-      if @starlint.label_name(method_name) != "starts_with" {
+      if @internal.label_name(method_name) != "starts_with" {
         false
       } else {
-        let args_array = @starlint.list_to_array(args)
+        let args_array = @internal.list_to_array(args)
         if args_array.length() != 1 {
           false
         } else {
           let arg = args_array[0]
           match arg.kind {
             @syntax.ArgumentKind::Positional =>
-              match @starlint.match_constant_string(arg.value) {
+              match @internal.match_constant_string(arg.value) {
                 Some(prefix) if prefix != "" => true
                 _ => false
               }

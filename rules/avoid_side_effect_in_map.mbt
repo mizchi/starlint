@@ -12,7 +12,7 @@ priv struct AvoidSideEffectInMapEnv {
 
 ///|
 fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.DotApply(
       self=_,
       method_name~,
@@ -21,10 +21,10 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       attr=NoAttr,
       loc~
     ) =>
-      if @starlint.label_name(method_name) != "map" {
+      if @internal.label_name(method_name) != "map" {
         None
       } else {
-        let args_array = @starlint.list_to_array(args)
+        let args_array = @internal.list_to_array(args)
         if args_array.length() != 1 {
           None
         } else {
@@ -41,10 +41,10 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       attr=NoAttr,
       loc~
     ) =>
-      if @starlint.label_name(label) != "map" {
+      if @internal.label_name(label) != "map" {
         None
       } else {
-        let args_array = @starlint.list_to_array(args)
+        let args_array = @internal.list_to_array(args)
         if args_array.length() != 1 {
           None
         } else {
@@ -61,10 +61,10 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       attr=NoAttr,
       loc~
     ) =>
-      if @starlint.label_name(method_name) != "map" {
+      if @internal.label_name(method_name) != "map" {
         None
       } else {
-        let args_array = @starlint.list_to_array(args)
+        let args_array = @internal.list_to_array(args)
         if args_array.length() != 2 {
           None
         } else {
@@ -84,7 +84,7 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
       if name != "map" {
         None
       } else {
-        let args_array = @starlint.list_to_array(args)
+        let args_array = @internal.list_to_array(args)
         if args_array.length() != 2 {
           None
         } else {
@@ -147,7 +147,7 @@ fn push_avoid_side_effect_in_map_diag(
 impl @syntax.IterVisitor for AvoidSideEffectInMapEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Let(pattern~, expr=bound, body=_, loc=_) =>
-      if @starlint.is_discard_pattern(pattern) {
+      if @internal.is_discard_pattern(pattern) {
         push_avoid_side_effect_in_map_diag(env, bound, false)
       }
     @syntax.LetMut(binder~, ty=_, expr=bound, body=_, loc=_) =>

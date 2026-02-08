@@ -15,49 +15,13 @@ pub fn compute_complexity(@syntax.Expr) -> Int
 
 pub fn compute_file_complexity(@list.List[@syntax.Impl], String) -> Array[FunctionComplexity]
 
-pub fn constr_id_pkg_name(@syntax.ConstrId) -> String?
-
-pub fn constr_id_right_name(@syntax.ConstrId) -> String
-
-pub fn constructor_name(@syntax.Constructor) -> String
-
-pub fn constructor_type_name(@syntax.Constructor) -> String?
-
 pub fn count_loc(String) -> Int
-
-pub fn expr_source(String, @syntax.Expr) -> String?
-
-pub fn first_positional_arg(Array[@syntax.Argument]) -> @syntax.Expr?
-
-pub fn first_two_positional_args(Array[@syntax.Argument]) -> (@syntax.Expr, @syntax.Expr)?
 
 pub fn format_comparison(BaselineComparison) -> String
 
 pub fn format_diagnostic(Diagnostic) -> String
 
 pub fn format_double(Double) -> String
-
-pub fn func_param_names(@syntax.Func) -> Array[String]
-
-pub fn is_async_with_task_group_call(@syntax.Expr) -> Bool
-
-pub fn is_call_expr(@syntax.Expr) -> Bool
-
-pub fn is_discard_pattern(@syntax.Pattern) -> Bool
-
-pub fn is_none_expr(@syntax.Expr) -> Bool
-
-pub fn is_none_pattern(@syntax.Pattern) -> Bool
-
-pub fn is_some_pattern(@syntax.Pattern) -> Bool
-
-pub fn is_string_literal_expr(@syntax.Expr) -> Bool
-
-pub fn is_trivial_expr(@syntax.Expr) -> Bool
-
-pub fn is_unit_expr(@syntax.Expr) -> Bool
-
-pub fn label_name(@syntax.Label) -> String
 
 pub fn lint(LintInput, Array[Rule]) -> Array[Diagnostic]
 
@@ -67,51 +31,9 @@ pub fn lint_impls_with_config(@list.List[@syntax.Impl], Array[Rule], LintConfig)
 
 pub fn lint_with_config(LintInput, Array[Rule], LintConfig) -> Array[Diagnostic]
 
-pub fn[T] list_to_array(@list.List[T]) -> Array[T]
-
-pub fn location_key(@basic.Location) -> String
-
-pub fn longident_full_name(@syntax.LongIdent) -> String
-
-pub fn longident_pkg_name(@syntax.LongIdent) -> String?
-
-pub fn longident_right_name(@syntax.LongIdent) -> String
-
-pub fn match_call_info(@syntax.Expr) -> (String, Array[@syntax.Argument], @basic.Location)?
-
-pub fn match_call_name(@syntax.Expr) -> String?
-
-pub fn match_callable_name(@syntax.Expr) -> String?
-
-pub fn match_constant_bool(@syntax.Expr) -> Bool?
-
-pub fn match_constant_int(@syntax.Expr) -> String?
-
-pub fn match_constant_string(@syntax.Expr) -> String?
-
-pub fn match_ident_name(@syntax.Expr) -> String?
-
-pub fn match_infix(@syntax.Expr, String) -> (@syntax.Expr, @syntax.Expr, @basic.Location)?
-
-pub fn match_match_expr(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
-
-pub fn match_some_apply(@syntax.Expr) -> @syntax.Expr?
-
-pub fn match_try_question(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
-
 pub fn parse_string_for_lint(String, name? : String, parser? : @parser.Parser) -> (@list.List[@syntax.Impl], Array[@basic.Report])
 
-pub fn pattern_source(String, @syntax.Pattern) -> String?
-
 pub fn resolve_rule_settings(Rule, LintConfig) -> (Bool, Severity)
-
-pub fn some_binder_name(@syntax.Pattern) -> String?
-
-pub fn source_slice(String, @basic.Location) -> String?
-
-pub fn type_name_right_name(@syntax.TypeName) -> String
-
-pub fn unwrap_paren(@syntax.Expr) -> @syntax.Expr
 
 // Errors
 
@@ -220,6 +142,26 @@ pub struct LintInput {
 }
 pub fn LintInput::new(impls~ : @list.List[@syntax.Impl], source~ : String, filename~ : String, package_filenames? : Array[String]) -> Self
 
+pub struct LintPluginContext {
+  rule_id : String
+  input : LintInput
+  diagnostics : Array[Diagnostic]
+}
+pub fn LintPluginContext::expr_source(Self, @syntax.Expr) -> String?
+pub fn LintPluginContext::filename(Self) -> String
+pub fn LintPluginContext::first_positional_arg(Self, Array[@syntax.Argument]) -> @syntax.Expr?
+pub fn LintPluginContext::first_two_positional_args(Self, Array[@syntax.Argument]) -> (@syntax.Expr, @syntax.Expr)?
+pub fn LintPluginContext::impls(Self) -> @list.List[@syntax.Impl]
+pub fn[T] LintPluginContext::list_to_array(Self, @list.List[T]) -> Array[T]
+pub fn LintPluginContext::match_call_info(Self, @syntax.Expr) -> (String, Array[@syntax.Argument], @basic.Location)?
+pub fn LintPluginContext::match_constant_bool(Self, @syntax.Expr) -> Bool?
+pub fn LintPluginContext::match_ident_name(Self, @syntax.Expr) -> String?
+pub fn LintPluginContext::pattern_source(Self, @syntax.Pattern) -> String?
+pub fn LintPluginContext::report(Self, loc~ : @basic.Location, message~ : String, detail? : String, suggestion? : String, fix? : Fix?) -> Unit
+pub fn LintPluginContext::source(Self) -> String
+pub fn LintPluginContext::unwrap_paren(Self, @syntax.Expr) -> @syntax.Expr
+pub fn LintPluginContext::visit_exprs(Self, (@syntax.Expr) -> Unit) -> Unit
+
 pub struct OverrideConfig {
   files : Array[String]
   rules : Map[String, RuleConfig]
@@ -243,6 +185,7 @@ pub struct Rule {
   enabled_by_default : Bool
 }
 pub fn Rule::apply(Self, LintInput) -> Array[Diagnostic]
+pub fn Rule::from_plugin(id~ : String, description~ : String, plugin~ : (LintPluginContext) -> Unit, tags? : Array[String], default_severity? : Severity, enabled_by_default? : Bool) -> Self
 pub fn Rule::new(id~ : String, description~ : String, run~ : (LintInput) -> Array[Diagnostic], tags? : Array[String], default_severity? : Severity, enabled_by_default? : Bool) -> Self
 
 pub struct RuleConfig {
@@ -269,6 +212,8 @@ pub(all) struct SummaryDelta {
 }
 
 // Type aliases
+pub type RulePluginRunner = (LintPluginContext) -> Unit
+
 pub type RuleRunner = (LintInput) -> Array[Diagnostic]
 
 // Traits

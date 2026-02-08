@@ -14,8 +14,8 @@ priv struct BooleanIfFalseTrueEnv {
 impl @syntax.IterVisitor for BooleanIfFalseTrueEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.If(cond~, ifso~, ifnot=Some(ifnot), loc~) =>
-      if @starlint.match_constant_bool(ifso) == Some(false) &&
-        @starlint.match_constant_bool(ifnot) == Some(true) {
+      if @internal.match_constant_bool(ifso) == Some(false) &&
+        @internal.match_constant_bool(ifnot) == Some(true) {
         let message = "if cond { false } else { true } is redundant."
         let detail =
           #|if cond { false } else { true }
@@ -23,7 +23,7 @@ impl @syntax.IterVisitor for BooleanIfFalseTrueEnv with visit_Expr(env, expr) {
           #|Use the negated condition:
           #|
           #|!cond
-        let fix = match @starlint.expr_source(env.source, cond) {
+        let fix = match @internal.expr_source(env.source, cond) {
           Some(cond_src) =>
             Some(@starlint.Fix::new(range=loc, replacement="!(\{cond_src})"))
           None => None

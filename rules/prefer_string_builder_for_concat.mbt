@@ -12,12 +12,12 @@ priv struct PreferStringBuilderForConcatEnv {
 
 ///|
 fn is_self_concat_with_literal(name : String, expr : @syntax.Expr) -> Bool {
-  match @starlint.match_infix(expr, "+") {
+  match @internal.match_infix(expr, "+") {
     Some((lhs, rhs, _)) => {
-      let lhs_is_name = @starlint.match_ident_name(lhs) == Some(name)
-      let rhs_is_name = @starlint.match_ident_name(rhs) == Some(name)
-      (lhs_is_name && @starlint.is_string_literal_expr(rhs)) ||
-      (rhs_is_name && @starlint.is_string_literal_expr(lhs))
+      let lhs_is_name = @internal.match_ident_name(lhs) == Some(name)
+      let rhs_is_name = @internal.match_ident_name(rhs) == Some(name)
+      (lhs_is_name && @internal.is_string_literal_expr(rhs)) ||
+      (rhs_is_name && @internal.is_string_literal_expr(lhs))
     }
     None => false
   }
@@ -26,7 +26,7 @@ fn is_self_concat_with_literal(name : String, expr : @syntax.Expr) -> Bool {
 ///|
 fn is_augmented_plus(op : @syntax.Var?) -> Bool {
   match op {
-    Some(var_) => @starlint.longident_right_name(var_.name) == "+"
+    Some(var_) => @internal.longident_right_name(var_.name) == "+"
     None => false
   }
 }
@@ -48,9 +48,9 @@ impl @syntax.IterVisitor for PreferStringBuilderForConcatEnv with visit_Expr(
     }
     @syntax.Assign(var_~, expr=rhs, augmented_by~, loc~) =>
       if env.loop_depth > 0 {
-        let name = @starlint.longident_right_name(var_.name)
+        let name = @internal.longident_right_name(var_.name)
         if is_augmented_plus(augmented_by) &&
-          @starlint.is_string_literal_expr(rhs) {
+          @internal.is_string_literal_expr(rhs) {
           let message = "Repeated string concatenation can be costly; use StringBuilder/Buffer."
           let detail =
             #|s += "..."

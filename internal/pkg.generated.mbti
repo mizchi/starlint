@@ -1,0 +1,96 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/starlint/internal"
+
+import {
+  "moonbitlang/core/list",
+  "moonbitlang/parser/basic",
+  "moonbitlang/parser/syntax",
+}
+
+// Values
+pub fn constr_id_pkg_name(@syntax.ConstrId) -> String?
+
+pub fn constr_id_right_name(@syntax.ConstrId) -> String
+
+pub fn constructor_name(@syntax.Constructor) -> String
+
+pub fn constructor_type_name(@syntax.Constructor) -> String?
+
+pub fn expr_source(String, @syntax.Expr) -> String?
+
+pub fn first_positional_arg(Array[@syntax.Argument]) -> @syntax.Expr?
+
+pub fn first_two_positional_args(Array[@syntax.Argument]) -> (@syntax.Expr, @syntax.Expr)?
+
+pub fn func_param_names(@syntax.Func) -> Array[String]
+
+pub fn is_async_with_task_group_call(@syntax.Expr) -> Bool
+
+pub fn is_call_expr(@syntax.Expr) -> Bool
+
+pub fn is_discard_pattern(@syntax.Pattern) -> Bool
+
+pub fn is_none_expr(@syntax.Expr) -> Bool
+
+pub fn is_none_pattern(@syntax.Pattern) -> Bool
+
+pub fn is_some_pattern(@syntax.Pattern) -> Bool
+
+pub fn is_string_literal_expr(@syntax.Expr) -> Bool
+
+pub fn is_trivial_expr(@syntax.Expr) -> Bool
+
+pub fn is_unit_expr(@syntax.Expr) -> Bool
+
+pub fn label_name(@syntax.Label) -> String
+
+pub fn[T] list_to_array(@list.List[T]) -> Array[T]
+
+pub fn location_key(@basic.Location) -> String
+
+pub fn longident_full_name(@syntax.LongIdent) -> String
+
+pub fn longident_pkg_name(@syntax.LongIdent) -> String?
+
+pub fn longident_right_name(@syntax.LongIdent) -> String
+
+pub fn match_call_info(@syntax.Expr) -> (String, Array[@syntax.Argument], @basic.Location)?
+
+pub fn match_call_name(@syntax.Expr) -> String?
+
+pub fn match_callable_name(@syntax.Expr) -> String?
+
+pub fn match_constant_bool(@syntax.Expr) -> Bool?
+
+pub fn match_constant_int(@syntax.Expr) -> String?
+
+pub fn match_constant_string(@syntax.Expr) -> String?
+
+pub fn match_ident_name(@syntax.Expr) -> String?
+
+pub fn match_infix(@syntax.Expr, String) -> (@syntax.Expr, @syntax.Expr, @basic.Location)?
+
+pub fn match_match_expr(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
+
+pub fn match_some_apply(@syntax.Expr) -> @syntax.Expr?
+
+pub fn match_try_question(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
+
+pub fn pattern_source(String, @syntax.Pattern) -> String?
+
+pub fn some_binder_name(@syntax.Pattern) -> String?
+
+pub fn source_slice(String, @basic.Location) -> String?
+
+pub fn type_name_right_name(@syntax.TypeName) -> String
+
+pub fn unwrap_paren(@syntax.Expr) -> @syntax.Expr
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -12,7 +12,7 @@ priv struct PreferExpressionOverReturnEnv {
 
 ///|
 fn tail_return_expr(expr : @syntax.Expr) -> (@basic.Location, @syntax.Expr)? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Return(return_value=Some(value), loc~) => Some((loc, value))
     @syntax.Sequence(exprs=_, last_expr~, loc=_) => tail_return_expr(last_expr)
     @syntax.Let(pattern=_, expr=_, body~, loc=_) => tail_return_expr(body)
@@ -32,7 +32,7 @@ fn push_prefer_expression_over_return_diag(
   loc : @basic.Location,
   value : @syntax.Expr,
 ) -> Unit {
-  match @starlint.expr_source(env.source, value) {
+  match @internal.expr_source(env.source, value) {
     Some(value_src) => {
       let message = "Return at the tail position is redundant."
       let detail =

@@ -13,12 +13,12 @@ priv struct PreferOptionMapOrElseEnv {
 fn default_arg_from_map_or(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, @basic.Location)? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.DotApply(method_name~, args~, loc~, ..) =>
-      if @starlint.label_name(method_name) != "map_or" {
+      if @internal.label_name(method_name) != "map_or" {
         None
       } else {
-        let args_array = @starlint.list_to_array(args)
+        let args_array = @internal.list_to_array(args)
         if args_array.length() != 2 {
           None
         } else {
@@ -36,7 +36,7 @@ fn default_arg_from_map_or(
 ///|
 impl @syntax.IterVisitor for PreferOptionMapOrElseEnv with visit_Expr(env, expr) {
   match default_arg_from_map_or(expr) {
-    Some((default_expr, loc)) if @starlint.is_call_expr(default_expr) => {
+    Some((default_expr, loc)) if @internal.is_call_expr(default_expr) => {
       let message = "map_or default is evaluated eagerly; use map_or_else for lazy evaluation."
       let detail =
         #|opt.map_or(expensive(), f)

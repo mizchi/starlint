@@ -14,7 +14,7 @@ priv struct BooleanMatchIsPatternEnv {
 fn match_boolean_pattern(
   cases : @list.List[@syntax.Case],
 ) -> (@syntax.Pattern, Bool)? {
-  let cases_array = @starlint.list_to_array(cases)
+  let cases_array = @internal.list_to_array(cases)
   if cases_array.length() != 2 {
     return None
   }
@@ -25,11 +25,11 @@ fn match_boolean_pattern(
     if case_.guard_ is Some(_) {
       return None
     }
-    let value = match @starlint.match_constant_bool(case_.body) {
+    let value = match @internal.match_constant_bool(case_.body) {
       Some(v) => v
       None => return None
     }
-    if @starlint.is_discard_pattern(case_.pattern) {
+    if @internal.is_discard_pattern(case_.pattern) {
       match wild_value {
         Some(_) => return None
         None => wild_value = Some(value)
@@ -76,8 +76,8 @@ fn push_boolean_match_is_pattern_diag(
   }
   let fix = match
     (
-      @starlint.expr_source(env.source, subject),
-      @starlint.pattern_source(env.source, pattern),
+      @internal.expr_source(env.source, subject),
+      @internal.pattern_source(env.source, pattern),
     ) {
     (Some(subject_src), Some(pattern_src)) =>
       if !subject_src.contains("\n") && !pattern_src.contains("\n") {

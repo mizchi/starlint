@@ -379,9 +379,9 @@ fn package_name_for_file(module_name : String, display_path : String) -> String 
 fn type_short_name(ty : @syntax.Type) -> String? {
   match ty {
     @syntax.Type::Name(constr_id~, ..) =>
-      constr_id |> @starlint.constr_id_right_name |> Some
+      constr_id |> @internal.constr_id_right_name |> Some
     @syntax.Type::Object(constr_id) =>
-      constr_id |> @starlint.constr_id_right_name |> Some
+      constr_id |> @internal.constr_id_right_name |> Some
     _ => None
   }
 }
@@ -390,7 +390,7 @@ fn type_short_name(ty : @syntax.Type) -> String? {
 fn format_fun_decl_name(fun_decl : @syntax.FunDecl) -> String {
   let base = fun_decl.name.name
   match fun_decl.type_name {
-    Some(type_name) => "\{@starlint.type_name_right_name(type_name)}::\{base}"
+    Some(type_name) => "\{@internal.type_name_right_name(type_name)}::\{base}"
     None => base
   }
 }

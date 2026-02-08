@@ -11,10 +11,10 @@ priv struct PreferTaskGroupSpawnEnv {
 
 ///|
 fn is_async_spawn_call(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Apply(func=@syntax.Ident(id=ident, ..), ..) => {
-      let name = @starlint.longident_right_name(ident.name)
-      match @starlint.longident_pkg_name(ident.name) {
+      let name = @internal.longident_right_name(ident.name)
+      match @internal.longident_pkg_name(ident.name) {
         Some(pkg) => pkg == "async" && (name == "spawn" || name == "spawn_bg")
         None => false
       }
@@ -27,8 +27,8 @@ fn is_async_spawn_call(expr : @syntax.Expr) -> Bool {
       ),
       ..
     ) => {
-      let name = @starlint.label_name(label)
-      @starlint.longident_right_name(ident.name) == "async" &&
+      let name = @internal.label_name(label)
+      @internal.longident_right_name(ident.name) == "async" &&
       (name == "spawn" || name == "spawn_bg")
     }
     _ => false

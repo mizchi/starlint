@@ -34,7 +34,7 @@ impl @syntax.IterVisitor for PreferUnicodeSafeIterationEnv with visit_Expr(
       env.loop_depth = prev
     }
     @syntax.ArrayGet(array~, index=_, loc~) =>
-      if env.loop_depth > 0 && @starlint.is_string_literal_expr(array) {
+      if env.loop_depth > 0 && @internal.is_string_literal_expr(array) {
         let message = "Direct string indexing is UTF-16 based; prefer unicode-safe iteration."
         let detail =
           #|"text"[i]
@@ -52,7 +52,7 @@ impl @syntax.IterVisitor for PreferUnicodeSafeIterationEnv with visit_Expr(
       }
     @syntax.DotApply(method_name~, loc~, ..) =>
       if env.loop_depth > 0 &&
-        is_char_access_method(@starlint.label_name(method_name)) {
+        is_char_access_method(@internal.label_name(method_name)) {
         let message = "Direct string indexing is UTF-16 based; prefer unicode-safe iteration."
         let detail =
           #|text.get_char(i)

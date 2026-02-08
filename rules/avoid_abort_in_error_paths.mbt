@@ -19,7 +19,7 @@ impl @syntax.IterVisitor for AbortSearchEnv with visit_Expr(env, expr) {
   if env.found {
     return
   }
-  match @starlint.match_call_name(expr) {
+  match @internal.match_call_name(expr) {
     Some(name) if name == "abort" || name == "panic" => env.found = true
     _ => ()
   }
@@ -61,7 +61,7 @@ impl @syntax.IterVisitor for AvoidAbortInErrorPathsEnv with visit_Expr(
 ) {
   match expr {
     @syntax.Try(catch_~, catch_loc~, ..) => {
-      let cases_array = @starlint.list_to_array(catch_)
+      let cases_array = @internal.list_to_array(catch_)
       let mut should_warn = false
       for case_ in cases_array {
         if contains_abort(case_.body) {

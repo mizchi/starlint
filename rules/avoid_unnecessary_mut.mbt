@@ -22,7 +22,7 @@ impl @syntax.IterVisitor for AssignDetector with visit_Expr(env, expr) {
   }
   match expr {
     @syntax.Assign(var_~, expr=_, augmented_by=_, loc=_) =>
-      if @starlint.longident_right_name(var_.name) == env.name {
+      if @internal.longident_right_name(var_.name) == env.name {
         env.found = true
       }
     _ => ()

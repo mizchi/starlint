@@ -9,7 +9,7 @@ priv struct MatchResultTryEnv(Array[@starlint.Diagnostic])
 
 ///|
 fn is_try_question_expr(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.TryOperator(kind=Question, ..) => true
     @syntax.Constraint(expr=inner, ..) => is_try_question_expr(inner)
     @syntax.As(expr=inner, ..) => is_try_question_expr(inner)

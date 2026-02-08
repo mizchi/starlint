@@ -16,8 +16,8 @@ impl @syntax.IterVisitor for RedundantIfSameBranchEnv with visit_Expr(env, expr)
     @syntax.If(cond~, ifso~, ifnot=Some(ifnot), loc~) =>
       match
         (
-          @starlint.expr_source(env.source, ifso),
-          @starlint.expr_source(env.source, ifnot),
+          @internal.expr_source(env.source, ifso),
+          @internal.expr_source(env.source, ifnot),
         ) {
         (Some(ifso_src), Some(ifnot_src)) if ifso_src == ifnot_src => {
           let message = "Both branches are identical."
@@ -25,7 +25,7 @@ impl @syntax.IterVisitor for RedundantIfSameBranchEnv with visit_Expr(env, expr)
             #|if cond { expr } else { expr }
           let suggestion =
             #|Replace the if-expression with the shared branch.
-          let fix = if @starlint.is_trivial_expr(cond) {
+          let fix = if @internal.is_trivial_expr(cond) {
             Some(@starlint.Fix::new(range=loc, replacement=ifso_src))
           } else {
             None

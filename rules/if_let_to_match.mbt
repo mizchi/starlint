@@ -69,10 +69,10 @@ fn push_if_let_to_match_diag(
     #|}
   let fix = match
     (
-      @starlint.expr_source(env.source, subject),
-      @starlint.pattern_source(env.source, pat),
-      @starlint.expr_source(env.source, ifso),
-      @starlint.expr_source(env.source, ifnot),
+      @internal.expr_source(env.source, subject),
+      @internal.pattern_source(env.source, pat),
+      @internal.expr_source(env.source, ifso),
+      @internal.expr_source(env.source, ifnot),
     ) {
     (Some(subject_src), Some(pattern_src), Some(ifso_src), Some(ifnot_src)) =>
       if loc.start.lnum == loc.end.lnum &&
@@ -114,7 +114,7 @@ fn push_if_let_to_match_diag(
 impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Sequence(exprs~, last_expr=_, loc=_) => {
-      let items = @starlint.list_to_array(exprs)
+      let items = @internal.list_to_array(exprs)
       for item in items {
         match item {
           @syntax.If(
@@ -123,15 +123,15 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
             ifnot=Some(_),
             loc~
           ) =>
-            if @starlint.is_some_pattern(pat) {
-              env.skip_locs.set(@starlint.location_key(loc), true)
+            if @internal.is_some_pattern(pat) {
+              env.skip_locs.set(@internal.location_key(loc), true)
             }
           _ => ()
         }
       }
     }
     @syntax.Let(pattern~, expr=bound, body=_, loc=_) =>
-      if @starlint.is_discard_pattern(pattern) {
+      if @internal.is_discard_pattern(pattern) {
         match bound {
           @syntax.If(
             cond=@syntax.Is(expr=_, pat~, loc=_),
@@ -139,8 +139,8 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
             ifnot=Some(_),
             loc~
           ) =>
-            if @starlint.is_some_pattern(pat) {
-              env.skip_locs.set(@starlint.location_key(loc), true)
+            if @internal.is_some_pattern(pat) {
+              env.skip_locs.set(@internal.location_key(loc), true)
             }
           _ => ()
         }
@@ -154,8 +154,8 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
             ifnot=Some(_),
             loc~
           ) =>
-            if @starlint.is_some_pattern(pat) {
-              env.skip_locs.set(@starlint.location_key(loc), true)
+            if @internal.is_some_pattern(pat) {
+              env.skip_locs.set(@internal.location_key(loc), true)
             }
           _ => ()
         }
@@ -166,8 +166,8 @@ impl @syntax.IterVisitor for IfLetToMatchEnv with visit_Expr(env, expr) {
       ifnot=Some(ifnot),
       loc~
     ) =>
-      if @starlint.is_some_pattern(pat) &&
-        env.skip_locs.get(@starlint.location_key(loc)) is None {
+      if @internal.is_some_pattern(pat) &&
+        env.skip_locs.get(@internal.location_key(loc)) is None {
         push_if_let_to_match_diag(env, subject, pat, ifso, ifnot, loc)
       }
     _ => ()

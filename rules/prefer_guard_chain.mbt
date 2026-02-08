@@ -12,12 +12,12 @@ priv struct PreferGuardChainEnv {
 
 ///|
 fn is_noop_pattern(pat : @syntax.Pattern) -> Bool {
-  @starlint.is_discard_pattern(pat) || @starlint.is_none_pattern(pat)
+  @internal.is_discard_pattern(pat) || @internal.is_none_pattern(pat)
 }
 
 ///|
 fn is_terminal_expr(expr : @syntax.Expr) -> Bool {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Raise(..) => true
     @syntax.Return(..) => true
     @syntax.Break(..) => true
@@ -27,17 +27,17 @@ fn is_terminal_expr(expr : @syntax.Expr) -> Bool {
       args=_,
       attr=NoAttr,
       loc=_
-    ) => is_terminal_name(@starlint.label_name(label))
+    ) => is_terminal_name(@internal.label_name(label))
     @syntax.Apply(
       func=@syntax.Method(type_name=_, method_name~, ..),
       args=_,
       attr=NoAttr,
       loc=_
-    ) => is_terminal_name(@starlint.label_name(method_name))
+    ) => is_terminal_name(@internal.label_name(method_name))
     @syntax.Apply(func=@syntax.Ident(id=ident, ..), args=_, attr=NoAttr, loc=_) =>
-      is_terminal_name(@starlint.longident_right_name(ident.name))
+      is_terminal_name(@internal.longident_right_name(ident.name))
     @syntax.DotApply(method_name~, ..) =>
-      is_terminal_name(@starlint.label_name(method_name))
+      is_terminal_name(@internal.label_name(method_name))
     _ => false
   }
 }
@@ -51,12 +51,12 @@ fn is_terminal_name(name : String) -> Bool {
 fn is_trivial_fallback_case(case_ : @syntax.Case) -> Bool {
   case_.guard_ is None &&
   is_noop_pattern(case_.pattern) &&
-  (@starlint.is_unit_expr(case_.body) || is_terminal_expr(case_.body))
+  (@internal.is_unit_expr(case_.body) || is_terminal_expr(case_.body))
 }
 
 ///|
 fn active_case_from_cases(cases : @list.List[@syntax.Case]) -> @syntax.Case? {
-  let cases_array = @starlint.list_to_array(cases)
+  let cases_array = @internal.list_to_array(cases)
   let mut active_case : @syntax.Case? = None
   let mut has_fallback = false
   for case_ in cases_array {
@@ -83,7 +83,7 @@ fn active_case_from_cases(cases : @list.List[@syntax.Case]) -> @syntax.Case? {
 fn match_expr_info(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, @list.List[@syntax.Case], @basic.Location)? {
-  match @starlint.unwrap_paren(expr) {
+  match @internal.unwrap_paren(expr) {
     @syntax.Match(expr=_, cases~, match_loc=_, loc~) => Some((expr, cases, loc))
     _ => None
   }
@@ -96,10 +96,10 @@ fn match_expr_from_body(
   match match_expr_info(expr) {
     Some(info) => Some(info)
     None =>
-      match @starlint.unwrap_paren(expr) {
+      match @internal.unwrap_paren(expr) {
         @syntax.Sequence(exprs~, last_expr~, loc=_) => {
-          let items = @starlint.list_to_array(exprs)
-          if items.length() == 1 && @starlint.is_unit_expr(last_expr) {
+          let items = @internal.list_to_array(exprs)
+          if items.length() == 1 && @internal.is_unit_expr(last_expr) {
             match match_expr_info(items[0]) {
               Some(info) => Some(info)
               None => None
@@ -178,11 +178,11 @@ fn push_prefer_guard_chain_diag(
 impl @syntax.IterVisitor for PreferGuardChainEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.Match(loc~, ..) =>
-      if env.skip_locs.get(@starlint.location_key(loc)) is None {
+      if env.skip_locs.get(@internal.location_key(loc)) is None {
         match collect_match_chain_locs(expr) {
           Some(locs) => {
             for i in 1..<locs.length() {
-              env.skip_locs.set(@starlint.location_key(locs[i]), true)
+              env.skip_locs.set(@internal.location_key(locs[i]), true)
             }
             push_prefer_guard_chain_diag(env, locs[0])
           }

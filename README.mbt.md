@@ -24,6 +24,140 @@ starlint analyze # baseline compare (default: .starlint/latest.json, fallback: .
 starlint analyze --compare path/to/baseline.json
 ```
 
+## embed as library
+
+`mizchi/starlint/tasks/lint` is the reference implementation used by this
+repository.
+
+When embedding in your own app/library, define your own wrapper module (for
+example `myapp/tasks/lint`) and compose rules there for each runtime
+environment.
+
+```mbt
+// moon.pkg
+import {
+  "mizchi/starlint",
+  "mizchi/starlint/tasks/lint",
+}
+
+///|
+fn run_lint(source : String) -> Array[@starlint.Diagnostic] raise {
+  let config = @starlint.LintConfig::recommended()
+  let (diags, reports) = @lint.lint_source(source, config~)
+  if reports.length() > 0 {
+    return []
+  }
+  diags
+}
+```
+
+`mizchi/starlint/internal` is an implementation detail package and may change
+without compatibility guarantees.
+
+### custom lint plugin (eslint-like ctx)
+
+You can inject user-defined rules with `Rule::from_plugin(...)`.
+The plugin receives `ctx` (report + AST utilities), similar to ESLint's
+`create(context)` style.
+
+```mbt
+// moon.pkg
+import {
+  "mizchi/starlint",
+  "mizchi/starlint/tasks/lint",
+}
+
+///|
+fn plugin_rule() -> @starlint.Rule {
+  @starlint.Rule::from_plugin(
+    id="my_plugin_rule",
+    description="example plugin rule",
+    tags=["my-plugin"],
+    enabled_by_default=false,
+    plugin=ctx => ctx.visit_exprs(expr => match ctx.match_call_info(expr) {
+      Some((name, args, loc)) if name == "assert_true" =>
+        match ctx.first_positional_arg(args) {
+          Some(arg) if ctx.match_constant_bool(arg) == Some(true) =>
+            ctx.report(
+              loc~,
+              message="avoid assert_true(true)",
+              suggestion="assert_true(actual)",
+            )
+          _ => ()
+        }
+      _ => ()
+    }),
+  )
+}
+
+///|
+fn run_with_plugin(source : String) -> Array[@starlint.Diagnostic] {
+  let config = @starlint.LintConfig::enable_categories(["my-plugin"])
+  let (diags, _reports) = @lint.lint_source_with_extra_rules(
+    source,
+    [plugin_rule()],
+    config~,
+  )
+  diags
+}
+```
+
+### environment-specific extension samples
+
+1. CLI (`myapp lint foo.mbt`)
+
+```mbt
+///|
+pub fn lint_for_cli(source : String, filename : String) -> Int {
+  let config = @starlint.LintConfig::recommended()
+  let (diags, reports) = @lint.lint_source_with_extra_rules(
+    source,
+    [plugin_rule()],
+    filename~,
+    config~,
+  )
+  if reports.length() > 0 {
+    return 2
+  }
+  if diags.length() > 0 {
+    return 1
+  }
+  0
+}
+```
+
+2. Editor on-save (fast subset)
+
+```mbt
+///|
+pub fn lint_on_save(
+  source : String,
+  filename : String,
+) -> Array[@starlint.Diagnostic] {
+  let config = @starlint.LintConfig::enable_categories(["fp", "my-plugin"])
+  let (diags, reports) = @lint.lint_source_with_extra_rules(
+    source,
+    [plugin_rule()],
+    filename~,
+    config~,
+  )
+  if reports.length() > 0 {
+    []
+  } else {
+    diags
+  }
+}
+```
+
+3. CI / batch runner (single composed ruleset)
+
+```mbt
+///|
+pub fn rules_for_ci() -> Array[@starlint.Rule] {
+  @lint.compose_rules([plugin_rule()])
+}
+```
+
 ## ai metadata (--ai)
 
 `--ai` emits a structured text dump for review by LLMs. It does not run lint rules.

@@ -25,7 +25,7 @@ fn match_single_positional_arg(args : Array[@syntax.Argument]) -> @syntax.Expr? 
 
 ///|
 fn match_not_call(expr : @syntax.Expr) -> @syntax.Expr? {
-  match @starlint.match_call_info(expr) {
+  match @internal.match_call_info(expr) {
     Some((name, args, _)) if name == "not" => match_single_positional_arg(args)
     _ => None
   }
@@ -42,7 +42,7 @@ fn push_assert_false_not_to_assert_true_diag(
     #|assert_false(not(expr))
   let suggestion =
     #|assert_true(expr)
-  let fix = match @starlint.expr_source(env.source, inner) {
+  let fix = match @internal.expr_source(env.source, inner) {
     Some(inner_src) =>
       if !inner_src.contains("\n") {
         Some(
@@ -98,7 +98,7 @@ impl @syntax.IterVisitor for AssertFalseNotToAssertTrueEnv with visit_Expr(
   env,
   expr,
 ) {
-  match @starlint.match_call_info(expr) {
+  match @internal.match_call_info(expr) {
     Some((name, args, loc)) if env.in_test && name == "assert_false" =>
       match match_single_positional_arg(args) {
         Some(arg) =>

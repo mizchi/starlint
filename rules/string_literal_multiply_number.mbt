@@ -12,8 +12,8 @@ impl @syntax.IterVisitor for StringLiteralMultiplyNumberEnv with visit_Expr(
   env,
   expr,
 ) {
-  if @starlint.match_infix(expr, "*") is Some((lhs, rhs, loc)) &&
-    @starlint.match_constant_string(lhs) is Some(str_lit) {
+  if @internal.match_infix(expr, "*") is Some((lhs, rhs, loc)) &&
+    @internal.match_constant_string(lhs) is Some(str_lit) {
     let message = "String literal multiplied by a number."
     let detail =
       #|"<string literal>" * n
@@ -21,7 +21,7 @@ impl @syntax.IterVisitor for StringLiteralMultiplyNumberEnv with visit_Expr(
       #|If n is an integer expression, rewrite to:
       #|
       #|"<string literal>".repeat(n)
-    let fix = match @starlint.match_constant_int(rhs) {
+    let fix = match @internal.match_constant_int(rhs) {
       Some(int_lit) => {
         let replacement = "\"\{str_lit}\".repeat(\{int_lit})"
         Some(@starlint.Fix::new(range=loc, replacement~))

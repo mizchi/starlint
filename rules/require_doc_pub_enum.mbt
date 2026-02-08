@@ -11,7 +11,7 @@ priv struct RequireDocPubEnumEnv {
 
 ///|
 fn has_doc_content_pub_enum(doc : @syntax.DocString) -> Bool {
-  let lines = @starlint.list_to_array(doc.content)
+  let lines = @internal.list_to_array(doc.content)
   for line in lines {
     if !line.is_blank() {
       return true
