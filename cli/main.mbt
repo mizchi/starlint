@@ -413,7 +413,7 @@ fn format_impl_method_name(
 
 ///|
 fn is_public_vis(vis : @syntax.Visibility) -> Bool {
-  (vis) is @syntax.Visibility::Pub(..)
+  vis is @syntax.Visibility::Pub(..)
 }
 
 ///|

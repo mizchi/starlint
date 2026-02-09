@@ -185,7 +185,7 @@ fn[FS : @vfs.VFS] run_baseline(
       }
     }
     let comparison = @starlint.compare_baselines(old_baseline, baseline)
-    (comparison |> @starlint.format_comparison |> println)
+    comparison |> @starlint.format_comparison |> println
   } else {
     // Write baseline
     let git_hash = read_git_head_hash(fs, module_root)
@@ -345,7 +345,7 @@ fn run_git_exit_code(module_root : String, args : Array[String]) -> Int {
 
 ///|
 fn run_shell_exit_code(cmd : String) -> Int {
-  let raw = (cmd |> to_c_string |> system)
+  let raw = cmd |> to_c_string |> system
   if raw < 0 {
     return raw
   }
