@@ -10,8 +10,15 @@ moon test --target wasm-gc
 
 ## basic usage
 
+Install:
+
 ```
-starlint # auto scan current project
+moon install mizchi/starlint/cmd/starlint
+```
+
+```
+starlint # show help
+starlint . # auto scan current project
 starlint foo.mbt # check this file
 starlint --rule prefer_pipeline # show only this rule's diagnostics
 starlint --fix # apply all autofixes

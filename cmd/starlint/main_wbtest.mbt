@@ -59,6 +59,24 @@ test "parse_meta_option: no option" {
 }
 
 ///|
+test "normalize_lint_targets: single dot means module scan" {
+  let actual = normalize_lint_targets(["."])
+  inspect(actual, content="[]")
+}
+
+///|
+test "normalize_lint_targets: file path is kept" {
+  let actual = normalize_lint_targets(["foo.mbt"])
+  inspect(actual, content="[\"foo.mbt\"]")
+}
+
+///|
+test "run_with_start_dir: empty args prints help and returns" {
+  let fs = @vfs.MemVFS::new()
+  run_with_start_dir(fs, [], "/repo")
+}
+
+///|
 test "analyze_compare_path: default latest path" {
   let fs = @vfs.MemVFS::new()
   fs.write_string("/repo/.starlint/latest.json", "{}")

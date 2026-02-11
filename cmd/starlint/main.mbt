@@ -841,6 +841,8 @@ let cli_version = "0.7.1"
 fn usage_text() -> String {
   let text =
     #| usage:
+    #|   starlint
+    #|   starlint . [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule]
     #|   starlint [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
     #|   starlint init
     #|   starlint doc
@@ -872,6 +874,15 @@ fn parse_compare_option(args : ArrayView[String]) -> String {
     }
   }
   ""
+}
+
+///|
+fn normalize_lint_targets(filenames : Array[String]) -> Array[String] {
+  if filenames.length() == 1 && filenames[0] == "." {
+    []
+  } else {
+    filenames
+  }
 }
 
 ///|
@@ -1117,6 +1128,10 @@ fn[FS : @vfs.VFS] run_with_start_dir(
   argv : Array[String],
   start_dir : String,
 ) -> Unit {
+  if argv.length() == 0 {
+    println(usage_text())
+    return
+  }
   match parse_meta_option(argv[:]) {
     "help" => {
       println(usage_text())
@@ -1208,6 +1223,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       panic()
     }
   }
+  let lint_targets = normalize_lint_targets(filenames)
   let module_root = resolve_module_root(fs, start_dir) catch {
     err => {
       println("failed to find module root: \{err}")
@@ -1227,7 +1243,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
   } else {
     join_path(module_root, base_rel)
   }
-  let file_entries = if filenames.length() == 0 {
+  let file_entries = if lint_targets.length() == 0 {
     build_file_entries_from_module(fs, module_root, base_fs, base_rel) catch {
       err => {
         println("failed when finding source files: \{err}")
@@ -1235,7 +1251,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       }
     }
   } else {
-    build_file_entries_from_args(filenames, start_dir, module_root)
+    build_file_entries_from_args(lint_targets, start_dir, module_root)
   }
   let doc_entries = get_mbt_md_path_set_from_base(fs, module_root, ".") catch {
     err => {
