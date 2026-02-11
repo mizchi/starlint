@@ -225,18 +225,14 @@ moon install mizchi/starlint/cmd/starlint
 Pin a specific version:
 
 ```
-moon install mizchi/starlint/cmd/starlint@v0.8.0
+moon install mizchi/starlint/cmd/starlint@v0.9.1
 ```
 
-Install to a custom bin directory:
+For local development builds (from source):
 
 ```
-moon install --bin ~/.local/bin mizchi/starlint/cmd/starlint
-```
-
-For local development builds:
-
-```
+git clone https://github.com/mizchi/starlint.git
+cd starlint
 moon install ./cmd/starlint
 ```
 
