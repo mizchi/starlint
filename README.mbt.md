@@ -217,7 +217,7 @@ moon install mizchi/starlint/cmd/starlint
 Pin a specific version:
 
 ```
-moon install mizchi/starlint/cmd/starlint@v0.7.1
+moon install mizchi/starlint/cmd/starlint@v0.8.0
 ```
 
 Install to a custom bin directory:

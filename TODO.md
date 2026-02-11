@@ -3,6 +3,7 @@
 moon fmt が直せず、moon check が対応できないベストプラクティスを中心にルールを拡充する。
 
 - [ ] parser が `..<=` をネイティブ対応したら `parser_compat.mbt` の `normalize_range_lt_inclusive` を削除し、テストも更新する
+- [ ] moonbitlang/parser が `nobreak` をネイティブ対応したら `parser_compat.mbt` の `normalize_nobreak_keyword` と CLI 側のフォールバックを削除し、関連テストを整理する
 
 ## 実装計画
 

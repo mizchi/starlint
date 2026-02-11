@@ -338,6 +338,14 @@ fn[FS : @vfs.VFS] read_mbt_file_to_impls(
     parser=MoonYacc,
   )
   if reports.length() > 0 {
+    let (fallback_impls, fallback_reports) = @lintlib.parse_string_for_lint(
+      source,
+      name=source_name,
+      parser=Handrolled,
+    )
+    if fallback_reports.length() == 0 {
+      return (fallback_impls, source)
+    }
     fail(reports[0].to_string())
   }
   // println(impls.to_json().stringify(indent=2))

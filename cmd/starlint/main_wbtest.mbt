@@ -96,3 +96,29 @@ test "analyze_compare_path: absolute path" {
   let actual = analyze_compare_path(fs, "/repo", "/tmp/base.json")
   inspect(actual, content="/tmp/base.json")
 }
+
+///|
+test "read_mbt_file_to_impls: fallback parser handles nobreak" {
+  let fs = @vfs.MemVFS::new()
+  let source =
+    #|///|
+    #|pub fn lint_with_config() -> Array[Int] {
+    #|  let diagnostics = Array::new(capacity=0)
+    #|  let rules = [1]
+    #|  for rule in rules {
+    #|    diagnostics.push(rule)
+    #|  } nobreak {
+    #|    diagnostics
+    #|  }
+    #|}
+    #|
+  fs.write_string("/repo/engine_like.mbt", source)
+  let result : Result[(@syntax.Impls, String), Error] = try? read_mbt_file_to_impls(
+    fs, "/repo/engine_like.mbt", "engine_like.mbt",
+  )
+  guard result is Ok((impls, parsed_source)) &&
+    impls.length() > 0 &&
+    parsed_source == source else {
+    fail("expected parser to handle nobreak source")
+  }
+}

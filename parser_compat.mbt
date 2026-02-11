@@ -128,6 +128,99 @@ fn normalize_range_lt_inclusive(source : String) -> String {
 }
 
 ///|
+fn is_parser_trivia_token(tok : @tokens.Token) -> Bool {
+  tok is @tokens.Token::NEWLINE || tok is @tokens.Token::COMMENT(_)
+}
+
+///|
+fn prev_significant_token(
+  tokens : @tokens.Triples,
+  index : Int,
+) -> @tokens.Token? {
+  let mut i = index - 1
+  while i >= 0 {
+    let (tok, _, _) = tokens[i]
+    if !is_parser_trivia_token(tok) {
+      return Some(tok)
+    }
+    i -= 1
+  }
+  None
+}
+
+///|
+fn next_significant_token(
+  tokens : @tokens.Triples,
+  index : Int,
+) -> @tokens.Token? {
+  let mut i = index + 1
+  while i < tokens.length() {
+    let (tok, _, _) = tokens[i]
+    if !is_parser_trivia_token(tok) {
+      return Some(tok)
+    }
+    i += 1
+  }
+  None
+}
+
+///|
+fn normalize_nobreak_keyword(source : String) -> String {
+  let lex_result = @lexer.tokens_from_string_with_utf16_location(
+    source,
+    comment=true,
+  )
+  if lex_result.errors.length() > 0 {
+    return source
+  }
+  let replacements : Array[(Int, Int)] = Array::new(capacity=2)
+  for i in 0..<lex_result.tokens.length() {
+    let (tok, start, end) = lex_result.tokens[i]
+    match tok {
+      @tokens.Token::LIDENT(name) if name == "nobreak" =>
+        match
+          (
+            prev_significant_token(lex_result.tokens, i),
+            next_significant_token(lex_result.tokens, i),
+          ) {
+          (Some(@tokens.Token::RBRACE), Some(@tokens.Token::LBRACE)) =>
+            replacements.push((start.cnum, end.cnum))
+          _ => ()
+        }
+      _ => ()
+    }
+  }
+  if replacements.is_empty() {
+    return source
+  }
+  replacements.sort_by((a, b) => a.0 - b.0)
+  let sb = StringBuilder::new()
+  let mut last = 0
+  for replacement in replacements {
+    let (start, end) = replacement
+    if start < last || end < start || end > source.length() {
+      return source
+    }
+    let prefix_result : Result[StringView, Error] = try? source[last:start]
+    match prefix_result {
+      Ok(prefix) => {
+        sb..write_view(prefix).write_string("else")
+        last = end
+      }
+      Err(_) => return source
+    }
+  }
+  let suffix_result : Result[StringView, Error] = try? source[last:]
+  match suffix_result {
+    Ok(suffix) => {
+      sb.write_view(suffix)
+      sb.to_string()
+    }
+    Err(_) => source
+  }
+}
+
+///|
 fn attach_docstrings_for_lint(
   docstrings : Array[@list.List[(@basic.Location, @tokens.Comment)]],
   toplevels : @syntax.Impls,
@@ -359,6 +452,7 @@ pub fn parse_string_for_lint(
   let normalized = source
     |> normalize_using_type_keyword
     |> normalize_range_lt_inclusive
+    |> normalize_nobreak_keyword
   let (impls, reports) = @parser.parse_string(normalized, name~, parser~)
   if reports.length() > 0 {
     match parser {
