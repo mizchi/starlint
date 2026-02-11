@@ -23,6 +23,7 @@ starlint foo.mbt # check this file
 starlint --rule prefer_pipeline # show only this rule's diagnostics
 starlint --fix # apply all autofixes
 starlint --fix --rule if_let_to_match # apply fixes for one rule only
+starlint . --fix --dry-run # preview rewrites without writing files
 starlint --by-rule foo.mbt # group diagnostics by rule
 starlint doc # show rule list and defaults
 starlint init # generate starlint.json (with rule_groups guidance)

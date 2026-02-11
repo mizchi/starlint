@@ -140,3 +140,72 @@ test "read_mbt_file_to_impls: fallback parser handles nobreak" {
     fail("expected parser to handle nobreak source")
   }
 }
+
+///|
+fn dry_run_test_source_before() -> String {
+  let text =
+    #|fn main {
+    #|  let x = if cond { true } else { false }
+    #|}
+  text
+}
+
+///|
+fn dry_run_test_source_after() -> String {
+  let text =
+    #|fn main {
+    #|  let x = cond
+    #|}
+  text
+}
+
+///|
+fn setup_fix_test_module(fs : @vfs.MemVFS) -> Unit {
+  let module_info =
+    #|{"name":"tmp/mod","source":"."}
+  fs.add_file("/repo/moon.mod.json", module_info)
+  fs.add_file("/repo/a.mbt", dry_run_test_source_before())
+}
+
+///|
+test "run_with_start_dir: --fix applies file changes" {
+  let fs = @vfs.MemVFS::new()
+  setup_fix_test_module(fs)
+  run_with_start_dir(
+    fs,
+    ["--fix", "--rule", "boolean_if_true_false", "a.mbt"],
+    "/repo",
+  )
+  let actual = fs.read_string("/repo/a.mbt")
+  inspect(actual, content=dry_run_test_source_after())
+}
+
+///|
+test "run_with_start_dir: --fix --dry-run does not write file" {
+  let fs = @vfs.MemVFS::new()
+  setup_fix_test_module(fs)
+  run_with_start_dir(
+    fs,
+    ["--fix", "--dry-run", "--rule", "boolean_if_true_false", "a.mbt"],
+    "/repo",
+  )
+  let actual = fs.read_string("/repo/a.mbt")
+  inspect(actual, content=dry_run_test_source_before())
+}
+
+///|
+test "format_dry_run_preview: includes old/new snippets" {
+  let source = dry_run_test_source_before()
+  let (impls, _) = @lintlib.parse_string_for_lint(source, name="a.mbt")
+  let input = @lintlib.LintInput::new(impls~, source~, filename="a.mbt")
+  let diagnostics = @lintlib.lint_with_config(
+    input,
+    @lint.rules(),
+    @lintlib.LintConfig::recommended(),
+  ).filter(diag => diag.rule_id == "boolean_if_true_false")
+  let fixes = collect_fixes(diagnostics, "a.mbt")
+  let preview = format_dry_run_preview(source, "a.mbt", fixes, fixes.length())
+  assert_true(preview.contains("Dry-run preview for a.mbt"))
+  assert_true(preview.contains("old: if cond { true } else { false }"))
+  assert_true(preview.contains("new: cond"))
+}

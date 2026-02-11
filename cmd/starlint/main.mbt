@@ -842,8 +842,8 @@ fn usage_text() -> String {
   let text =
     #| usage:
     #|   starlint
-    #|   starlint . [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule]
-    #|   starlint [--ai] [--fix] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
+    #|   starlint . [--ai] [--fix] [--dry-run] [--rule <id>] [--config <file>] [--by-file|--by-rule]
+    #|   starlint [--ai] [--fix] [--dry-run] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
     #|   starlint init
     #|   starlint doc
     #|   starlint baseline [--compare <file>]
@@ -980,6 +980,89 @@ fn apply_fixes_to_source(
   } nobreak {
     (output, applied)
   }
+}
+
+///|
+fn preview_text(text : String) -> String {
+  if !text.contains("\n") {
+    return text
+  }
+  let lines = []
+  for line in text.split("\n") {
+    lines.push(line.to_string())
+  } nobreak {
+    join_strings(lines, "\\n")
+  }
+}
+
+///|
+fn sort_fixes_for_preview(fixes : Array[@lintlib.Fix]) -> Array[@lintlib.Fix] {
+  let out = []
+  for fix in fixes {
+    out.push(fix)
+  }
+  out.sort_by((a, b) => a.range.start.cnum - b.range.start.cnum)
+  out
+}
+
+///|
+fn format_dry_run_preview(
+  source : String,
+  display_path : String,
+  fixes : Array[@lintlib.Fix],
+  applied : Int,
+) -> String {
+  let ordered = sort_fixes_for_preview(fixes)
+  let sb = StringBuilder::new()
+  sb
+  ..write_string("Dry-run preview for ")
+  ..write_string(display_path)
+  ..write_string(" (")
+  ..write_string(applied.to_string())
+  .write_string(" fixes)\n")
+  for fix in ordered {
+    let old_text = match @internal.source_slice(source, fix.range) {
+      Some(src) => src
+      None => ""
+    }
+    sb
+    ..write_string("- ")
+    ..write_string(fix.range.to_string())
+    ..write_string("\n")
+    ..write_string("  old: ")
+    ..write_string(preview_text(old_text))
+    ..write_string("\n")
+    ..write_string("  new: ")
+    ..write_string(preview_text(fix.replacement))
+    .write_string("\n")
+  }
+  sb.to_string()
+}
+
+///|
+fn[FS : @vfs.VFS] preview_fixes_for_file(
+  fs : FS,
+  fs_path : String,
+  display_path : String,
+  diagnostics : Array[@lintlib.Diagnostic],
+) -> (Int, String?) raise {
+  let fixes = collect_fixes(diagnostics, display_path)
+  if fixes.is_empty() {
+    return (0, None)
+  }
+  let source = fs.read_string(fs_path)
+  let (new_source, applied) = apply_fixes_to_source(source, fixes)
+  if applied == 0 || new_source == source {
+    return (0, None)
+  }
+  let (_, reports) = @lintlib.parse_string_for_lint(
+    new_source,
+    name=display_path,
+  )
+  if reports.length() > 0 {
+    return (0, None)
+  }
+  (applied, Some(format_dry_run_preview(source, display_path, fixes, applied)))
 }
 
 ///|
@@ -1184,6 +1267,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
     }
   }
   let apply_fix = @ref.new(false)
+  let dry_run = @ref.new(false)
   let config_path = @ref.new("")
   let rule_filter = @ref.new("")
   let ai_mode = @ref.new(false)
@@ -1191,6 +1275,12 @@ fn[FS : @vfs.VFS] run_with_start_dir(
   let by_rule = @ref.new(false)
   let spec : Array[(String, String, @ArgParser.Spec, String)] = [
     ("--fix", "-f", @ArgParser.Spec::Set(apply_fix), "apply autofixes"),
+    (
+      "--dry-run",
+      "",
+      @ArgParser.Spec::Set(dry_run),
+      "preview autofixes without writing files",
+    ),
     (
       "--config",
       "-c",
@@ -1311,31 +1401,49 @@ fn[FS : @vfs.VFS] run_with_start_dir(
         diag.rule_id == rule_filter.val
       })
     }
-    if apply_fix.val {
-      let applied = apply_fixes_to_file(
-        fs, fs_path, display_path, file_diagnostics,
-      ) catch {
-        err => {
-          println(err)
-          panic()
-        }
-      }
-      if applied > 0 {
-        let refreshed_config = config.for_file(display_path)
-        file_diagnostics = lint_file(
-          fs, fs_path, display_path, package_filenames, rules, refreshed_config,
+    if apply_fix.val || dry_run.val {
+      if dry_run.val {
+        let (applied, preview) = preview_fixes_for_file(
+          fs, fs_path, display_path, file_diagnostics,
         ) catch {
           err => {
             println(err)
             panic()
           }
         }
-        if rule_filter.val != "" {
-          file_diagnostics = file_diagnostics.filter(diag => {
-            diag.rule_id == rule_filter.val
-          })
+        if applied > 0 {
+          println("Would apply \{applied} fixes in \{display_path}")
+          match preview {
+            Some(text) => println(text)
+            None => ()
+          }
         }
-        println("Applied \{applied} fixes in \{display_path}")
+      } else {
+        let applied = apply_fixes_to_file(
+          fs, fs_path, display_path, file_diagnostics,
+        ) catch {
+          err => {
+            println(err)
+            panic()
+          }
+        }
+        if applied > 0 {
+          let refreshed_config = config.for_file(display_path)
+          file_diagnostics = lint_file(
+            fs, fs_path, display_path, package_filenames, rules, refreshed_config,
+          ) catch {
+            err => {
+              println(err)
+              panic()
+            }
+          }
+          if rule_filter.val != "" {
+            file_diagnostics = file_diagnostics.filter(diag => {
+              diag.rule_id == rule_filter.val
+            })
+          }
+          println("Applied \{applied} fixes in \{display_path}")
+        }
       }
     }
     for diag in file_diagnostics {
