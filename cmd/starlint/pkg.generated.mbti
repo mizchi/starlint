@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "mizchi/starlint/cli"
+package "mizchi/starlint/cmd/starlint"
 
 // Values
 pub fn run(Array[String], start_dir? : String) -> Unit

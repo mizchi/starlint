@@ -3,7 +3,7 @@
   "ignore": ["target/*", "_build/*"],
   "overrides": [
     {
-      "files": ["cli/*", "benchmarks/*"],
+      "files": ["cmd/starlint/*", "benchmarks/*"],
       "rules": {
         "avoid_abort_in_error_paths": "off"
       }

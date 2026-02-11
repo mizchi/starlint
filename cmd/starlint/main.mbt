@@ -11,16 +11,16 @@ fn colorize(text : String, code : String) -> String {
 }
 
 ///|
-fn severity_color_code(severity : @starlint.Severity) -> String {
+fn severity_color_code(severity : @lintlib.Severity) -> String {
   match severity {
-    @starlint.Severity::Error => "31"
-    @starlint.Severity::Warning => "33"
-    @starlint.Severity::Info => "34"
+    @lintlib.Severity::Error => "31"
+    @lintlib.Severity::Warning => "33"
+    @lintlib.Severity::Info => "34"
   }
 }
 
 ///|
-fn format_diagnostic_colored(diag : @starlint.Diagnostic) -> String {
+fn format_diagnostic_colored(diag : @lintlib.Diagnostic) -> String {
   let sb = StringBuilder::new()
   let rule_text = colorize(diag.rule_id, "36")
   let sev_label = diag.severity.to_string()
@@ -58,7 +58,7 @@ fn format_diagnostic_colored(diag : @starlint.Diagnostic) -> String {
 }
 
 ///|
-fn compare_by_file(a : @starlint.Diagnostic, b : @starlint.Diagnostic) -> Int {
+fn compare_by_file(a : @lintlib.Diagnostic, b : @lintlib.Diagnostic) -> Int {
   let fa = a.loc.start.fname
   let fb = b.loc.start.fname
   let cmp = fa.compare(fb)
@@ -73,7 +73,7 @@ fn compare_by_file(a : @starlint.Diagnostic, b : @starlint.Diagnostic) -> Int {
 }
 
 ///|
-fn compare_by_rule(a : @starlint.Diagnostic, b : @starlint.Diagnostic) -> Int {
+fn compare_by_rule(a : @lintlib.Diagnostic, b : @lintlib.Diagnostic) -> Int {
   let cmp = a.rule_id.compare(b.rule_id)
   if cmp != 0 {
     return cmp
@@ -82,7 +82,7 @@ fn compare_by_rule(a : @starlint.Diagnostic, b : @starlint.Diagnostic) -> Int {
 }
 
 ///|
-fn print_by_file(diagnostics : Array[@starlint.Diagnostic]) -> Unit {
+fn print_by_file(diagnostics : Array[@lintlib.Diagnostic]) -> Unit {
   if diagnostics.is_empty() {
     return
   }
@@ -102,7 +102,7 @@ fn print_by_file(diagnostics : Array[@starlint.Diagnostic]) -> Unit {
 }
 
 ///|
-fn print_by_rule(diagnostics : Array[@starlint.Diagnostic]) -> Unit {
+fn print_by_rule(diagnostics : Array[@lintlib.Diagnostic]) -> Unit {
   if diagnostics.is_empty() {
     return
   }
@@ -162,20 +162,20 @@ fn string_array_inline(items : Array[String]) -> String {
 }
 
 ///|
-fn severity_label(severity : @starlint.Severity) -> String {
+fn severity_label(severity : @lintlib.Severity) -> String {
   severity.to_string().to_lower()
 }
 
 ///|
-fn print_rules_doc(rules : Array[@starlint.Rule]) -> Unit {
+fn print_rules_doc(rules : Array[@lintlib.Rule]) -> Unit {
   let sorted = []
   for rule in rules {
     sorted.push(rule)
   }
   sorted.sort_by((a, b) => a.id.compare(b.id))
-  let recommended = @starlint.LintConfig::recommended()
+  let recommended = @lintlib.LintConfig::recommended()
   for rule in sorted {
-    let (rec_enabled, rec_sev) = @starlint.resolve_rule_settings(
+    let (rec_enabled, rec_sev) = @lintlib.resolve_rule_settings(
       rule, recommended,
     )
     let tags = if rule.tags.is_empty() {
@@ -197,13 +197,13 @@ fn print_rules_doc(rules : Array[@starlint.Rule]) -> Unit {
 }
 
 ///|
-fn default_rules_config_json(rules : Array[@starlint.Rule]) -> String {
+fn default_rules_config_json(rules : Array[@lintlib.Rule]) -> String {
   let sorted = []
   for rule in rules {
     sorted.push(rule)
   }
   sorted.sort_by((a, b) => a.id.compare(b.id))
-  let recommended = @starlint.LintConfig::recommended()
+  let recommended = @lintlib.LintConfig::recommended()
   let always_on = []
   let project_policy = []
   let async_rules = []
@@ -285,7 +285,7 @@ fn default_rules_config_json(rules : Array[@starlint.Rule]) -> String {
   sb.write_string("  \"rules\": {\n")
   let mut index = 0
   for rule in sorted {
-    let (enabled, sev) = @starlint.resolve_rule_settings(rule, recommended)
+    let (enabled, sev) = @lintlib.resolve_rule_settings(rule, recommended)
     let value = if enabled { severity_label(sev) } else { "off" }
     sb.write_string("    \"")
     sb.write_string(rule.id)
@@ -306,7 +306,7 @@ fn default_rules_config_json(rules : Array[@starlint.Rule]) -> String {
 ///|
 fn[FS : @vfs.VFS] run_init(
   fs : FS,
-  rules : Array[@starlint.Rule],
+  rules : Array[@lintlib.Rule],
   module_root : String,
 ) -> Unit {
   let config_path = join_path(module_root, "starlint.json")
@@ -332,7 +332,7 @@ fn[FS : @vfs.VFS] read_mbt_file_to_impls(
   source_name : String,
 ) -> (@syntax.Impls, String) raise {
   let source = fs.read_string(fs_path)
-  let (impls, reports) = @starlint.parse_string_for_lint(
+  let (impls, reports) = @lintlib.parse_string_for_lint(
     source,
     name=source_name,
     parser=MoonYacc,
@@ -883,9 +883,9 @@ fn[FS : @vfs.VFS] analyze_compare_path(
 fn[FS : @vfs.VFS] load_config(
   fs : FS,
   path : String,
-) -> @starlint.LintConfig raise {
+) -> @lintlib.LintConfig raise {
   let text = fs.read_string(path)
-  @starlint.LintConfig::from_json(text)
+  @lintlib.LintConfig::from_json(text)
 }
 
 ///|
@@ -894,24 +894,24 @@ fn[FS : @vfs.VFS] lint_file(
   fs_path : String,
   display_path : String,
   package_filenames : Array[String],
-  rules : Array[@starlint.Rule],
-  config : @starlint.LintConfig,
-) -> Array[@starlint.Diagnostic] raise {
+  rules : Array[@lintlib.Rule],
+  config : @lintlib.LintConfig,
+) -> Array[@lintlib.Diagnostic] raise {
   let (impls, source) = read_mbt_file_to_impls(fs, fs_path, display_path)
-  let input = @starlint.LintInput::new(
+  let input = @lintlib.LintInput::new(
     impls~,
     source~,
     filename=display_path,
     package_filenames~,
   )
-  return @starlint.lint_with_config(input, rules, config)
+  return @lintlib.lint_with_config(input, rules, config)
 }
 
 ///|
 fn collect_fixes(
-  diagnostics : Array[@starlint.Diagnostic],
+  diagnostics : Array[@lintlib.Diagnostic],
   filename : String,
-) -> Array[@starlint.Fix] {
+) -> Array[@lintlib.Fix] {
   let fixes = []
   for diag in diagnostics {
     match diag.fix {
@@ -929,7 +929,7 @@ fn collect_fixes(
 ///|
 fn apply_fixes_to_source(
   source : String,
-  fixes : Array[@starlint.Fix],
+  fixes : Array[@lintlib.Fix],
 ) -> (String, Int) {
   if fixes.is_empty() {
     return (source, 0)
@@ -1015,7 +1015,7 @@ fn[FS : @vfs.VFS] apply_fixes_to_file(
   fs : FS,
   fs_path : String,
   display_path : String,
-  diagnostics : Array[@starlint.Diagnostic],
+  diagnostics : Array[@lintlib.Diagnostic],
 ) -> Int raise {
   let fixes = collect_fixes(diagnostics, display_path)
   if fixes.is_empty() {
@@ -1024,7 +1024,7 @@ fn[FS : @vfs.VFS] apply_fixes_to_file(
   let source = fs.read_string(fs_path)
   let (new_source, applied) = apply_fixes_to_source(source, fixes)
   if applied > 0 && new_source != source {
-    let (_, reports) = @starlint.parse_string_for_lint(
+    let (_, reports) = @lintlib.parse_string_for_lint(
       new_source,
       name=display_path,
     )
@@ -1251,7 +1251,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
               panic()
             }
           }
-        None => @starlint.LintConfig::recommended()
+        None => @lintlib.LintConfig::recommended()
       }
     path =>
       load_config(fs, path) catch {

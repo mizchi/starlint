@@ -1,5 +1,5 @@
 import {
-  "mizchi/starlint",
+  "mizchi/starlint" @lintlib,
   "mizchi/starlint/internal",
   "mizchi/starlint/tasks/lint",
   "mizchi/starlint/vfs",

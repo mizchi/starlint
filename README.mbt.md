@@ -33,7 +33,7 @@ When embedding in your own app/library, define your own wrapper module (for
 example `myapp/tasks/lint`) and compose rules there for each runtime
 environment.
 
-```mbt
+```mbt nocheck
 // moon.pkg
 import {
   "mizchi/starlint",
@@ -60,7 +60,7 @@ You can inject user-defined rules with `Rule::from_plugin(...)`.
 The plugin receives `ctx` (report + AST utilities), similar to ESLint's
 `create(context)` style.
 
-```mbt
+```mbt nocheck
 // moon.pkg
 import {
   "mizchi/starlint",
@@ -74,19 +74,23 @@ fn plugin_rule() -> @starlint.Rule {
     description="example plugin rule",
     tags=["my-plugin"],
     enabled_by_default=false,
-    plugin=ctx => ctx.visit_exprs(expr => match ctx.match_call_info(expr) {
-      Some((name, args, loc)) if name == "assert_true" =>
-        match ctx.first_positional_arg(args) {
-          Some(arg) if ctx.match_constant_bool(arg) == Some(true) =>
-            ctx.report(
-              loc~,
-              message="avoid assert_true(true)",
-              suggestion="assert_true(actual)",
-            )
+    plugin=ctx => {
+      ctx.visit_exprs(expr => {
+        match ctx.match_call_info(expr) {
+          Some((name, args, loc)) if name == "assert_true" =>
+            match ctx.first_positional_arg(args) {
+              Some(arg) if ctx.match_constant_bool(arg) == Some(true) =>
+                ctx.report(
+                  loc~,
+                  message="avoid assert_true(true)",
+                  suggestion="assert_true(actual)",
+                )
+              _ => ()
+            }
           _ => ()
         }
-      _ => ()
-    }),
+      })
+    },
   )
 }
 
@@ -106,7 +110,7 @@ fn run_with_plugin(source : String) -> Array[@starlint.Diagnostic] {
 
 1. CLI (`myapp lint foo.mbt`)
 
-```mbt
+```mbt nocheck
 ///|
 pub fn lint_for_cli(source : String, filename : String) -> Int {
   let config = @starlint.LintConfig::recommended()
@@ -128,7 +132,7 @@ pub fn lint_for_cli(source : String, filename : String) -> Int {
 
 2. Editor on-save (fast subset)
 
-```mbt
+```mbt nocheck
 ///|
 pub fn lint_on_save(
   source : String,
@@ -151,7 +155,7 @@ pub fn lint_on_save(
 
 3. CI / batch runner (single composed ruleset)
 
-```mbt
+```mbt nocheck
 ///|
 pub fn rules_for_ci() -> Array[@starlint.Rule] {
   @lint.compose_rules([plugin_rule()])
@@ -183,17 +187,17 @@ starlint --config path/to/starlint.json src/foo.mbt
 ## embed as CLI main
 
 Use starlint as a library-driven CLI by calling `@cli.run(...)` from your own
-`main` (e.g. `src/internal/cli.mbt`).
+`main` (e.g. `src/cmd/starlint/main.mbt`).
 
 ```
 // moon.pkg
 import {
-  "mizchi/starlint/cli",
+  "mizchi/starlint/cmd/starlint" @cli,
   "moonbitlang/x/sys",
 }
 ```
 
-```mbt
+```mbt nocheck
 ///|
 fn main {
   let argv = @sys.get_cli_args()[1:].to_array()
@@ -204,19 +208,28 @@ fn main {
 
 ## install
 
+From mooncakes:
+
 ```
-curl -fsSL https://raw.githubusercontent.com/mizchi/starlint/main/install.sh | sh
+moon install mizchi/starlint/cmd/starlint
 ```
 
-Optional environment variables:
+Pin a specific version:
 
-- `STARLINT_VERSION` to pin a tag (e.g. `v0.2.1`)
-- `STARLINT_INSTALL_DIR` to change the install directory (default: `$HOME/.local/bin`)
+```
+moon install mizchi/starlint/cmd/starlint@v0.7.1
+```
+
+Install to a custom bin directory:
+
+```
+moon install --bin ~/.local/bin mizchi/starlint/cmd/starlint
+```
 
 For local development builds:
 
 ```
-just install
+moon install ./cmd/starlint
 ```
 
 ## configuration

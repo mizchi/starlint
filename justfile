@@ -1,14 +1,10 @@
 set shell := ["bash", "-cu"]
 
-home := env_var("HOME")
-bin := home + "/.local/bin/starlint"
-
 build:
-  moon build --target native cli
+  moon build --target native cmd/starlint
 
-install: build
-  mkdir -p {{home}}/.local/bin
-  install -m 755 _build/native/release/build/cli/cli.exe {{bin}}
+install:
+  moon install ./cmd/starlint
 
 metrics-test:
   bash scripts/moon_metrics_test.sh

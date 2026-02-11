@@ -34,11 +34,11 @@ fn[FS : @vfs.VFS] run_baseline(
           panic()
         }
       }
-    None => @starlint.LintConfig::recommended()
+    None => @lintlib.LintConfig::recommended()
   }
   // Collect metrics per file and per package
   let pkg_data : Map[String, PackageAccum] = Map::new()
-  let file_baselines : Map[String, @starlint.FileBaseline] = Map::new()
+  let file_baselines : Map[String, @lintlib.FileBaseline] = Map::new()
   let all_diagnostics = []
   let mut total_loc = 0
   let mut total_functions = 0
@@ -56,10 +56,10 @@ fn[FS : @vfs.VFS] run_baseline(
     match parse_result {
       Ok((impls, source)) => {
         let package_name = package_name_for_file(module_name, display_path)
-        let loc = @starlint.count_loc(source)
+        let loc = @lintlib.count_loc(source)
         total_loc += loc
         // Complexity
-        let functions = @starlint.compute_file_complexity(impls, source)
+        let functions = @lintlib.compute_file_complexity(impls, source)
         let mut file_max = 0
         let mut file_sum = 0
         for fc in functions {
@@ -78,7 +78,7 @@ fn[FS : @vfs.VFS] run_baseline(
         } else {
           0.0
         }
-        file_baselines.set(display_path, @starlint.FileBaseline::{
+        file_baselines.set(display_path, @lintlib.FileBaseline::{
           package_name,
           loc,
           functions,
@@ -103,12 +103,12 @@ fn[FS : @vfs.VFS] run_baseline(
         accum.loc += loc
         collect_package_metrics(impls, accum)
         // Diagnostics
-        let input = @starlint.LintInput::new(
+        let input = @lintlib.LintInput::new(
           impls~,
           source~,
           filename=display_path,
         )
-        let file_diags = @starlint.lint_with_config(input, rules, file_config)
+        let file_diags = @lintlib.lint_with_config(input, rules, file_config)
         for diag in file_diags {
           all_diagnostics.push(diag)
         }
@@ -117,10 +117,10 @@ fn[FS : @vfs.VFS] run_baseline(
     }
   }
   // Build package baselines
-  let packages : Map[String, @starlint.PackageBaseline] = Map::new()
+  let packages : Map[String, @lintlib.PackageBaseline] = Map::new()
   for name, accum in pkg_data {
     accum.pub_api_names.sort_by((a, b) => a.compare(b))
-    packages.set(name, @starlint.PackageBaseline::{
+    packages.set(name, @lintlib.PackageBaseline::{
       pub_fn_count: accum.pub_fn_count,
       pub_type_count: accum.pub_type_count,
       pub_api_names: accum.pub_api_names,
@@ -137,7 +137,7 @@ fn[FS : @vfs.VFS] run_baseline(
     }
     by_rule.set(diag.rule_id, current + 1)
   }
-  let diagnostics_summary = @starlint.DiagnosticsSummary::{
+  let diagnostics_summary = @lintlib.DiagnosticsSummary::{
     total: all_diagnostics.length(),
     by_rule,
   }
@@ -153,7 +153,7 @@ fn[FS : @vfs.VFS] run_baseline(
   } else {
     0.0
   }
-  let summary = @starlint.BaselineSummary::{
+  let summary = @lintlib.BaselineSummary::{
     total_files: file_baselines.length(),
     total_loc,
     total_packages: packages.length(),
@@ -163,7 +163,7 @@ fn[FS : @vfs.VFS] run_baseline(
     avg_complexity,
     max_complexity: global_max_complexity,
   }
-  let baseline = @starlint.Baseline::{
+  let baseline = @lintlib.Baseline::{
     version: "1",
     packages,
     files: file_baselines,
@@ -178,14 +178,14 @@ fn[FS : @vfs.VFS] run_baseline(
         panic()
       }
     }
-    let old_baseline = @starlint.Baseline::from_json(old_text) catch {
+    let old_baseline = @lintlib.Baseline::from_json(old_text) catch {
       err => {
         println("failed to parse baseline file: \{err}")
         panic()
       }
     }
-    let comparison = @starlint.compare_baselines(old_baseline, baseline)
-    comparison |> @starlint.format_comparison |> println
+    let comparison = @lintlib.compare_baselines(old_baseline, baseline)
+    comparison |> @lintlib.format_comparison |> println
   } else {
     // Write baseline
     let git_hash = read_git_head_hash(fs, module_root)
@@ -211,7 +211,7 @@ fn[FS : @vfs.VFS] run_baseline(
     println("  pub APIs: \{total_pub_apis}")
     println("  tests: \{total_tests}")
     println("  diagnostics: \{all_diagnostics.length()}")
-    println("  avg complexity: \{@starlint.format_double(avg_complexity)}")
+    println("  avg complexity: \{@lintlib.format_double(avg_complexity)}")
     println("  max complexity: \{global_max_complexity}")
   }
 }
