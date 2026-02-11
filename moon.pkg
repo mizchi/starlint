@@ -10,7 +10,7 @@ import {
   "moonbitlang/parser/yacc_parser",
 }
 
-import "test" {
+import {
   "moonbitlang/parser",
   "mizchi/starlint/tasks/lint",
-}
+} for "test"
