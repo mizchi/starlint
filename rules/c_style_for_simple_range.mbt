@@ -58,6 +58,40 @@ fn match_simple_update(binder_name : String, expr : @syntax.Expr) -> Bool {
 }
 
 ///|
+fn range_side_needs_paren(raw_src : String) -> Bool {
+  let src = raw_src.trim().to_string()
+  if src == "" {
+    return false
+  }
+  if src.has_prefix("(") && src.has_suffix(")") {
+    return false
+  }
+  src.contains("+") ||
+  src.contains("-") ||
+  src.contains("*") ||
+  src.contains("/") ||
+  src.contains("%") ||
+  src.contains("&&") ||
+  src.contains("||") ||
+  src.contains("&") ||
+  src.contains("|") ||
+  src.contains("^") ||
+  src.contains("==") ||
+  src.contains("!=") ||
+  src.contains("<") ||
+  src.contains(">")
+}
+
+///|
+fn format_range_side(src : String) -> String {
+  if range_side_needs_paren(src) {
+    "(\{src})"
+  } else {
+    src
+  }
+}
+
+///|
 impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.For(
@@ -114,7 +148,9 @@ impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) 
                 (Some(init_src), Some(bound_src), Some(body_src)) =>
                   if !body_src.contains("\n") {
                     let range_op = if inclusive { "..=" } else { "..<" }
-                    let replacement = "for \{binder_name} in \{init_src}\{range_op}\{bound_src} { \{body_src} }"
+                    let start_src = format_range_side(init_src)
+                    let end_src = format_range_side(bound_src)
+                    let replacement = "for \{binder_name} in \{start_src}\{range_op}\{end_src} { \{body_src} }"
                     Some(@starlint.Fix::new(range=loc, replacement~))
                   } else {
                     None

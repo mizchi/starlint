@@ -291,6 +291,22 @@ test "fix fixtures" {
       rules: ["prefer_eta_reduce"],
     },
     FixFixture::{
+      name: "prefer_eta_reduce_constructor_no_fix",
+      input: (
+        #|fn main {
+        #|  let ok = x => Ok(x)
+        #|  let err = x => Err(x)
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let ok = x => Ok(x)
+        #|  let err = x => Err(x)
+        #|}
+      ),
+      rules: ["prefer_eta_reduce"],
+    },
+    FixFixture::{
       name: "prefer_tuple_destructure_fix",
       input: (
         #|fn main {
@@ -522,6 +538,38 @@ test "fix fixtures" {
       rules: ["dotdot_single_call"],
     },
     FixFixture::{
+      name: "dotdot_single_call_used_as_value_no_fix",
+      input: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  let result = obj..a()
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  let result = obj..a()
+        #|}
+      ),
+      rules: ["dotdot_single_call"],
+    },
+    FixFixture::{
+      name: "dotdot_single_call_followed_by_dot_no_fix",
+      input: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  let result = obj..a().b()
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let obj = foo()
+        #|  let result = obj..a().b()
+        #|}
+      ),
+      rules: ["dotdot_single_call"],
+    },
+    FixFixture::{
       name: "prefer_pipeline_rebind_chain_no_fix",
       input: (
         #|fn main {
@@ -619,6 +667,20 @@ test "fix fixtures" {
       expected: (
         #|fn main {
         #|  for i in 1..=3 { foo(i) }
+        #|}
+      ),
+      rules: ["c_style_for_simple_range"],
+    },
+    FixFixture::{
+      name: "c_style_for_simple_range_complex_bounds_fix",
+      input: (
+        #|fn main {
+        #|  for i = idx + 2; i < chars.length() - 1; i = i + 1 { foo(i) }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  for i in (idx + 2)..<(chars.length() - 1) { foo(i) }
         #|}
       ),
       rules: ["c_style_for_simple_range"],
@@ -725,7 +787,7 @@ test "fix fixtures" {
       rules: ["match_option_unwrap_or"],
     },
     FixFixture::{
-      name: "match_option_map_fix",
+      name: "match_option_map_no_fix_for_ambiguous_body",
       input: (
         #|fn main {
         #|  let opt = foo()
@@ -738,7 +800,10 @@ test "fix fixtures" {
       expected: (
         #|fn main {
         #|  let opt = foo()
-        #|  let value = opt.map(v => f(v))
+        #|  let value = match opt {
+        #|    Some(v) => f(v)
+        #|    None => None
+        #|  }
         #|}
       ),
       rules: ["match_option_map"],
@@ -801,6 +866,28 @@ test "fix fixtures" {
         #|  let value = match opt {
         #|    Some(v) => f(v)
         #|    None => Some(0)
+        #|  }
+        #|}
+      ),
+      rules: ["match_option_map"],
+    },
+    FixFixture::{
+      name: "match_option_map_optional_body_no_fix",
+      input: (
+        #|fn main {
+        #|  let opt = foo()
+        #|  let value = match opt {
+        #|    Some(v) => v.as_string()
+        #|    None => None
+        #|  }
+        #|}
+      ),
+      expected: (
+        #|fn main {
+        #|  let opt = foo()
+        #|  let value = match opt {
+        #|    Some(v) => v.as_string()
+        #|    None => None
         #|  }
         #|}
       ),

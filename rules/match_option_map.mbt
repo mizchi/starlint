@@ -52,17 +52,19 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
               ) {
               (Some(subject_src), Some(body_src)) =>
                 if !body_src.contains("\n") {
-                  let replacement = match
-                    @internal.match_some_apply(some_case.body) {
+                  // Restrict autofix to Some(inner) only.
+                  // For arbitrary Some branch expressions, map can change Option nesting.
+                  match @internal.match_some_apply(some_case.body) {
                     Some(inner) =>
                       match @internal.expr_source(env.source, inner) {
-                        Some(inner_src) =>
-                          "\{subject_src}.map(\{name} => \{inner_src})"
-                        None => "\{subject_src}.map(\{name} => \{body_src})"
+                        Some(inner_src) => {
+                          let replacement = "\{subject_src}.map(\{name} => \{inner_src})"
+                          Some(@starlint.Fix::new(range=loc, replacement~))
+                        }
+                        None => None
                       }
-                    None => "\{subject_src}.map(\{name} => \{body_src})"
+                    None => None
                   }
-                  Some(@starlint.Fix::new(range=loc, replacement~))
                 } else {
                   None
                 }

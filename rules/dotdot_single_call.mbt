@@ -36,6 +36,54 @@ fn dotdot_single_replacement(
 }
 
 ///|
+fn dotdot_single_has_trailing_semicolon(
+  source : String,
+  loc : @basic.Location,
+) -> Bool {
+  if source == "" {
+    return false
+  }
+  let start = loc.end.cnum
+  if start < 0 || start > source.length() {
+    return false
+  }
+  let view_result : Result[StringView, Error] = try? source[start:]
+  match view_result {
+    Ok(view) => view.trim_start().has_prefix(";")
+    Err(_) => false
+  }
+}
+
+///|
+fn dotdot_single_has_only_ws_before_on_line(
+  source : String,
+  loc : @basic.Location,
+) -> Bool {
+  if source == "" {
+    return false
+  }
+  let start = loc.start.cnum
+  if start < 0 || start > source.length() {
+    return false
+  }
+  let prefix_result : Result[StringView, Error] = try? source[:start]
+  match prefix_result {
+    Ok(prefix) => {
+      let line_start = match prefix.rev_find("\n") {
+        Some(idx) => idx + 1
+        None => 0
+      }
+      let line_result : Result[StringView, Error] = try? source[line_start:start]
+      match line_result {
+        Ok(line_prefix) => line_prefix.trim().length() == 0
+        Err(_) => false
+      }
+    }
+    Err(_) => false
+  }
+}
+
+///|
 impl @syntax.IterVisitor for DotdotSingleCallEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.DotApply(self~, return_self=true, loc~, ..) => {
@@ -53,10 +101,16 @@ impl @syntax.IterVisitor for DotdotSingleCallEnv with visit_Expr(env, expr) {
               #|obj..method()
             let suggestion =
               #|obj.method()
-            let fix = match dotdot_single_replacement(env.source, expr, self) {
-              Some(replacement) =>
-                Some(@starlint.Fix::new(range=loc, replacement~))
-              None => None
+            let can_fix = dotdot_single_has_trailing_semicolon(env.source, loc) &&
+              dotdot_single_has_only_ws_before_on_line(env.source, loc)
+            let fix = if can_fix {
+              match dotdot_single_replacement(env.source, expr, self) {
+                Some(replacement) =>
+                  Some(@starlint.Fix::new(range=loc, replacement~))
+                None => None
+              }
+            } else {
+              None
             }
             let diag = match fix {
               Some(fix) =>

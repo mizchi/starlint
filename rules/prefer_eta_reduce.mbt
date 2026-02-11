@@ -50,7 +50,6 @@ fn is_eta_target(expr : @syntax.Expr) -> Bool {
   match @internal.unwrap_paren(expr) {
     @syntax.Ident(..) => true
     @syntax.Method(..) => true
-    @syntax.Constr(..) => true
     _ => false
   }
 }
