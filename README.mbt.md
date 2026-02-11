@@ -222,12 +222,6 @@ From mooncakes:
 moon install mizchi/starlint/cmd/starlint
 ```
 
-Pin a specific version:
-
-```
-moon install mizchi/starlint/cmd/starlint@v0.9.1
-```
-
 For local development builds (from source):
 
 ```
