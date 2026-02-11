@@ -74,7 +74,7 @@ fn avoid_unnecessary_mut_rule() -> @starlint.Rule {
       let env = AvoidUnnecessaryMutEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

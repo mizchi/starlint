@@ -123,7 +123,7 @@ fn prefer_string_pattern_rule() -> @starlint.Rule {
       let env = PreferStringPatternEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

@@ -327,14 +327,14 @@ fn shell_test_no_untracked(module_root : String) -> String {
   sb
   ..write_string("test -z \"$(git -C ")
   ..write_string(shell_escape(module_root))
-  ..write_string(" ls-files --others --exclude-standard 2>/dev/null)\"")
+  .write_string(" ls-files --others --exclude-standard 2>/dev/null)\"")
   sb.to_string()
 }
 
 ///|
 fn run_git_exit_code(module_root : String, args : Array[String]) -> Int {
   let sb = StringBuilder::new()
-  sb..write_string("git -C ")..write_string(shell_escape(module_root))
+  sb..write_string("git -C ").write_string(shell_escape(module_root))
   if args.length() > 0 {
     sb.write_string(" ")
     sb.write_string(shell_join(args))

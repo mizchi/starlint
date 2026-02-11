@@ -6,7 +6,7 @@ fn colorize(text : String, code : String) -> String {
   ..write_string(code)
   ..write_string("m")
   ..write_string(text)
-  ..write_string("\u{1b}[0m")
+  .write_string("\u{1b}[0m")
   sb.to_string()
 }
 
@@ -34,14 +34,14 @@ fn format_diagnostic_colored(diag : @starlint.Diagnostic) -> String {
   ..write_string(" at ")
   ..write_string(diag.loc.to_string())
   ..write_string(":\n\n")
-  ..write_string(diag.message)
+  .write_string(diag.message)
   match diag.detail {
-    Some(detail) => sb..write_string("\n\n")..write_string(detail)
+    Some(detail) => sb..write_string("\n\n").write_string(detail)
     None => ()
   }
   match diag.suggestion {
     Some(suggestion) =>
-      sb..write_string("\n\nSuggestion:\n")..write_string(suggestion)
+      sb..write_string("\n\nSuggestion:\n").write_string(suggestion)
     None => ()
   }
   match diag.fix {
@@ -50,7 +50,7 @@ fn format_diagnostic_colored(diag : @starlint.Diagnostic) -> String {
       ..write_string("\n\nFix: replace ")
       ..write_string(fix.range.to_string())
       ..write_string(" with:\n")
-      ..write_string(fix.replacement)
+      .write_string(fix.replacement)
     None => ()
   }
   sb.write_string("\n")
@@ -530,7 +530,7 @@ fn extract_doc_tests(source : String, allow_plain_blocks : Bool) -> DocTestInfo 
         None => unnamed_tests += 1
       }
     }
-  } else {
+  } nobreak {
     DocTestInfo::{ tests, check_style_tests, unnamed_tests, block_count }
   }
 }
@@ -580,7 +580,7 @@ fn collect_ai_names(impls : @syntax.Impls) -> AiNames {
         }
       _ => ()
     }
-  } else {
+  } nobreak {
     AiNames::{
       pub_functions,
       priv_functions,
@@ -621,7 +621,7 @@ fn[FS : @vfs.VFS] print_ai_metadata(
   ..write_string(
     "- Call out vague module/file names (util/misc/helper) that hide intent.\n",
   )
-  ..write_string("\nfiles:\n")
+  .write_string("\nfiles:\n")
   for entry in file_entries {
     let (fs_path, display_path) = entry
     let package_name = package_name_for_file(module_name, display_path)
@@ -638,17 +638,17 @@ fn[FS : @vfs.VFS] print_ai_metadata(
         sb
         ..write_string("- file: ")
         ..write_string(display_path)
-        ..write_string("\n")
+        .write_string("\n")
         sb
         ..write_string("  package: ")
         ..write_string(package_name)
-        ..write_string("\n")
+        .write_string("\n")
         sb.write_string("  public functions:\n")
         if names.pub_functions.is_empty() {
           sb.write_string("    - (none)\n")
         } else {
           for name in names.pub_functions {
-            sb..write_string("    - ")..write_string(name)..write_string("\n")
+            sb..write_string("    - ")..write_string(name).write_string("\n")
           }
         }
         sb.write_string("  private functions:\n")
@@ -656,7 +656,7 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           sb.write_string("    - (none)\n")
         } else {
           for name in names.priv_functions {
-            sb..write_string("    - ")..write_string(name)..write_string("\n")
+            sb..write_string("    - ")..write_string(name).write_string("\n")
           }
         }
         sb.write_string("  tests:\n")
@@ -664,7 +664,7 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           sb.write_string("    - (none)\n")
         } else {
           for name in names.tests {
-            sb..write_string("    - ")..write_string(name)..write_string("\n")
+            sb..write_string("    - ")..write_string(name).write_string("\n")
           }
         }
         if names.unnamed_tests > 0 || !names.check_style_tests.is_empty() {
@@ -673,13 +673,13 @@ fn[FS : @vfs.VFS] print_ai_metadata(
             sb
             ..write_string("    - unnamed tests: ")
             ..write_string(names.unnamed_tests.to_string())
-            ..write_string("\n")
+            .write_string("\n")
           }
           for name in names.check_style_tests {
             sb
             ..write_string("    - check-style: ")
             ..write_string(name)
-            ..write_string("\n")
+            .write_string("\n")
           }
         }
         let doc_info = extract_doc_tests(source, false)
@@ -690,7 +690,7 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           sb
           ..write_string("    code_blocks: ")
           ..write_string(doc_info.block_count.to_string())
-          ..write_string("\n")
+          .write_string("\n")
           sb.write_string("    tests:\n")
           if doc_info.tests.is_empty() {
             sb.write_string("      - (none)\n")
@@ -699,7 +699,7 @@ fn[FS : @vfs.VFS] print_ai_metadata(
               sb
               ..write_string("      - ")
               ..write_string(name)
-              ..write_string("\n")
+              .write_string("\n")
             }
           }
           if doc_info.unnamed_tests > 0 ||
@@ -709,13 +709,13 @@ fn[FS : @vfs.VFS] print_ai_metadata(
               sb
               ..write_string("      - unnamed tests: ")
               ..write_string(doc_info.unnamed_tests.to_string())
-              ..write_string("\n")
+              .write_string("\n")
             }
             for name in doc_info.check_style_tests {
               sb
               ..write_string("      - check-style: ")
               ..write_string(name)
-              ..write_string("\n")
+              .write_string("\n")
             }
           }
         }
@@ -724,12 +724,12 @@ fn[FS : @vfs.VFS] print_ai_metadata(
         sb
         ..write_string("- file: ")
         ..write_string(display_path)
-        ..write_string("\n")
+        .write_string("\n")
         sb
         ..write_string("  package: ")
         ..write_string(package_name)
-        ..write_string("\n")
-        sb..write_string("  parse_error: ")..write_string(err.to_string())
+        .write_string("\n")
+        sb..write_string("  parse_error: ").write_string(err.to_string())
         sb.write_string("\n")
       }
     }
@@ -754,17 +754,17 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           sb
           ..write_string("- file: ")
           ..write_string(doc_path)
-          ..write_string("\n")
+          .write_string("\n")
           sb
           ..write_string("  code_blocks: ")
           ..write_string(info.block_count.to_string())
-          ..write_string("\n")
+          .write_string("\n")
           sb.write_string("  tests:\n")
           if info.tests.is_empty() {
             sb.write_string("    - (none)\n")
           } else {
             for name in info.tests {
-              sb..write_string("    - ")..write_string(name)..write_string("\n")
+              sb..write_string("    - ")..write_string(name).write_string("\n")
             }
           }
           if info.unnamed_tests > 0 || !info.check_style_tests.is_empty() {
@@ -773,13 +773,13 @@ fn[FS : @vfs.VFS] print_ai_metadata(
               sb
               ..write_string("    - unnamed tests: ")
               ..write_string(info.unnamed_tests.to_string())
-              ..write_string("\n")
+              .write_string("\n")
             }
             for name in info.check_style_tests {
               sb
               ..write_string("    - check-style: ")
               ..write_string(name)
-              ..write_string("\n")
+              .write_string("\n")
             }
           }
         }
@@ -788,8 +788,8 @@ fn[FS : @vfs.VFS] print_ai_metadata(
           sb
           ..write_string("- file: ")
           ..write_string(doc_path)
-          ..write_string("\n")
-          sb..write_string("  read_error: ")..write_string(err.to_string())
+          .write_string("\n")
+          sb..write_string("  read_error: ").write_string(err.to_string())
           sb.write_string("\n")
         }
       }
@@ -921,7 +921,7 @@ fn collect_fixes(
         }
       None => ()
     }
-  } else {
+  } nobreak {
     fixes
   }
 }
@@ -950,7 +950,7 @@ fn apply_fixes_to_source(
           sb
           ..write_view(prefix)
           ..write_string(fix.replacement)
-          ..write_view(suffix)
+          .write_view(suffix)
           output = sb.to_string()
           applied += 1
           prev_start = start
@@ -958,7 +958,7 @@ fn apply_fixes_to_source(
         _ => ()
       }
     }
-  } else {
+  } nobreak {
     (output, applied)
   }
 }
@@ -1081,7 +1081,7 @@ fn build_file_entries_from_args(
       None => filename
     }
     entries.push((fs_path, rel_path))
-  } else {
+  } nobreak {
     entries
   }
 }
@@ -1098,7 +1098,7 @@ fn[FS : @vfs.VFS] build_file_entries_from_module(
   for rel_path in rel_paths {
     let fs_path = join_path(module_root, rel_path)
     entries.push((fs_path, rel_path))
-  } else {
+  } nobreak {
     entries
   }
 }
@@ -1283,8 +1283,9 @@ fn[FS : @vfs.VFS] run_with_start_dir(
       }
     }
     if rule_filter.val != "" {
-      file_diagnostics = file_diagnostics.filter(diag => diag.rule_id ==
-        rule_filter.val)
+      file_diagnostics = file_diagnostics.filter(diag => {
+        diag.rule_id == rule_filter.val
+      })
     }
     if apply_fix.val {
       let applied = apply_fixes_to_file(
@@ -1306,8 +1307,9 @@ fn[FS : @vfs.VFS] run_with_start_dir(
           }
         }
         if rule_filter.val != "" {
-          file_diagnostics = file_diagnostics.filter(diag => diag.rule_id ==
-            rule_filter.val)
+          file_diagnostics = file_diagnostics.filter(diag => {
+            diag.rule_id == rule_filter.val
+          })
         }
         println("Applied \{applied} fixes in \{display_path}")
       }

@@ -183,7 +183,7 @@ fn spawn_bg_long_running_requires_no_wait_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

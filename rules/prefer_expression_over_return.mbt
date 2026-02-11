@@ -122,7 +122,7 @@ fn prefer_expression_over_return_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

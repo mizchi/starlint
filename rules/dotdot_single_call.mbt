@@ -28,7 +28,7 @@ fn dotdot_single_replacement(
   match call_src.strip_prefix("\{receiver_src}..") {
     Some(view) => {
       let sb = StringBuilder::new()
-      sb..write_view(receiver_src)..write_char('.')..write_view(view)
+      sb..write_view(receiver_src)..write_char('.').write_view(view)
       Some(sb.to_string())
     }
     None => None
@@ -100,7 +100,7 @@ fn dotdot_single_call_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

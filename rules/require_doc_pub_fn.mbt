@@ -16,7 +16,7 @@ fn has_doc_content_pub_fn(doc : @syntax.DocString) -> Bool {
     if !line.is_blank() {
       return true
     }
-  } else {
+  } nobreak {
     false
   }
 }
@@ -71,7 +71,7 @@ fn require_doc_pub_fn_rule() -> @starlint.Rule {
       let env = RequireDocPubFnEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

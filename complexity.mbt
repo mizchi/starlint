@@ -80,7 +80,7 @@ pub fn compute_file_complexity(
       }
       _ => ()
     }
-  } else {
+  } nobreak {
     results
   }
 }

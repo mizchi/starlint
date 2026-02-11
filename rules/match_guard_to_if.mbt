@@ -39,7 +39,7 @@ fn is_guard_chain_cases(cases : @list.List[@syntax.Case]) -> Bool {
     } else {
       return false
     }
-  } else {
+  } nobreak {
     has_guard
   }
 }
@@ -91,7 +91,7 @@ fn match_guard_to_if_rule() -> @starlint.Rule {
       let env = MatchGuardToIfEnv::{ diags: Array::new(capacity=8) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

@@ -144,7 +144,7 @@ fn boolean_match_is_pattern_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

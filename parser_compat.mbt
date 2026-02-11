@@ -59,7 +59,7 @@ fn normalize_using_type_keyword(source : String) -> String {
                         sb
                         ..write_view(prefix)
                         ..write_string(mid_replaced)
-                        ..write_view(suffix)
+                        .write_view(suffix)
                         output = sb.to_string()
                         offset = close_pos + 1
                       }
@@ -107,7 +107,7 @@ fn normalize_range_lt_inclusive(source : String) -> String {
       match prefix_result {
         Ok(prefix) => {
           changed = true
-          sb..write_view(prefix)..write_string("..= ")
+          sb..write_view(prefix).write_string("..= ")
           last = end_idx
         }
         Err(_) => return source
@@ -147,9 +147,11 @@ fn attach_docstrings_for_lint(
     comments : @list.List[(@basic.Location, @tokens.Comment)],
   ) -> @syntax.DocString {
     {
-      content: comments.map(p => match p.1.content {
-        [.. "///|", .. remain] | [.. "///", .. remain] => remain.to_string()
-        _ => panic()
+      content: comments.map(p => {
+        match p.1.content {
+          [.. "///|", .. remain] | [.. "///", .. remain] => remain.to_string()
+          _ => panic()
+        }
       }),
       loc: {
         start: comments.head().unwrap().0.start,

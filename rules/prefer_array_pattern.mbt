@@ -166,7 +166,7 @@ fn prefer_array_pattern_rule() -> @starlint.Rule {
       let env = PreferArrayPatternEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

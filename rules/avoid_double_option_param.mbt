@@ -70,7 +70,7 @@ fn avoid_double_option_param_rule() -> @starlint.Rule {
       let env = AvoidDoubleOptionParamEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

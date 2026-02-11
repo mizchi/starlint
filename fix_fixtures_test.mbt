@@ -38,7 +38,7 @@ fn collect_fixes(
         None => ()
       }
     }
-  } else {
+  } nobreak {
     fixes
   }
 }
@@ -66,14 +66,14 @@ fn apply_fixes_to_source(
           sb
           ..write_view(prefix)
           ..write_string(fix.replacement)
-          ..write_view(suffix)
+          .write_view(suffix)
           output = sb.to_string()
           prev_start = start
         }
         _ => ()
       }
     }
-  } else {
+  } nobreak {
     output
   }
 }
@@ -1069,7 +1069,7 @@ test "fix fixtures" {
       ..write_string("\n--- expected ---\n")
       ..write_string(fixture.expected)
       ..write_string("\n--- actual ---\n")
-      ..write_string(output)
+      .write_string(output)
       fail(sb.to_string())
     }
   }
@@ -1160,7 +1160,7 @@ test "fix fixtures boolean match is pattern" {
       ..write_string("\n--- expected ---\n")
       ..write_string(fixture.expected)
       ..write_string("\n--- actual ---\n")
-      ..write_string(output)
+      .write_string(output)
       fail(sb.to_string())
     }
   }
@@ -1231,7 +1231,7 @@ test "fix fixtures assert false not" {
       ..write_string("\n--- expected ---\n")
       ..write_string(fixture.expected)
       ..write_string("\n--- actual ---\n")
-      ..write_string(output)
+      .write_string(output)
       fail(sb.to_string())
     }
   }
@@ -1310,7 +1310,7 @@ test "fix fixtures prefer prefix not" {
       ..write_string("\n--- expected ---\n")
       ..write_string(fixture.expected)
       ..write_string("\n--- actual ---\n")
-      ..write_string(output)
+      .write_string(output)
       fail(sb.to_string())
     }
   }

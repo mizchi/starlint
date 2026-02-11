@@ -136,7 +136,7 @@ fn spawn_result_must_be_used_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

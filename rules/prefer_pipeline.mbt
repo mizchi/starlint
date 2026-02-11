@@ -91,7 +91,7 @@ fn pipeline_suggestion(
     _ => "(\{base_src})"
   }
   let sb = StringBuilder::new()
-  sb..write_view(base_text)
+  sb.write_view(base_text)
   let mut idx = funcs.length()
   while idx > 0 {
     idx = idx - 1
@@ -99,7 +99,7 @@ fn pipeline_suggestion(
       Some(src) => src
       None => return None
     }
-    sb..write_string(" |> ")..write_view(func_src)
+    sb..write_string(" |> ").write_view(func_src)
   }
   Some(sb.to_string())
 }
@@ -171,7 +171,7 @@ fn prefer_pipeline_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

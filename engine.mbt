@@ -17,7 +17,7 @@ pub fn lint_with_config(
         diagnostics.push(diag.with_severity(severity))
       }
     }
-  } else {
+  } nobreak {
     diagnostics
   }
 }

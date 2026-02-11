@@ -58,7 +58,7 @@ fn match_result_try_rule() -> @starlint.Rule {
       let env = MatchResultTryEnv(Array::new(capacity=8))
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         let MatchResultTryEnv(diags) = env
         diags
       }

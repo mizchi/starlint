@@ -20,7 +20,7 @@ fn remove_at(source : String, index : Int) -> String? {
   match (prefix_result, suffix_result) {
     (Ok(prefix), Ok(suffix)) => {
       let sb = StringBuilder::new()
-      sb..write_view(prefix)..write_view(suffix)
+      sb..write_view(prefix).write_view(suffix)
       Some(sb.to_string())
     }
     _ => None
@@ -162,7 +162,7 @@ fn legacy_call_syntax_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

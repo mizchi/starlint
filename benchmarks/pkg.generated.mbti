@@ -1,7 +1,14 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "mizchi/starlint/benchmarks"
 
+import {
+  "mizchi/starlint",
+  "moonbitlang/core/list",
+  "moonbitlang/parser/syntax",
+}
+
 // Values
+pub fn keep_bench_imports_used(String, String, String) -> (@list.List[@syntax.Impl], String, String?, Array[@starlint.Rule]) raise
 
 // Errors
 

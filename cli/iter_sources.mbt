@@ -106,7 +106,7 @@ fn[FS : @vfs.VFS] get_mbt_path_set_from_base(
       if !need_ignore(path) {
         q.push((join_path(base_fs, path), join_rel(base_rel, path)))
       }
-    } else {
+    } nobreak {
       q
     }
   }
@@ -127,7 +127,7 @@ fn[FS : @vfs.VFS] get_mbt_path_set_from_base(
     } else if fs_path.has_suffix(".mbt") {
       mbt_set.push(rel_path)
     }
-  } else {
+  } nobreak {
     return mbt_set
   }
 }
@@ -148,7 +148,7 @@ fn[FS : @vfs.VFS] get_mbt_md_path_set_from_base(
       if !need_ignore(path) {
         q.push((join_path(base_fs, path), join_rel(base_rel, path)))
       }
-    } else {
+    } nobreak {
       q
     }
   }
@@ -169,7 +169,7 @@ fn[FS : @vfs.VFS] get_mbt_md_path_set_from_base(
     } else if fs_path.has_suffix(".mbt.md") {
       md_set.push(rel_path)
     }
-  } else {
+  } nobreak {
     return md_set
   }
 }

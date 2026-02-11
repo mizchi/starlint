@@ -114,10 +114,10 @@ fn dotdot_chain_replacement(
     }
   }
   let sb = StringBuilder::new()
-  sb..write_view(receiver_src)
+  sb.write_view(receiver_src)
   for suffix in suffixes {
-    sb..write_string("..")..write_view(suffix)
-  } else {
+    sb..write_string("..").write_view(suffix)
+  } nobreak {
     Some(sb.to_string())
   }
 }
@@ -236,7 +236,7 @@ fn dotdot_chain_sequence_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

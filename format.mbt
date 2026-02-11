@@ -10,14 +10,14 @@ pub fn format_diagnostic(diag : Diagnostic) -> String {
   ..write_string(" at ")
   ..write_string(diag.loc.to_string())
   ..write_string(":\n\n")
-  ..write_string(diag.message)
+  .write_string(diag.message)
   match diag.detail {
-    Some(detail) => sb..write_string("\n\n")..write_string(detail)
+    Some(detail) => sb..write_string("\n\n").write_string(detail)
     None => ()
   }
   match diag.suggestion {
     Some(suggestion) =>
-      sb..write_string("\n\nSuggestion: ")..write_string(suggestion)
+      sb..write_string("\n\nSuggestion: ").write_string(suggestion)
     None => ()
   }
   match diag.fix {
@@ -26,7 +26,7 @@ pub fn format_diagnostic(diag : Diagnostic) -> String {
       ..write_string("\n\nFix: replace ")
       ..write_string(fix.range.to_string())
       ..write_string(" with:\n")
-      ..write_string(fix.replacement)
+      .write_string(fix.replacement)
     None => ()
   }
   sb.write_string("\n")

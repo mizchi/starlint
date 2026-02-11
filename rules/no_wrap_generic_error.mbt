@@ -83,7 +83,7 @@ fn no_wrap_generic_error_rule() -> @starlint.Rule {
       let env = NoWrapGenericErrorEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

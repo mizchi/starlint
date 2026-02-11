@@ -42,7 +42,7 @@ fn[T] list_to_array_for(xs : @list.List[T]) -> Array[T] {
   let out = Array::new(capacity=4)
   for item in xs {
     out.push(item)
-  } else {
+  } nobreak {
     out
   }
 }
@@ -164,7 +164,7 @@ fn c_style_for_simple_range_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

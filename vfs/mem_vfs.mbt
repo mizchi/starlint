@@ -130,7 +130,7 @@ pub impl VFS for MemVFS with read_dir(self, path : String) -> Array[String] rais
   let result = []
   for name, _ in seen {
     result.push(name)
-  } else {
+  } nobreak {
     result
   }
 }

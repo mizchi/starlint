@@ -125,7 +125,7 @@ pub fn[T] list_to_array(xs : @list.List[T]) -> Array[T] {
   let out = Array::new(capacity=4)
   for item in xs {
     out.push(item)
-  } else {
+  } nobreak {
     out
   }
 }
@@ -231,7 +231,7 @@ pub fn func_param_names(func : @syntax.Func) -> Array[String] {
         }
       _ => ()
     }
-  } else {
+  } nobreak {
     names
   }
 }

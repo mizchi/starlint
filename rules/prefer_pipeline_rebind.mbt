@@ -87,7 +87,7 @@ fn rebind_call_rhs(
     return Some(func_src)
   }
   let sb = StringBuilder::new()
-  sb..write_view(func_src)..write_string("(")
+  sb..write_view(func_src).write_string("(")
   let mut first = true
   for arg in args {
     match arg.kind {
@@ -101,11 +101,11 @@ fn rebind_call_rhs(
     if first {
       first = false
     } else {
-      sb..write_string(", ")
+      sb.write_string(", ")
     }
-    sb..write_view(arg_src)
+    sb.write_view(arg_src)
   }
-  sb..write_string(")")
+  sb.write_string(")")
   Some(sb.to_string())
 }
 
@@ -120,7 +120,7 @@ fn rebind_pipeline_suggestion(
     None => return None
   }
   let sb = StringBuilder::new()
-  sb..write_view(base_src)
+  sb.write_view(base_src)
   for step in steps {
     let (_, bound_expr) = step
     match rebind_parse_simple_apply(bound_expr) {
@@ -143,7 +143,7 @@ fn rebind_pipeline_suggestion(
           Some(rhs) => rhs
           None => return None
         }
-        sb..write_string(" |> ")..write_view(rhs)
+        sb..write_string(" |> ").write_view(rhs)
       }
       None => return None
     }
@@ -246,7 +246,7 @@ fn prefer_pipeline_rebind_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

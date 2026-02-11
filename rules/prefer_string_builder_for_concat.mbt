@@ -102,7 +102,7 @@ fn prefer_string_builder_for_concat_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

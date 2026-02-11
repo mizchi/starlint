@@ -73,7 +73,7 @@ fn avoid_string_from_array_large_rule() -> @starlint.Rule {
       let env = AvoidStringFromArrayLargeEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

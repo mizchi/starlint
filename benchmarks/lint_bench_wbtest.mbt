@@ -35,7 +35,7 @@ fn load_lint_bench_source() -> (String, String) {
   } else {
     let sb = StringBuilder::new()
     for _ in 0..<repeat {
-      sb..write_string(source)..write_char('\n')
+      sb..write_string(source).write_char('\n')
     }
     (filename, sb.to_string())
   }
@@ -85,7 +85,7 @@ fn filter_rules_by_tag(
     if rule.tags.contains(tag) {
       out.push(rule)
     }
-  } else {
+  } nobreak {
     out
   }
 }
@@ -100,7 +100,7 @@ fn filter_rules_by_tags(
     if rule_has_any_tag(rule, tags) {
       out.push(rule)
     }
-  } else {
+  } nobreak {
     out
   }
 }

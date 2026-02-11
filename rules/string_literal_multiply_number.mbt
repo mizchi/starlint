@@ -61,7 +61,7 @@ fn string_literal_multiply_number_rule() -> @starlint.Rule {
       let env = StringLiteralMultiplyNumberEnv(Array::new(capacity=8))
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         let StringLiteralMultiplyNumberEnv(diags) = env
         diags
       }

@@ -45,7 +45,7 @@ fn match_try_question_rule() -> @starlint.Rule {
       let env = MatchTryQuestionEnv(Array::new(capacity=8))
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         let MatchTryQuestionEnv(diags) = env
         diags
       }

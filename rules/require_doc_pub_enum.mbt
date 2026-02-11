@@ -16,7 +16,7 @@ fn has_doc_content_pub_enum(doc : @syntax.DocString) -> Bool {
     if !line.is_blank() {
       return true
     }
-  } else {
+  } nobreak {
     false
   }
 }
@@ -70,7 +70,7 @@ fn require_doc_pub_enum_rule() -> @starlint.Rule {
       let env = RequireDocPubEnumEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

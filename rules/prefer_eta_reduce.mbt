@@ -23,7 +23,7 @@ fn params_to_names(params : Array[@syntax.Parameter]) -> Array[String]? {
         }
       _ => return None
     }
-  } else {
+  } nobreak {
     Some(names)
   }
 }
@@ -79,7 +79,7 @@ fn eta_call_target(
           Some(name) if name == params[i] => ()
           _ => return None
         }
-      } else {
+      } nobreak {
         Some(func)
       }
     }
@@ -194,7 +194,7 @@ fn prefer_eta_reduce_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

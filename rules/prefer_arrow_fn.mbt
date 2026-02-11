@@ -21,7 +21,7 @@ fn params_to_arrow_source(params : Array[@syntax.Parameter]) -> String? {
       @syntax.Parameter::Positional(binder~, ty=None) => names.push(binder.name)
       _ => return None
     }
-  } else {
+  } nobreak {
     let joined = names.join(", ")
     if names.length() == 1 {
       Some(joined)
@@ -147,7 +147,7 @@ fn prefer_arrow_fn_rule() -> @starlint.Rule {
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

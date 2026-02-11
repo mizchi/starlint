@@ -89,7 +89,7 @@ fn avoid_json_js_rule() -> @starlint.Rule {
       let env = AvoidJsonJsEnv::{ diags: Array::new(capacity=8) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
-      } else {
+      } nobreak {
         env.diags
       }
     },

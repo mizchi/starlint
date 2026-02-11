@@ -148,7 +148,7 @@ fn bench_dotdot_chain(bench : @bench.T, size : Int, count : UInt) -> Unit {
       let mut acc = 0
       for _ in 0..<size {
         let b = Box::{ x: 1 }
-        b..inc()..mul()
+        b..inc().mul()
         acc += b.x
       }
       bench.keep(acc)
