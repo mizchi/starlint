@@ -20,18 +20,13 @@ fn MemVFS::ensure_parent_dirs(self : MemVFS, path : String) -> Unit {
           self.dirs["/"] = true
           break
         } else {
-          let parent_result : Result[StringView, Error] = try? current[:idx]
-          match parent_result {
-            Ok(view) => {
-              let parent = view.to_string()
-              if self.dirs.contains(parent) {
-                break
-              }
-              self.dirs[parent] = true
-              current = parent
-            }
-            Err(_) => break
+          let view = current[:idx]
+          let parent = view.to_string()
+          if self.dirs.contains(parent) {
+            break
           }
+          self.dirs[parent] = true
+          current = parent
         }
     }
   }
@@ -71,11 +66,7 @@ pub impl VFS for MemVFS with path_exists(self, path : String) -> Bool {
 ///|
 pub impl VFS for MemVFS with read_dir(self, path : String) -> Array[String] raise Error {
   let normalized = if path.has_suffix("/") {
-    let slice_result : Result[StringView, Error] = try? path[:path.length() - 1]
-    match slice_result {
-      Ok(view) => view.to_string()
-      Err(_) => path
-    }
+    path[:path.length() - 1].to_string()
   } else {
     path
   }
@@ -87,43 +78,27 @@ pub impl VFS for MemVFS with read_dir(self, path : String) -> Array[String] rais
   let seen : Map[String, Bool] = {}
   for file_path, _ in self.files {
     if file_path.has_prefix(prefix) {
-      let rest_result : Result[StringView, Error] = try? file_path[prefix_len:]
-      match rest_result {
-        Ok(rest) => {
-          let rest_str = rest.to_string()
-          match rest_str.find("/") {
-            Some(idx) => {
-              let name_result : Result[StringView, Error] = try? rest_str[:idx]
-              match name_result {
-                Ok(name) => seen[name.to_string()] = true
-                Err(_) => ()
-              }
-            }
-            None => seen[rest_str] = true
-          }
+      let rest = file_path[prefix_len:]
+      let rest_str = rest.to_string()
+      match rest_str.find("/") {
+        Some(idx) => {
+          let name = rest_str[:idx]
+          seen[name.to_string()] = true
         }
-        Err(_) => ()
+        None => seen[rest_str] = true
       }
     }
   }
   for dir_path, _ in self.dirs {
     if dir_path.has_prefix(prefix) && dir_path.length() > prefix_len {
-      let rest_result : Result[StringView, Error] = try? dir_path[prefix_len:]
-      match rest_result {
-        Ok(rest) => {
-          let rest_str = rest.to_string()
-          match rest_str.find("/") {
-            Some(idx) => {
-              let name_result : Result[StringView, Error] = try? rest_str[:idx]
-              match name_result {
-                Ok(name) => seen[name.to_string()] = true
-                Err(_) => ()
-              }
-            }
-            None => seen[rest_str] = true
-          }
+      let rest = dir_path[prefix_len:]
+      let rest_str = rest.to_string()
+      match rest_str.find("/") {
+        Some(idx) => {
+          let name = rest_str[:idx]
+          seen[name.to_string()] = true
         }
-        Err(_) => ()
+        None => seen[rest_str] = true
       }
     }
   }

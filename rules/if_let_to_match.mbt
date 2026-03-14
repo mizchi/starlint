@@ -7,33 +7,18 @@ fn stmt_indent(source : String, loc : @basic.Location) -> String {
   if start <= 0 || start > source.length() {
     return ""
   }
-  let prefix_result : Result[StringView, Error] = try? source[:start]
-  match prefix_result {
-    Ok(prefix) => {
-      let line_start = match prefix.rev_find("\n") {
-        Some(idx) => idx + 1
-        None => 0
-      }
-      let line_text_result : Result[StringView, Error] = try? source[line_start:start]
-      match line_text_result {
-        Ok(line_text) => {
-          let trimmed = line_text.trim_start()
-          let ws_len = line_text.length() - trimmed.length()
-          if ws_len == 0 {
-            ""
-          } else {
-            let ws_result : Result[StringView, Error] = try? source[line_start:line_start +
-              ws_len]
-            match ws_result {
-              Ok(ws) => ws.to_string()
-              Err(_) => ""
-            }
-          }
-        }
-        Err(_) => ""
-      }
-    }
-    Err(_) => ""
+  let prefix = source[:start]
+  let line_start = match prefix.rev_find("\n") {
+    Some(idx) => idx + 1
+    None => 0
+  }
+  let line_text = source[line_start:start]
+  let trimmed = line_text.trim_start()
+  let ws_len = line_text.length() - trimmed.length()
+  if ws_len == 0 {
+    ""
+  } else {
+    source[line_start:line_start + ws_len].to_string()
   }
 }
 

@@ -287,11 +287,7 @@ fn basename(path : String) -> String {
   while idx > 0 {
     idx = idx - 1
     if path[idx] == ('/' : UInt16) {
-      let view_result : Result[StringView, Error] = try? path[idx + 1:]
-      return match view_result {
-        Ok(view) => view.to_string()
-        Err(_) => path
-      }
+      return path[idx + 1:].to_string()
     }
   }
   path

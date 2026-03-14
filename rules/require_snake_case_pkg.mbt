@@ -39,22 +39,11 @@ fn extract_pkg_dir_name(filename : String) -> String? {
   match filename.rev_find("/") {
     None => None
     Some(idx) => {
-      let dir_result : Result[StringView, Error] = try? filename[:idx]
-      match dir_result {
-        Ok(view) => {
-          let dir = view.to_string()
-          match dir.rev_find("/") {
-            None => Some(dir)
-            Some(idx2) => {
-              let seg_result : Result[StringView, Error] = try? dir[idx2 + 1:]
-              match seg_result {
-                Ok(v) => Some(v.to_string())
-                Err(_) => None
-              }
-            }
-          }
-        }
-        Err(_) => None
+      let view = filename[:idx]
+      let dir = view.to_string()
+      match dir.rev_find("/") {
+        None => Some(dir)
+        Some(idx2) => Some(dir[idx2 + 1:].to_string())
       }
     }
   }
@@ -65,29 +54,18 @@ fn extract_file_stem(filename : String) -> String? {
   // Get basename (after last /)
   let base = match filename.rev_find("/") {
     None => filename
-    Some(idx) => {
-      let r : Result[StringView, Error] = try? filename[idx + 1:]
-      match r {
-        Ok(v) => v.to_string()
-        Err(_) => return None
-      }
-    }
+    Some(idx) => filename[idx + 1:].to_string()
   }
   // Remove .mbt extension
   if !base.has_suffix(".mbt") {
     return None
   }
-  let r : Result[StringView, Error] = try? base[:base.length() - 4]
-  match r {
-    Ok(v) => {
-      let stem = v.to_string()
-      if stem.length() == 0 {
-        None
-      } else {
-        Some(stem)
-      }
-    }
-    Err(_) => None
+  let v = base[:base.length() - 4]
+  let stem = v.to_string()
+  if stem.length() == 0 {
+    None
+  } else {
+    Some(stem)
   }
 }
 
