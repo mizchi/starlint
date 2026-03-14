@@ -73,13 +73,13 @@ fn dotdot_single_has_only_ws_before_on_line(
 ///|
 impl @syntax.IterVisitor for DotdotSingleCallEnv with visit_Expr(env, expr) {
   match expr {
-    @syntax.DotApply(self~, return_self=true, loc~, ..) => {
+    @syntax.DotApply(self~, return_self~, loc~, ..) => {
       match self {
         @syntax.DotApply(return_self=true, loc=inner_loc, ..) =>
           env.skip_locs.set(@internal.location_key(inner_loc), true)
         _ => ()
       }
-      if env.skip_locs.get(@internal.location_key(loc)) is None {
+      if env.skip_locs.get(@internal.location_key(loc)) is None && return_self {
         match self {
           @syntax.DotApply(return_self=true, ..) => ()
           _ => {
