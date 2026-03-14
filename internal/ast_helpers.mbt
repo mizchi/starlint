@@ -357,11 +357,7 @@ pub fn source_slice(source : String, loc : @basic.Location) -> String? {
   if start < 0 || end < start || end > source.length() {
     return None
   }
-  let view_result : Result[StringView, Error] = try? source[start:end]
-  match view_result {
-    Ok(view) => Some(view.to_string())
-    Err(_) => None
-  }
+  Some(source[start:end].to_string())
 }
 
 ///|

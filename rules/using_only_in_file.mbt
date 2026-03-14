@@ -15,15 +15,7 @@ priv struct UsingOnlyInFileEnv {
 
 ///|
 fn string_has_suffix(value : String, suffix : String) -> Bool {
-  if value.length() < suffix.length() {
-    return false
-  }
-  let start = value.length() - suffix.length()
-  let view_result : Result[StringView, Error] = try? value[start:]
-  match view_result {
-    Ok(view) => view == suffix
-    Err(_) => false
-  }
+  value.has_suffix(suffix)
 }
 
 ///|

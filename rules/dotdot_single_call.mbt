@@ -47,11 +47,7 @@ fn dotdot_single_has_trailing_semicolon(
   if start < 0 || start > source.length() {
     return false
   }
-  let view_result : Result[StringView, Error] = try? source[start:]
-  match view_result {
-    Ok(view) => view.trim_start().has_prefix(";")
-    Err(_) => false
-  }
+  source[start:].trim_start().has_prefix(";")
 }
 
 ///|
@@ -66,33 +62,24 @@ fn dotdot_single_has_only_ws_before_on_line(
   if start < 0 || start > source.length() {
     return false
   }
-  let prefix_result : Result[StringView, Error] = try? source[:start]
-  match prefix_result {
-    Ok(prefix) => {
-      let line_start = match prefix.rev_find("\n") {
-        Some(idx) => idx + 1
-        None => 0
-      }
-      let line_result : Result[StringView, Error] = try? source[line_start:start]
-      match line_result {
-        Ok(line_prefix) => line_prefix.trim().length() == 0
-        Err(_) => false
-      }
-    }
-    Err(_) => false
+  let prefix = source[:start]
+  let line_start = match prefix.rev_find("\n") {
+    Some(idx) => idx + 1
+    None => 0
   }
+  source[line_start:start].trim().length() == 0
 }
 
 ///|
 impl @syntax.IterVisitor for DotdotSingleCallEnv with visit_Expr(env, expr) {
   match expr {
-    @syntax.DotApply(self~, return_self=true, loc~, ..) => {
+    @syntax.DotApply(self~, return_self~, loc~, ..) => {
       match self {
         @syntax.DotApply(return_self=true, loc=inner_loc, ..) =>
           env.skip_locs.set(@internal.location_key(inner_loc), true)
         _ => ()
       }
-      if env.skip_locs.get(@internal.location_key(loc)) is None {
+      if env.skip_locs.get(@internal.location_key(loc)) is None && return_self {
         match self {
           @syntax.DotApply(return_self=true, ..) => ()
           _ => {

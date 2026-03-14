@@ -15,16 +15,11 @@ fn remove_at(source : String, index : Int) -> String? {
   if index < 0 || index >= source.length() {
     return None
   }
-  let prefix_result : Result[StringView, Error] = try? source[:index]
-  let suffix_result : Result[StringView, Error] = try? source[index + 1:]
-  match (prefix_result, suffix_result) {
-    (Ok(prefix), Ok(suffix)) => {
-      let sb = StringBuilder::new()
-      sb..write_view(prefix).write_view(suffix)
-      Some(sb.to_string())
-    }
-    _ => None
-  }
+  let prefix = source[:index]
+  let suffix = source[index + 1:]
+  let sb = StringBuilder::new()
+  sb..write_view(prefix).write_view(suffix)
+  Some(sb.to_string())
 }
 
 ///|
@@ -51,11 +46,7 @@ fn remove_question_mark(call_src : String) -> String? {
             None
           } else {
             let end = call_src.length() - 1
-            let view_result : Result[StringView, Error] = try? call_src[:end]
-            match view_result {
-              Ok(view) => Some(view.to_string())
-              Err(_) => None
-            }
+            Some(call_src[:end].to_string())
           }
       }
   }

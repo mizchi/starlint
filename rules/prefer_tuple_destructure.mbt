@@ -121,21 +121,12 @@ fn line_indent(source : String, loc : @basic.Location) -> String {
   if start <= 0 || start > source.length() {
     return ""
   }
-  let prefix_result : Result[StringView, Error] = try? source[:start]
-  match prefix_result {
-    Ok(prefix) => {
-      let line_start = match prefix.rev_find("\n") {
-        Some(idx) => idx + 1
-        None => 0
-      }
-      let indent_result : Result[StringView, Error] = try? source[line_start:start]
-      match indent_result {
-        Ok(view) => view.to_string()
-        Err(_) => ""
-      }
-    }
-    Err(_) => ""
+  let prefix = source[:start]
+  let line_start = match prefix.rev_find("\n") {
+    Some(idx) => idx + 1
+    None => 0
   }
+  source[line_start:start].to_string()
 }
 
 ///|

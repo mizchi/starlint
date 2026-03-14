@@ -108,11 +108,7 @@ fn map_has_trailing_semicolon(source : String, loc : @basic.Location) -> Bool {
   if start < 0 || start > source.length() {
     return false
   }
-  let view_result : Result[StringView, Error] = try? source[start:]
-  match view_result {
-    Ok(view) => view.trim_start().has_prefix(";")
-    Err(_) => false
-  }
+  source[start:].trim_start().has_prefix(";")
 }
 
 ///|
