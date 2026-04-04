@@ -1,61 +1,71 @@
 ///|
-test "parse_compare_option: long option" {
-  let actual = parse_compare_option(["--compare", "baseline.json"][:])
-  inspect(actual, content="baseline.json")
+test "build_command: baseline --compare parses correctly" {
+  let cmd = build_command()
+  let matches = cmd.parse(argv=["baseline", "--compare", "baseline.json"], env={}) catch {
+    err => {
+      println(err)
+      panic()
+    }
+  }
+  guard matches.subcommand is Some(("baseline", sub_matches))
+  let compare = match sub_matches.values.get("compare") {
+    Some([val, ..]) => val
+    _ => ""
+  }
+  inspect(compare, content="baseline.json")
 }
 
 ///|
-test "parse_compare_option: short option" {
-  let actual = parse_compare_option(["-c", "path/to/baseline.json"][:])
-  inspect(actual, content="path/to/baseline.json")
+test "build_command: baseline -c parses correctly" {
+  let cmd = build_command()
+  let matches = cmd.parse(argv=["baseline", "-c", "path/to/baseline.json"], env={}) catch {
+    err => {
+      println(err)
+      panic()
+    }
+  }
+  guard matches.subcommand is Some(("baseline", sub_matches))
+  let compare = match sub_matches.values.get("compare") {
+    Some([val, ..]) => val
+    _ => ""
+  }
+  inspect(compare, content="path/to/baseline.json")
 }
 
 ///|
-test "parse_compare_option: no option" {
-  let actual = parse_compare_option(["foo.mbt"][:])
-  inspect(actual, content="")
+test "build_command: baseline without compare" {
+  let cmd = build_command()
+  let matches = cmd.parse(argv=["baseline"], env={}) catch {
+    err => {
+      println(err)
+      panic()
+    }
+  }
+  guard matches.subcommand is Some(("baseline", sub_matches))
+  let compare = match sub_matches.values.get("compare") {
+    Some([val, ..]) => val
+    _ => ""
+  }
+  inspect(compare, content="")
 }
 
 ///|
-test "parse_compare_option: missing value" {
-  let actual = parse_compare_option(["--compare"][:])
-  inspect(actual, content="")
-}
-
-///|
-test "parse_meta_option: long help" {
-  let actual = parse_meta_option(["--help"][:])
-  inspect(actual, content="help")
-}
-
-///|
-test "parse_meta_option: short help" {
-  let actual = parse_meta_option(["-h"][:])
-  inspect(actual, content="help")
-}
-
-///|
-test "parse_meta_option: long version" {
-  let actual = parse_meta_option(["--version"][:])
-  inspect(actual, content="version")
-}
-
-///|
-test "parse_meta_option: short version" {
-  let actual = parse_meta_option(["-v"][:])
-  inspect(actual, content="version")
-}
-
-///|
-test "parse_meta_option: first hit wins" {
-  let actual = parse_meta_option(["-v", "--help"][:])
-  inspect(actual, content="version")
-}
-
-///|
-test "parse_meta_option: no option" {
-  let actual = parse_meta_option(["foo.mbt"][:])
-  inspect(actual, content="")
+test "build_command: lint with flags" {
+  let cmd = build_command()
+  let matches = cmd.parse(argv=["--fix", "--rule", "some_rule", "a.mbt"], env={}) catch {
+    err => {
+      println(err)
+      panic()
+    }
+  }
+  inspect(matches.flags.get("fix"), content="Some(true)")
+  let rule = match matches.values.get("rule") {
+    Some([val, ..]) => val
+    _ => ""
+  }
+  inspect(rule, content="some_rule")
+  let files = matches.values.get("files").unwrap_or([])
+  inspect(files, content="[\"a.mbt\"]")
 }
 
 ///|

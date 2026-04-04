@@ -10,8 +10,7 @@ import {
   "moonbitlang/core/encoding/utf8" @utf8,
   "moonbitlang/core/queue",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
-  "Yoorkin/ArgParser",
+  "moonbitlang/core/argparse",
   "moonbitlang/x/sys",
 }
 

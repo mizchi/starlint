@@ -818,42 +818,58 @@ fn resolve_config_path(module_root : String, path : String) -> String {
 let cli_version = "0.9.2"
 
 ///|
-fn usage_text() -> String {
-  let text =
-    #| usage:
-    #|   starlint
-    #|   starlint . [--ai] [--fix] [--dry-run] [--rule <id>] [--config <file>] [--by-file|--by-rule]
-    #|   starlint [--ai] [--fix] [--dry-run] [--rule <id>] [--config <file>] [--by-file|--by-rule] <file1> <file2> ...
-    #|   starlint init
-    #|   starlint doc
-    #|   starlint baseline [--compare <file>]
-    #|   starlint analyze [--compare <file>]
-    #|   starlint --help | -h
-    #|   starlint --version | -v
-  text
-}
-
-///|
-fn parse_meta_option(args : ArrayView[String]) -> String {
-  for arg in args {
-    if arg == "--help" || arg == "-h" {
-      return "help"
-    }
-    if arg == "--version" || arg == "-v" {
-      return "version"
-    }
-  }
-  ""
-}
-
-///|
-fn parse_compare_option(args : ArrayView[String]) -> String {
-  for i in 0..<args.length() {
-    if (args[i] == "--compare" || args[i] == "-c") && i + 1 < args.length() {
-      return args[i + 1]
-    }
-  }
-  ""
+fn build_command() -> @argparse.Command {
+  @argparse.Command(
+    "starlint",
+    version=cli_version,
+    about="Opinionated moonbit linter",
+    flags=[
+      @argparse.FlagArg("fix", short='f', about="apply autofixes"),
+      @argparse.FlagArg(
+        "dry-run", about="preview autofixes without writing files",
+      ),
+      @argparse.FlagArg("ai", about="output AI review metadata"),
+      @argparse.FlagArg(
+        "by-file",
+        about="group by file (default)",
+        conflicts_with=["by-rule"],
+      ),
+      @argparse.FlagArg(
+        "by-rule", about="group by rule", conflicts_with=["by-file"],
+      ),
+    ],
+    options=[
+      @argparse.OptionArg("config", short='c', about="config file path"),
+      @argparse.OptionArg("rule", short='r', about="filter by rule id"),
+    ],
+    positionals=[
+      @argparse.PositionArg(
+        "files", num_args=@argparse.ValueRange(lower=0), about="files to lint",
+      ),
+    ],
+    subcommands=[
+      @argparse.Command("doc", about="print rules documentation"),
+      @argparse.Command("init", about="initialize starlint config"),
+      @argparse.Command(
+        "baseline",
+        about="create baseline snapshot",
+        options=[
+          @argparse.OptionArg(
+            "compare", short='c', about="compare file path",
+          ),
+        ],
+      ),
+      @argparse.Command(
+        "analyze",
+        about="analyze lint results",
+        options=[
+          @argparse.OptionArg(
+            "compare", short='c', about="compare file path",
+          ),
+        ],
+      ),
+    ],
+  )
 }
 
 ///|
@@ -1183,108 +1199,80 @@ fn[FS : @vfs.VFS] run_with_start_dir(
   argv : Array[String],
   start_dir : String,
 ) -> Unit {
-  if argv.length() == 0 {
-    println(usage_text())
-    return
+  let cmd = build_command()
+  let matches = if argv.length() == 0 {
+    cmd.parse(argv=["--help"], env={}) catch {
+      _ => return
+    }
+  } else {
+    cmd.parse(argv=argv[:], env={}) catch {
+      err => {
+        println(err)
+        return
+      }
+    }
   }
-  match parse_meta_option(argv[:]) {
-    "help" => {
-      println(usage_text())
+  match matches.subcommand {
+    Some(("doc", _)) => {
+      let rules = @lint.rules()
+      print_rules_doc(rules)
       return
     }
-    "version" => {
-      println("starlint \{cli_version}")
+    Some(("init", _)) => {
+      let module_root = resolve_module_root(fs, start_dir) catch {
+        err => {
+          println("failed to find module root: \{err}")
+          panic()
+        }
+      }
+      let rules = @lint.rules()
+      run_init(fs, rules, module_root)
+      return
+    }
+    Some(("baseline", sub_matches)) => {
+      let module_root = resolve_module_root(fs, start_dir) catch {
+        err => {
+          println("failed to find module root: \{err}")
+          panic()
+        }
+      }
+      let compare = match sub_matches.values.get("compare") {
+        Some([val, ..]) => val
+        _ => ""
+      }
+      run_baseline(fs, module_root, compare)
+      return
+    }
+    Some(("analyze", sub_matches)) => {
+      let module_root = resolve_module_root(fs, start_dir) catch {
+        err => {
+          println("failed to find module root: \{err}")
+          panic()
+        }
+      }
+      let compare = match sub_matches.values.get("compare") {
+        Some([val, ..]) => val
+        _ => ""
+      }
+      run_analyze(fs, module_root, compare)
       return
     }
     _ => ()
   }
-  if argv.length() > 0 && !argv[0].has_prefix("-") {
-    let cmd = argv[0]
-    let rules = @lint.rules()
-    if cmd == "doc" {
-      print_rules_doc(rules)
-      return
-    }
-    if cmd == "init" {
-      let module_root = resolve_module_root(fs, start_dir) catch {
-        err => {
-          println("failed to find module root: \{err}")
-          panic()
-        }
-      }
-      run_init(fs, rules, module_root)
-      return
-    }
-    if cmd == "baseline" {
-      let module_root = resolve_module_root(fs, start_dir) catch {
-        err => {
-          println("failed to find module root: \{err}")
-          panic()
-        }
-      }
-      let compare = parse_compare_option(argv[1:])
-      run_baseline(fs, module_root, compare)
-      return
-    }
-    if cmd == "analyze" {
-      let module_root = resolve_module_root(fs, start_dir) catch {
-        err => {
-          println("failed to find module root: \{err}")
-          panic()
-        }
-      }
-      let compare = parse_compare_option(argv[1:])
-      run_analyze(fs, module_root, compare)
-      return
-    }
+  let apply_fix = matches.flags.get("fix").unwrap_or(false)
+  let dry_run = matches.flags.get("dry-run").unwrap_or(false)
+  let ai_mode = matches.flags.get("ai").unwrap_or(false)
+  let by_file = matches.flags.get("by-file").unwrap_or(false)
+  let by_rule = matches.flags.get("by-rule").unwrap_or(false)
+  let config_path = match matches.values.get("config") {
+    Some([val, ..]) => val
+    _ => ""
   }
-  let apply_fix = @ref.new(false)
-  let dry_run = @ref.new(false)
-  let config_path = @ref.new("")
-  let rule_filter = @ref.new("")
-  let ai_mode = @ref.new(false)
-  let by_file = @ref.new(false)
-  let by_rule = @ref.new(false)
-  let spec : Array[(String, String, @ArgParser.Spec, String)] = [
-    ("--fix", "-f", @ArgParser.Spec::Set(apply_fix), "apply autofixes"),
-    (
-      "--dry-run",
-      "",
-      @ArgParser.Spec::Set(dry_run),
-      "preview autofixes without writing files",
-    ),
-    (
-      "--config",
-      "-c",
-      @ArgParser.Spec::Set_string(config_path),
-      "config file path",
-    ),
-    (
-      "--rule",
-      "-r",
-      @ArgParser.Spec::Set_string(rule_filter),
-      "filter by rule id",
-    ),
-    ("--ai", "", @ArgParser.Spec::Set(ai_mode), "output AI review metadata"),
-    ("--by-file", "", @ArgParser.Spec::Set(by_file), "group by file (default)"),
-    ("--by-rule", "", @ArgParser.Spec::Set(by_rule), "group by rule"),
-  ]
-  let filenames = []
-  @ArgParser.parse(
-    spec,
-    filename => filenames.push(filename),
-    usage_text(),
-    argv,
-  ) catch {
-    @ArgParser.ErrorMsg(msg) => {
-      println(msg)
-      return
-    }
-    err => {
-      println(err)
-      panic()
-    }
+  let rule_filter = match matches.values.get("rule") {
+    Some([val, ..]) => val
+    _ => ""
   }
+  let filenames = matches.values.get("files").unwrap_or([])
   let lint_targets = normalize_lint_targets(filenames)
   let module_root = resolve_module_root(fs, start_dir) catch {
     err => {
@@ -1322,12 +1310,12 @@ fn[FS : @vfs.VFS] run_with_start_dir(
     }
   }
   doc_entries.sort_by((a, b) => a.compare(b))
-  if ai_mode.val {
+  if ai_mode {
     print_ai_metadata(fs, file_entries, doc_entries, module_name, module_root)
     return
   }
   let rules = @lint.rules()
-  let config = match resolve_config_path(module_root, config_path.val) {
+  let config = match resolve_config_path(module_root, config_path) {
     "" =>
       match default_config_path(fs, module_root) {
         Some(path) =>
@@ -1347,7 +1335,7 @@ fn[FS : @vfs.VFS] run_with_start_dir(
         }
       }
   }
-  let use_by_rule = if by_file.val { false } else { by_rule.val }
+  let use_by_rule = if by_file { false } else { by_rule }
   let package_filenames = []
   for entry in file_entries {
     let (_, display_path) = entry
@@ -1368,13 +1356,13 @@ fn[FS : @vfs.VFS] run_with_start_dir(
         panic()
       }
     }
-    if rule_filter.val != "" {
+    if rule_filter != "" {
       file_diagnostics = file_diagnostics.filter(diag => {
-        diag.rule_id == rule_filter.val
+        diag.rule_id == rule_filter
       })
     }
-    if apply_fix.val || dry_run.val {
-      if dry_run.val {
+    if apply_fix || dry_run {
+      if dry_run {
         let (applied, preview) = preview_fixes_for_file(
           fs, fs_path, display_path, file_diagnostics,
         ) catch {
@@ -1409,9 +1397,9 @@ fn[FS : @vfs.VFS] run_with_start_dir(
               panic()
             }
           }
-          if rule_filter.val != "" {
+          if rule_filter != "" {
             file_diagnostics = file_diagnostics.filter(diag => {
-              diag.rule_id == rule_filter.val
+              diag.rule_id == rule_filter
             })
           }
           println("Applied \{applied} fixes in \{display_path}")
