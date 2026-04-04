@@ -114,9 +114,7 @@ fn prefer_range_for_with_state_rule() -> @starlint.Rule {
     tags=["fp"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferRangeForWithStateEnv::{
-        diags: Array::new(capacity=4),
-      }
+      let env = PreferRangeForWithStateEnv::{ diags: Array::new(capacity=4) }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

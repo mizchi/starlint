@@ -61,10 +61,7 @@ fn apply_fixes_to_source(
       let prefix = output[:start]
       let suffix = output[end:]
       let sb = StringBuilder::new()
-      sb
-      ..write_view(prefix)
-      ..write_string(fix.replacement)
-      .write_view(suffix)
+      sb..write_view(prefix)..write_string(fix.replacement).write_view(suffix)
       output = sb.to_string()
       prev_start = start
     }
