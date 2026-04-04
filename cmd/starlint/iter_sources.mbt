@@ -23,11 +23,7 @@ fn strip_trailing_slash(path : String) -> String {
   if path.length() <= 1 || !path.has_suffix("/") {
     return path
   }
-  let slice_result : Result[StringView, Error] = try? path[:path.length() - 1]
-  match slice_result {
-    Ok(view) => view.to_string()
-    Err(_) => path
-  }
+  path[:path.length() - 1].to_string()
 }
 
 ///|
@@ -61,11 +57,7 @@ fn parent_dir(path : String) -> String? {
       if idx == 0 {
         Some("/")
       } else {
-        let slice_result : Result[StringView, Error] = try? trimmed[:idx]
-        match slice_result {
-          Ok(view) => Some(view.to_string())
-          Err(_) => None
-        }
+        Some(trimmed[:idx].to_string())
       }
   }
 }
@@ -219,11 +211,7 @@ fn path_relative_to_root(path : String, root : String) -> String? {
   if !path.has_prefix(prefix) {
     return None
   }
-  let slice_result : Result[StringView, Error] = try? path[prefix.length():]
-  match slice_result {
-    Ok(view) => Some(view.to_string())
-    Err(_) => None
-  }
+  Some(path[prefix.length():].to_string())
 }
 
 ///|
@@ -231,9 +219,5 @@ fn strip_dot_slash(path : String) -> String {
   if !path.has_prefix("./") {
     return path
   }
-  let slice_result : Result[StringView, Error] = try? path[2:]
-  match slice_result {
-    Ok(view) => view.to_string()
-    Err(_) => path
-  }
+  path[2:].to_string()
 }

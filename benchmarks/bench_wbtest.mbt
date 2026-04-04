@@ -1,6 +1,6 @@
 ///|
 fn parse_int_or(default_value : Int, value : String) -> Int {
-  try @strconv.parse_int(value[:], base=10) catch {
+  try @string.parse_int(value[:], base=10) catch {
     _ => default_value
   } noraise {
     parsed => parsed
@@ -9,7 +9,7 @@ fn parse_int_or(default_value : Int, value : String) -> Int {
 
 ///|
 fn parse_uint_or(default_value : UInt, value : String) -> UInt {
-  try @strconv.parse_uint(value[:], base=10) catch {
+  try @string.parse_uint(value[:], base=10) catch {
     _ => default_value
   } noraise {
     parsed => parsed
@@ -165,7 +165,7 @@ fn bench_view_vs_copy(bench : @bench.T, size : Int, count : UInt) -> Unit {
   let half = size / 2
   bench.bench(
     fn() {
-      let _copy = (try! s[0:half]).to_string()
+      let _copy = s[0:half].to_string()
       bench.keep(_copy.length())
     },
     name="string_copy",
@@ -173,7 +173,7 @@ fn bench_view_vs_copy(bench : @bench.T, size : Int, count : UInt) -> Unit {
   )
   bench.bench(
     fn() {
-      let _view = try! s[0:half]
+      let _view = s[0:half]
       bench.keep(_view.length())
     },
     name="string_view",

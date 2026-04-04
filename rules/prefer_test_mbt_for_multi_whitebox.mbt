@@ -10,11 +10,8 @@ fn wbtest_rule_string_has_suffix(value : String, suffix : String) -> Bool {
     return false
   }
   let start = value.length() - suffix.length()
-  let view_result : Result[StringView, Error] = try? value[start:]
-  match view_result {
-    Ok(view) => view == suffix
-    Err(_) => false
-  }
+  let view : StringView = value[start:]
+  view == suffix
 }
 
 ///|
@@ -22,11 +19,8 @@ fn parent_dir(path : String) -> String {
   match path.rev_find("/") {
     None => ""
     Some(idx) => {
-      let view_result : Result[StringView, Error] = try? path[:idx]
-      match view_result {
-        Ok(view) => view.to_string()
-        Err(_) => ""
-      }
+      let view : StringView = path[:idx]
+      view.to_string()
     }
   }
 }

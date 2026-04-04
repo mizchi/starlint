@@ -11,67 +11,48 @@ fn normalize_using_type_keyword(source : String) -> String {
   let mut output = source
   let mut offset = 0
   while offset < output.length() {
-    let view_result : Result[StringView, Error] = try? output[offset:]
-    match view_result {
-      Ok(view) =>
-        match view.find("using") {
+    let view = output[offset:]
+    match view.find("using") {
+      None => break
+      Some(rel) => {
+        let using_pos = offset + rel
+        if using_pos > 0 && is_ident_char(output[using_pos - 1]) {
+          offset = using_pos + 5
+          continue
+        }
+        let using_end = using_pos + 5
+        if using_end < output.length() && is_ident_char(output[using_end]) {
+          offset = using_end
+          continue
+        }
+        let after_using = output[using_pos:]
+        match after_using.find("{") {
           None => break
-          Some(rel) => {
-            let using_pos = offset + rel
-            if using_pos > 0 && is_ident_char(output[using_pos - 1]) {
-              offset = using_pos + 5
-              continue
-            }
-            let using_end = using_pos + 5
-            if using_end < output.length() && is_ident_char(output[using_end]) {
-              offset = using_end
-              continue
-            }
-            let after_using_result : Result[StringView, Error] = try? output[using_pos:]
-            let brace_rel = match after_using_result {
-              Ok(after_using) => after_using.find("{")
-              Err(_) => None
-            }
-            match brace_rel {
+          Some(rel_brace) => {
+            let brace_pos = using_pos + rel_brace
+            let after_brace = output[brace_pos:]
+            match after_brace.find("}") {
               None => break
-              Some(rel_brace) => {
-                let brace_pos = using_pos + rel_brace
-                let after_brace_result : Result[StringView, Error] = try? output[brace_pos:]
-                let close_rel = match after_brace_result {
-                  Ok(after_brace) => after_brace.find("}")
-                  Err(_) => None
-                }
-                match close_rel {
-                  None => break
-                  Some(rel_close) => {
-                    let close_pos = brace_pos + rel_close
-                    let prefix_result : Result[StringView, Error] = try? output[:brace_pos +
-                      1]
-                    let mid_result : Result[StringView, Error] = try? output[brace_pos +
-                      1:close_pos]
-                    let suffix_result : Result[StringView, Error] = try? output[close_pos:]
-                    match (prefix_result, mid_result, suffix_result) {
-                      (Ok(prefix), Ok(mid), Ok(suffix)) => {
-                        let mid_replaced = mid
-                          .to_string()
-                          .replace_all(old="type ", new="     ")
-                        let sb = StringBuilder::new()
-                        sb
-                        ..write_view(prefix)
-                        ..write_string(mid_replaced)
-                        .write_view(suffix)
-                        output = sb.to_string()
-                        offset = close_pos + 1
-                      }
-                      _ => break
-                    }
-                  }
-                }
+              Some(rel_close) => {
+                let close_pos = brace_pos + rel_close
+                let prefix = output[:brace_pos + 1]
+                let mid = output[brace_pos + 1:close_pos]
+                let suffix = output[close_pos:]
+                let mid_replaced = mid
+                  .to_string()
+                  .replace_all(old="type ", new="     ")
+                let sb = StringBuilder::new()
+                sb
+                ..write_view(prefix)
+                ..write_string(mid_replaced)
+                .write_view(suffix)
+                output = sb.to_string()
+                offset = close_pos + 1
               }
             }
           }
         }
-      Err(_) => break
+      }
     }
   }
   output
@@ -103,28 +84,18 @@ fn normalize_range_lt_inclusive(source : String) -> String {
       if start_idx < last || end_idx < start_idx {
         return source
       }
-      let prefix_result : Result[StringView, Error] = try? source[last:start_idx]
-      match prefix_result {
-        Ok(prefix) => {
-          changed = true
-          sb..write_view(prefix).write_string("..= ")
-          last = end_idx
-        }
-        Err(_) => return source
-      }
+      let prefix = source[last:start_idx]
+      changed = true
+      sb..write_view(prefix).write_string("..= ")
+      last = end_idx
     }
   }
   if !changed {
     return source
   }
-  let suffix_result : Result[StringView, Error] = try? source[last:]
-  match suffix_result {
-    Ok(suffix) => {
-      sb.write_view(suffix)
-      sb.to_string()
-    }
-    Err(_) => source
-  }
+  let suffix = source[last:]
+  sb.write_view(suffix)
+  sb.to_string()
 }
 
 ///|
@@ -201,23 +172,13 @@ fn normalize_nobreak_keyword(source : String) -> String {
     if start < last || end < start || end > source.length() {
       return source
     }
-    let prefix_result : Result[StringView, Error] = try? source[last:start]
-    match prefix_result {
-      Ok(prefix) => {
-        sb..write_view(prefix).write_string("else")
-        last = end
-      }
-      Err(_) => return source
-    }
+    let prefix = source[last:start]
+    sb..write_view(prefix).write_string("else")
+    last = end
   }
-  let suffix_result : Result[StringView, Error] = try? source[last:]
-  match suffix_result {
-    Ok(suffix) => {
-      sb.write_view(suffix)
-      sb.to_string()
-    }
-    Err(_) => source
-  }
+  let suffix = source[last:]
+  sb.write_view(suffix)
+  sb.to_string()
 }
 
 ///|

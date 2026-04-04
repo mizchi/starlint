@@ -423,11 +423,7 @@ fn parse_git_dir_from_marker(
   if !trimmed.has_prefix("gitdir:") {
     return None
   }
-  let rest = try trimmed[7:] catch {
-    _ => ""
-  } noraise {
-    view => view.to_string().trim().to_string()
-  }
+  let rest = trimmed[7:].to_string().trim().to_string()
   if rest == "" {
     return None
   }
@@ -461,11 +457,7 @@ fn[FS : @vfs.VFS] read_git_head_hash(fs : FS, module_root : String) -> String? {
   if !head_trimmed.has_prefix("ref:") {
     return normalize_git_hash(head_trimmed)
   }
-  let ref_name = try head_trimmed[4:] catch {
-    _ => ""
-  } noraise {
-    view => view.to_string().trim().to_string()
-  }
+  let ref_name = head_trimmed[4:].to_string().trim().to_string()
   if ref_name == "" {
     return None
   }
@@ -502,16 +494,8 @@ fn[FS : @vfs.VFS] read_git_ref_hash_from_packed_refs(
     }
     match line.find(" ") {
       Some(idx) => {
-        let hash = try line[:idx] catch {
-          _ => continue
-        } noraise {
-          view => view.to_string()
-        }
-        let ref_part = try line[idx + 1:] catch {
-          _ => continue
-        } noraise {
-          view => view.to_string().trim().to_string()
-        }
+        let hash = line[:idx].to_string()
+        let ref_part = line[idx + 1:].to_string().trim().to_string()
         if ref_part == ref_name {
           return normalize_git_hash(hash)
         }

@@ -2,7 +2,7 @@ import {
   "mizchi/starlint",
   "mizchi/starlint/tasks/lint",
   "moonbitlang/core/bench",
-  "moonbitlang/core/strconv",
+  "moonbitlang/core/string",
   "moonbitlang/parser",
   "moonbitlang/parser/syntax",
   "moonbitlang/x/fs",

@@ -95,11 +95,8 @@ fn eta_reduce_has_call_suffix(source : String, loc : @basic.Location) -> Bool {
   if start < 0 || start > source.length() {
     return false
   }
-  let view_result : Result[StringView, Error] = try? source[start:]
-  match view_result {
-    Ok(view) => view.trim_start().has_prefix("(")
-    Err(_) => false
-  }
+  let view : StringView = source[start:]
+  view.trim_start().has_prefix("(")
 }
 
 ///|
