@@ -157,7 +157,10 @@ let string_concat_in_loop =
 test "prefer string builder for concat" {
   let diagnostics = test_lint(string_concat_in_loop)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_string_builder_for_concat\"]")
+  inspect(
+    summary,
+    content="[\"prefer_string_builder_for_concat\", \"prefer_string_interpolation\"]",
+  )
 }
 
 ///|
@@ -1213,7 +1216,7 @@ test "prefer array pattern length" {
   inspect(
     summary,
     content=(
-      #|[("prefer_array_pattern", <lint test>-2:3-2:47)]
+      #|[("prefer_array_pattern", <lint test>-2:3-2:47), ("prefer_is_empty", <lint test>-2:6-2:22)]
     ),
   )
 }
@@ -1228,7 +1231,12 @@ let prefer_array_pattern_length_no_else =
 test "prefer array pattern length no else" {
   let diagnostics = test_lint(prefer_array_pattern_length_no_else)
   let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
-  inspect(summary, content="[]")
+  inspect(
+    summary,
+    content=(
+      #|[("prefer_is_empty", <lint test>-2:6-2:22)]
+    ),
+  )
 }
 
 ///|
@@ -1444,4 +1452,82 @@ test "prefer test mbt for multi wbtest: warns for each wbtest file" {
     d.rule_id == "prefer_test_mbt_for_multi_wbtest"
   })
   inspect(summary.length(), content="1")
+}
+
+///|
+let prefer_range_for_with_state_source =
+  #|fn main {
+  #|  let arr = [1, 2, 3]
+  #|  for i = 0, sum = 0; i < arr.length(); i = i + 1, sum = sum + arr[i] {
+  #|    println(sum)
+  #|  }
+  #|}
+
+///|
+test "prefer range for with state: index + accumulator" {
+  let diagnostics = test_lint(prefer_range_for_with_state_source)
+  let summary = diagnostics.filter(fn(d) {
+    d.rule_id == "prefer_range_for_with_state"
+  })
+  inspect(summary.length(), content="1")
+}
+
+///|
+let prefer_range_for_with_state_single_binder =
+  #|fn main {
+  #|  let arr = [1, 2, 3]
+  #|  for i = 0; i < arr.length(); i = i + 1 {
+  #|    println(arr[i])
+  #|  }
+  #|}
+
+///|
+test "prefer range for with state: single binder - no warn" {
+  let diagnostics = test_lint(prefer_range_for_with_state_single_binder)
+  let summary = diagnostics.filter(fn(d) {
+    d.rule_id == "prefer_range_for_with_state"
+  })
+  inspect(summary.length(), content="0")
+}
+
+///|
+let prefer_const_string_concat_source =
+  #|let greeting : String = "Hello" + " " + "World"
+
+///|
+test "prefer const string concat: string literal concat" {
+  let diagnostics = test_lint(prefer_const_string_concat_source)
+  let summary = diagnostics.filter(fn(d) {
+    d.rule_id == "prefer_const_string_concat"
+  })
+  inspect(summary.length(), content="1")
+}
+
+///|
+let prefer_const_string_concat_already_const =
+  #|const Greeting : String = "Hello" + " World"
+
+///|
+test "prefer const string concat: already const - no warn" {
+  let diagnostics = test_lint(prefer_const_string_concat_already_const)
+  let summary = diagnostics.filter(fn(d) {
+    d.rule_id == "prefer_const_string_concat"
+  })
+  inspect(summary.length(), content="0")
+}
+
+///|
+let prefer_const_string_concat_with_var =
+  #|fn main {
+  #|  let name = "world"
+  #|  let greeting = "Hello " + name
+  #|}
+
+///|
+test "prefer const string concat: has variable - no warn" {
+  let diagnostics = test_lint(prefer_const_string_concat_with_var)
+  let summary = diagnostics.filter(fn(d) {
+    d.rule_id == "prefer_const_string_concat"
+  })
+  inspect(summary.length(), content="0")
 }

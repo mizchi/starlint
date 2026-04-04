@@ -367,17 +367,11 @@ fn package_name_for_file(module_name : String, display_path : String) -> String 
   match display_path.rev_find("/") {
     None => module_name
     Some(idx) => {
-      let prefix_result : Result[StringView, Error] = try? display_path[:idx]
-      match prefix_result {
-        Ok(view) => {
-          let dir = view.to_string()
-          if dir == "" {
-            module_name
-          } else {
-            module_name + "/" + dir
-          }
-        }
-        Err(_) => module_name
+      let dir = display_path[:idx].to_string()
+      if dir == "" {
+        module_name
+      } else {
+        module_name + "/" + dir
       }
     }
   }
@@ -450,11 +444,7 @@ priv struct DocTestInfo {
 ///|
 fn strip_doc_prefix(line : String) -> String {
   if line.has_prefix("///") {
-    let rest_result : Result[StringView, Error] = try? line[3:]
-    match rest_result {
-      Ok(rest) => rest.to_string().trim().to_string()
-      Err(_) => line
-    }
+    line[3:].to_string().trim().to_string()
   } else {
     line
   }
@@ -474,20 +464,10 @@ fn extract_named_test(line : String) -> String? {
   match trimmed.find("\"") {
     None => None
     Some(start) => {
-      let rest_result : Result[StringView, Error] = try? trimmed[start + 1:]
-      match rest_result {
-        Ok(rest) =>
-          match rest.find("\"") {
-            Some(end_rel) => {
-              let name_result : Result[StringView, Error] = try? rest[:end_rel]
-              match name_result {
-                Ok(view) => Some(view.to_string())
-                Err(_) => None
-              }
-            }
-            None => None
-          }
-        Err(_) => None
+      let rest = trimmed[start + 1:]
+      match rest.find("\"") {
+        Some(end_rel) => Some(rest[:end_rel].to_string())
+        None => None
       }
     }
   }
@@ -961,21 +941,13 @@ fn apply_fixes_to_source(
     let start = fix.range.start.cnum
     let end = fix.range.end.cnum
     if end <= prev_start && 0 <= start && start <= end && end <= output.length() {
-      let prefix_result : Result[StringView, Error] = try? output[:start]
-      let suffix_result : Result[StringView, Error] = try? output[end:]
-      match (prefix_result, suffix_result) {
-        (Ok(prefix), Ok(suffix)) => {
-          let sb = StringBuilder::new()
-          sb
-          ..write_view(prefix)
-          ..write_string(fix.replacement)
-          .write_view(suffix)
-          output = sb.to_string()
-          applied += 1
-          prev_start = start
-        }
-        _ => ()
-      }
+      let prefix = output[:start]
+      let suffix = output[end:]
+      let sb = StringBuilder::new()
+      sb..write_view(prefix)..write_string(fix.replacement).write_view(suffix)
+      output = sb.to_string()
+      applied += 1
+      prev_start = start
     }
   } nobreak {
     (output, applied)

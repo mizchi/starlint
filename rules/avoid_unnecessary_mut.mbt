@@ -41,7 +41,7 @@ fn has_assignment(name : String, expr : @syntax.Expr) -> Bool {
 impl @syntax.IterVisitor for AvoidUnnecessaryMutEnv with visit_Expr(env, expr) {
   match expr {
     @syntax.LetMut(binder~, ty=_, expr=_, body~, loc~) =>
-      if not(has_assignment(binder.name, body)) {
+      if !has_assignment(binder.name, body) {
         let message = "let mut is unnecessary because the binding is never reassigned."
         let detail =
           #|let mut x = expr

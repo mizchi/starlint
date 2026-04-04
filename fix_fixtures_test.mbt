@@ -58,20 +58,12 @@ fn apply_fixes_to_source(
     let start = fix.range.start.cnum
     let end = fix.range.end.cnum
     if end <= prev_start && 0 <= start && start <= end && end <= output.length() {
-      let prefix_result : Result[StringView, Error] = try? output[:start]
-      let suffix_result : Result[StringView, Error] = try? output[end:]
-      match (prefix_result, suffix_result) {
-        (Ok(prefix), Ok(suffix)) => {
-          let sb = StringBuilder::new()
-          sb
-          ..write_view(prefix)
-          ..write_string(fix.replacement)
-          .write_view(suffix)
-          output = sb.to_string()
-          prev_start = start
-        }
-        _ => ()
-      }
+      let prefix = output[:start]
+      let suffix = output[end:]
+      let sb = StringBuilder::new()
+      sb..write_view(prefix)..write_string(fix.replacement).write_view(suffix)
+      output = sb.to_string()
+      prev_start = start
     }
   } nobreak {
     output

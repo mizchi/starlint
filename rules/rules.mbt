@@ -58,5 +58,13 @@ pub fn rules() -> Array[@starlint.Rule] {
     no_hole_placeholder_rule(),
     require_snake_case_pkg_rule(),
     prefer_test_mbt_for_multi_wbtest_rule(),
+    avoid_ignore_error_rule(),
+    avoid_single_variant_match_rule(),
+    prefer_for_each_over_index_rule(),
+    prefer_is_empty_rule(),
+    prefer_option_filter_rule(),
+    prefer_string_interpolation_rule(),
+    prefer_range_for_with_state_rule(),
+    prefer_const_string_concat_rule(),
   ]
 }
