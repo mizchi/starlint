@@ -82,7 +82,10 @@ fn push_spawn_result_unused_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for SpawnResultMustBeUsedEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match @internal.unwrap_paren(expr) {
     @syntax.Apply(func~, args~, ..) =>
       if @internal.is_async_with_task_group_call(func) {

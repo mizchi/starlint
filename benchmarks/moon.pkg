@@ -2,6 +2,7 @@ import {
   "mizchi/starlint",
   "mizchi/starlint/tasks/lint",
   "moonbitlang/core/bench",
+  "moonbitlang/core/debug",
   "moonbitlang/core/string",
   "moonbitlang/parser",
   "moonbitlang/parser/syntax",

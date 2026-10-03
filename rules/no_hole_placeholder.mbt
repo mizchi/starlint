@@ -19,7 +19,7 @@ fn hole_kind_label(kind : @syntax.Hole) -> String {
 }
 
 ///|
-impl @syntax.IterVisitor for NoHolePlaceholderEnv with visit_Expr_Hole(
+impl @syntax.IterVisitor for NoHolePlaceholderEnv with fn visit_Expr_Hole(
   env,
   loc~,
   kind~,
@@ -50,7 +50,7 @@ fn no_hole_placeholder_rule() -> @starlint.Rule {
     tags=["error"],
     enabled_by_default=false,
     run=input => {
-      let env = NoHolePlaceholderEnv::{ diags: Array::new(capacity=4) }
+      let env = NoHolePlaceholderEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

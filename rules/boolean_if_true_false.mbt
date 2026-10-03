@@ -11,7 +11,7 @@ priv struct BooleanIfTrueFalseEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for BooleanIfTrueFalseEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for BooleanIfTrueFalseEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.If(cond~, ifso~, ifnot=Some(ifnot), loc~) =>
       if @internal.match_constant_bool(ifso) == Some(true) &&

@@ -13,7 +13,7 @@ pub fn LintInput::new(
   filename~ : String,
   package_filenames? : Array[String] = [],
 ) -> LintInput {
-  { impls, source, filename, package_filenames }
+  { impls, source, filename, package_filenames, }
 }
 
 ///|
@@ -41,7 +41,7 @@ pub fn Rule::new(
   default_severity? : Severity = Severity::Warning,
   enabled_by_default? : Bool = true,
 ) -> Rule {
-  { id, description, run, tags, default_severity, enabled_by_default }
+  { id, description, run, tags, default_severity, enabled_by_default, }
 }
 
 ///|

@@ -27,7 +27,7 @@ pub struct OverrideConfig {
 
 ///|
 pub fn LintConfig::empty() -> LintConfig {
-  { rules: Map::new(), categories: Map::new(), ignore: [], overrides: [] }
+  { rules: Map::new(), categories: Map::new(), ignore: [], overrides: [], }
 }
 
 ///|
@@ -74,15 +74,18 @@ fn parse_severity(json : Json) -> Severity? {
 ///|
 fn parse_rule_config(json : Json) -> RuleConfig? {
   match json {
-    True => Some(RuleConfig::{ enabled: Some(true), severity: None })
-    False => Some(RuleConfig::{ enabled: Some(false), severity: None })
+    True => Some(RuleConfig::{ enabled: Some(true), severity: None, })
+    False => Some(RuleConfig::{ enabled: Some(false), severity: None, })
     String(value) =>
       match value.to_lower() {
-        "off" => Some(RuleConfig::{ enabled: Some(false), severity: None })
+        "off" => Some(RuleConfig::{ enabled: Some(false), severity: None, })
         _ =>
           match severity_from_string(value) {
             Some(severity) =>
-              Some(RuleConfig::{ enabled: Some(true), severity: Some(severity) })
+              Some(RuleConfig::{
+                enabled: Some(true),
+                severity: Some(severity),
+              })
             None => None
           }
       }
@@ -95,7 +98,7 @@ fn parse_rule_config(json : Json) -> RuleConfig? {
         Some(value) => parse_severity(value)
         None => None
       }
-      Some(RuleConfig::{ enabled, severity })
+      Some(RuleConfig::{ enabled, severity, })
     }
     _ => None
   }
@@ -104,11 +107,11 @@ fn parse_rule_config(json : Json) -> RuleConfig? {
 ///|
 fn parse_category_config(json : Json) -> CategoryConfig? {
   match json {
-    True => Some(CategoryConfig::{ enabled: Some(true), severity: None })
-    False => Some(CategoryConfig::{ enabled: Some(false), severity: None })
+    True => Some(CategoryConfig::{ enabled: Some(true), severity: None, })
+    False => Some(CategoryConfig::{ enabled: Some(false), severity: None, })
     String(value) =>
       match value.to_lower() {
-        "off" => Some(CategoryConfig::{ enabled: Some(false), severity: None })
+        "off" => Some(CategoryConfig::{ enabled: Some(false), severity: None, })
         _ =>
           match severity_from_string(value) {
             Some(severity) =>
@@ -128,7 +131,7 @@ fn parse_category_config(json : Json) -> CategoryConfig? {
         Some(value) => parse_severity(value)
         None => None
       }
-      Some(CategoryConfig::{ enabled, severity })
+      Some(CategoryConfig::{ enabled, severity, })
     }
     _ => None
   }
@@ -198,7 +201,7 @@ pub fn LintConfig::from_json(text : String) -> LintConfig raise {
         }
         _ => ()
       }
-      { rules, categories, ignore, overrides }
+      { rules, categories, ignore, overrides, }
     }
     _ => base
   }
@@ -208,9 +211,9 @@ pub fn LintConfig::from_json(text : String) -> LintConfig raise {
 pub fn LintConfig::enable_categories(tags : Array[String]) -> LintConfig {
   let categories = Map::new()
   for tag in tags {
-    categories.set(tag, CategoryConfig::{ enabled: Some(true), severity: None })
+    categories.set(tag, CategoryConfig::{ enabled: Some(true), severity: None, })
   }
-  { rules: Map::new(), categories, ignore: [], overrides: [] }
+  { rules: Map::new(), categories, ignore: [], overrides: [], }
 }
 
 ///|
@@ -253,7 +256,7 @@ fn parse_override_config(obj : Map[String, Json]) -> OverrideConfig? {
       }
     _ => ()
   }
-  Some(OverrideConfig::{ files, rules, categories })
+  Some(OverrideConfig::{ files, rules, categories, })
 }
 
 ///|

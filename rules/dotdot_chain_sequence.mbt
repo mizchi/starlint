@@ -43,9 +43,14 @@ fn receiver_key(expr : @syntax.Expr) -> String? {
 }
 
 ///|
-fn method_call_info(expr : @syntax.Expr) -> DotApplyInfo? {
+fn method_call_info(expr : @syntax.Expr, source : String) -> DotApplyInfo? {
+  if @internal.legacy_call_marker(source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    return None
+  }
+
   match expr {
-    @syntax.DotApply(self~, attr=NoAttr, return_self=false, ..) =>
+    @syntax.DotApply(self~, return_self=false, ..) =>
       match receiver_key(self) {
         Some(key) =>
           Some(DotApplyInfo::{
@@ -55,7 +60,7 @@ fn method_call_info(expr : @syntax.Expr) -> DotApplyInfo? {
           })
         None => None
       }
-    @syntax.Apply(func=@syntax.Field(record~, accessor=_, ..), attr=NoAttr, ..) =>
+    @syntax.Apply(func=@syntax.Field(record~, accessor=_, ..), ..) =>
       match receiver_key(record) {
         Some(key) =>
           Some(DotApplyInfo::{
@@ -151,7 +156,10 @@ fn has_trailing_semicolon(source : String, loc : @basic.Location) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for DotdotChainSequenceEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.Sequence(exprs~, last_expr~, loc~) => {
       let items = sequence_items(exprs, last_expr)
@@ -160,7 +168,7 @@ impl @syntax.IterVisitor for DotdotChainSequenceEnv with visit_Expr(env, expr) {
         let mut receiver_key : String? = None
         let mut ok = true
         for item in items {
-          match method_call_info(item) {
+          match method_call_info(item, env.source) {
             Some(info) => {
               match receiver_key {
                 None => receiver_key = Some(info.receiver_key)

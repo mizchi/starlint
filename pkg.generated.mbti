@@ -3,8 +3,8 @@ package "mizchi/starlint"
 
 import {
   "moonbitlang/core/list",
+  "moonbitlang/lexer/basic",
   "moonbitlang/parser",
-  "moonbitlang/parser/basic",
   "moonbitlang/parser/syntax",
 }
 
@@ -88,10 +88,9 @@ pub struct Diagnostic {
   suggestion : String?
   fix : Fix?
   severity : Severity
-}
+} derive(Show)
 pub fn Diagnostic::new(rule_id~ : String, loc~ : @basic.Location, message~ : String, detail? : String, suggestion? : String, fix? : Fix, severity? : Severity) -> Self
 pub fn Diagnostic::with_severity(Self, Severity) -> Self
-pub impl Show for Diagnostic
 
 pub(all) struct DiagnosticsSummary {
   total : Int
@@ -109,16 +108,13 @@ pub(all) struct FileBaseline {
 pub struct Fix {
   range : @basic.Location
   replacement : String
-}
+} derive(Show)
 pub fn Fix::new(range~ : @basic.Location, replacement~ : String) -> Self
-pub impl Show for Fix
 
 pub(all) struct FunctionComplexity {
   name : String
   complexity : Int
-}
-pub impl Eq for FunctionComplexity
-pub impl Show for FunctionComplexity
+} derive(Eq, Show)
 
 pub struct LintConfig {
   rules : Map[String, RuleConfig]
@@ -197,9 +193,7 @@ pub enum Severity {
   Info
   Warning
   Error
-}
-pub impl Eq for Severity
-pub impl Show for Severity
+} derive(Eq, Show)
 
 pub(all) struct SummaryDelta {
   total_files : Int
@@ -217,4 +211,3 @@ pub type RulePluginRunner = (LintPluginContext) -> Unit
 pub type RuleRunner = (LintInput) -> Array[Diagnostic]
 
 // Traits
-

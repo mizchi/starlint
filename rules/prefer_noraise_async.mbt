@@ -15,7 +15,7 @@ priv struct ErrorEffectSearchEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for ErrorEffectSearchEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for ErrorEffectSearchEnv with fn visit_Expr(env, expr) {
   if env.found {
     return
   }
@@ -30,24 +30,14 @@ impl @syntax.IterVisitor for ErrorEffectSearchEnv with visit_Expr(env, expr) {
 
 ///|
 fn contains_error_effect(expr : @syntax.Expr) -> Bool {
-  let env = ErrorEffectSearchEnv::{ found: false }
+  let env = ErrorEffectSearchEnv::{ found: false, }
   env.visit_Expr(expr)
   env.found
 }
 
 ///|
-fn should_suggest_noraise(
-  error_type : @syntax.ErrorType,
-  has_error : @basic.Location?,
-) -> Bool {
-  match has_error {
-    Some(_) => false
-    None =>
-      match error_type {
-        @syntax.ErrorType::Noraise(_) => false
-        _ => true
-      }
-  }
+fn should_suggest_noraise(error_type : @syntax.ErrorType) -> Bool {
+  error_type is @syntax.ErrorType::NoErrorType
 }
 
 ///|
@@ -72,13 +62,16 @@ fn push_prefer_noraise_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferNoraiseAsyncEnv with visit_Impl(env, impl_) {
+impl @syntax.IterVisitor for PreferNoraiseAsyncEnv with fn visit_Impl(
+  env,
+  impl_,
+) {
   match impl_ {
     @syntax.Impl::TopFuncDef(fun_decl~, decl_body~, loc=_) =>
       if fun_decl.is_async is Some(_) &&
-        should_suggest_noraise(fun_decl.error_type, fun_decl.has_error) {
+        should_suggest_noraise(fun_decl.error_type) {
         match decl_body {
-          @syntax.DeclBody::DeclBody(local_types=_, expr~) =>
+          @syntax.DeclBody::DeclBody(expr~) =>
             if !contains_error_effect(expr) {
               push_prefer_noraise_diag(env, fun_decl.name.loc)
             }
@@ -91,11 +84,11 @@ impl @syntax.IterVisitor for PreferNoraiseAsyncEnv with visit_Impl(env, impl_) {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferNoraiseAsyncEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferNoraiseAsyncEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Function(func~, loc~) =>
       if func.is_async is Some(_) &&
-        should_suggest_noraise(func.error_type, func.has_error) &&
+        should_suggest_noraise(func.error_type) &&
         !contains_error_effect(func.body) {
         push_prefer_noraise_diag(env, loc)
       }
@@ -112,7 +105,7 @@ fn prefer_noraise_async_rule() -> @starlint.Rule {
     tags=["async"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferNoraiseAsyncEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferNoraiseAsyncEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

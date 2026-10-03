@@ -23,121 +23,57 @@ fn remove_at(source : String, index : Int) -> String? {
 }
 
 ///|
-fn remove_bang_before_paren(call_src : String) -> String? {
-  match call_src.find("!(") {
-    Some(index) => remove_at(call_src, index)
-    None =>
-      match call_src.find("! (") {
-        Some(index) => remove_at(call_src, index)
-        None => None
-      }
-  }
-}
-
-///|
-fn remove_question_mark(call_src : String) -> String? {
-  match call_src.find("?(") {
-    Some(index) => remove_at(call_src, index)
-    None =>
-      match call_src.find("? (") {
-        Some(index) => remove_at(call_src, index)
-        None =>
-          if !call_src.has_suffix("?") {
-            None
-          } else {
-            let end = call_src.length() - 1
-            let view : StringView = call_src[:end]
-            Some(view.to_string())
-          }
-      }
-  }
-}
-
-///|
-impl @syntax.IterVisitor for LegacyCallSyntaxEnv with visit_Expr(env, expr) {
-  match expr {
-    @syntax.Apply(attr=Exclamation, loc~, ..) => {
-      let message = "Legacy call syntax f!(...) is deprecated."
-      let detail =
-        #|f!(args)
-      let suggestion =
-        #|Use a normal call:
-        #|
-        #|f(args)
-      let fix = match @internal.expr_source(env.source, expr) {
-        Some(call_src) =>
-          match remove_bang_before_paren(call_src) {
-            Some(replacement) =>
-              Some(@starlint.Fix::new(range=loc, replacement~))
-            None => None
-          }
-        None => None
-      }
-      let diag = match fix {
-        Some(fix) =>
-          @starlint.Diagnostic::new(
-            rule_id=legacy_call_syntax_rule_id,
-            loc~,
-            message~,
-            detail~,
-            suggestion~,
-            fix~,
-          )
-        None =>
-          @starlint.Diagnostic::new(
-            rule_id=legacy_call_syntax_rule_id,
-            loc~,
-            message~,
-            detail~,
-            suggestion~,
-          )
-      }
-      env.diags.push(diag)
+impl @syntax.IterVisitor for LegacyCallSyntaxEnv with fn visit_Expr(env, expr) {
+  // Only inspect the call's own callee boundary and closing parenthesis.
+  // Searching the full call text could accidentally rewrite a nested call or string.
+  if @internal.legacy_call_marker(env.source, expr)
+    is Some((marker, question, loc)) {
+    let message = if question {
+      "Legacy call syntax f(...)? is deprecated."
+    } else {
+      "Legacy call syntax f!(...) is deprecated."
     }
-    @syntax.Apply(attr=Question, loc~, ..) => {
-      let message = "Legacy call syntax f(...)? is deprecated."
-      let detail =
-        #|f(args)?
-      let suggestion =
-        #|Use try? for Result conversion:
-        #|
-        #|try? f(args)
-      let fix = match @internal.expr_source(env.source, expr) {
-        Some(call_src) =>
-          match remove_question_mark(call_src) {
-            Some(call_without_question) =>
-              Some(
-                @starlint.Fix::new(
-                  range=loc,
-                  replacement="try? \{call_without_question}",
-                ),
-              )
-            None => None
-          }
-        None => None
-      }
-      let diag = match fix {
-        Some(fix) =>
-          @starlint.Diagnostic::new(
-            rule_id=legacy_call_syntax_rule_id,
-            loc~,
-            message~,
-            detail~,
-            suggestion~,
-            fix~,
-          )
-        None =>
-          @starlint.Diagnostic::new(
-            rule_id=legacy_call_syntax_rule_id,
-            loc~,
-            message~,
-            detail~,
-            suggestion~,
-          )
-      }
-      env.diags.push(diag)
+    let detail = if question { "f(args)?" } else { "f!(args)" }
+    let suggestion = if question {
+      "Use try? for Result conversion:\n\ntry? f(args)"
+    } else {
+      "Use a normal call:\n\nf(args)"
     }
-    _ => ()
+    let fix = match @internal.source_slice(env.source, loc) {
+      Some(call_src) =>
+        match remove_at(call_src, marker - loc.start.cnum) {
+          Some(unmarked) => {
+            let replacement = if question {
+              "try? \{unmarked}"
+            } else {
+              unmarked
+            }
+            Some(@starlint.Fix::new(range=loc, replacement~))
+          }
+          None => None
+        }
+      None => None
+    }
+    let diag = match fix {
+      Some(fix) =>
+        @starlint.Diagnostic::new(
+          rule_id=legacy_call_syntax_rule_id,
+          loc~,
+          message~,
+          detail~,
+          suggestion~,
+          fix~,
+        )
+      None =>
+        @starlint.Diagnostic::new(
+          rule_id=legacy_call_syntax_rule_id,
+          loc~,
+          message~,
+          detail~,
+          suggestion~,
+        )
+    }
+    env.diags.push(diag)
   }
   env.base().visit_Expr(expr)
 }

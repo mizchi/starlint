@@ -44,7 +44,10 @@ fn push_require_doc_pub_enum_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for RequireDocPubEnumEnv with visit_TypeDecl(env, decl) {
+impl @syntax.IterVisitor for RequireDocPubEnumEnv with fn visit_TypeDecl(
+  env,
+  decl,
+) {
   match decl.type_vis {
     @syntax.Visibility::Pub(..) =>
       match decl.components {
@@ -67,7 +70,7 @@ fn require_doc_pub_enum_rule() -> @starlint.Rule {
     tags=["module"],
     enabled_by_default=false,
     run=input => {
-      let env = RequireDocPubEnumEnv::{ diags: Array::new(capacity=4) }
+      let env = RequireDocPubEnumEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

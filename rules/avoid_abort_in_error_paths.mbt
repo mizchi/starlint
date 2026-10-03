@@ -15,7 +15,7 @@ priv struct AbortSearchEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for AbortSearchEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AbortSearchEnv with fn visit_Expr(env, expr) {
   if env.found {
     return
   }
@@ -28,7 +28,7 @@ impl @syntax.IterVisitor for AbortSearchEnv with visit_Expr(env, expr) {
 
 ///|
 fn contains_abort(expr : @syntax.Expr) -> Bool {
-  let env = AbortSearchEnv::{ found: false }
+  let env = AbortSearchEnv::{ found: false, }
   env.visit_Expr(expr)
   env.found
 }
@@ -55,7 +55,7 @@ fn push_avoid_abort_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidAbortInErrorPathsEnv with visit_Expr(
+impl @syntax.IterVisitor for AvoidAbortInErrorPathsEnv with fn visit_Expr(
   env,
   expr,
 ) {
@@ -85,7 +85,7 @@ fn avoid_abort_in_error_paths_rule() -> @starlint.Rule {
     tags=["error"],
     enabled_by_default=false,
     run=input => {
-      let env = AvoidAbortInErrorPathsEnv::{ diags: Array::new(capacity=4) }
+      let env = AvoidAbortInErrorPathsEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

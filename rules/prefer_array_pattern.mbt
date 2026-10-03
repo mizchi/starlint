@@ -12,7 +12,7 @@ priv struct PreferArrayPatternEnv {
 ///|
 fn match_get_zero(expr : @syntax.Expr) -> @syntax.Expr? {
   match @internal.unwrap_paren(expr) {
-    @syntax.DotApply(self~, method_name~, args~, return_self=_, attr=_, loc=_) =>
+    @syntax.DotApply(self~, method_name~, args~, return_self=_, loc=_) =>
       if @internal.label_name(method_name) != "get" {
         None
       } else {
@@ -39,7 +39,7 @@ fn match_get_zero(expr : @syntax.Expr) -> @syntax.Expr? {
 ///|
 fn match_length_call(expr : @syntax.Expr) -> @syntax.Expr? {
   match @internal.unwrap_paren(expr) {
-    @syntax.DotApply(self~, method_name~, args~, return_self=_, attr=_, loc=_) =>
+    @syntax.DotApply(self~, method_name~, args~, return_self=_, loc=_) =>
       if @internal.label_name(method_name) != "length" {
         None
       } else if @internal.list_to_array(args).length() == 0 {
@@ -99,7 +99,7 @@ fn has_some_none_cases(cases_array : Array[@syntax.Case]) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferArrayPatternEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferArrayPatternEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) =>
       match match_get_zero(subject) {
@@ -163,7 +163,7 @@ fn prefer_array_pattern_rule() -> @starlint.Rule {
     tags=["fp"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferArrayPatternEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferArrayPatternEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

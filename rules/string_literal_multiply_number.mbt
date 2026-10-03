@@ -8,7 +8,7 @@ let string_literal_multiply_number_description : String = "Prefer .repeat(n) ove
 priv struct StringLiteralMultiplyNumberEnv(Array[@starlint.Diagnostic])
 
 ///|
-impl @syntax.IterVisitor for StringLiteralMultiplyNumberEnv with visit_Expr(
+impl @syntax.IterVisitor for StringLiteralMultiplyNumberEnv with fn visit_Expr(
   env,
   expr,
 ) {

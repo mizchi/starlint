@@ -32,7 +32,7 @@ fn count_concat_operands(expr : @syntax.Expr) -> Int {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferStringInterpolationEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferStringInterpolationEnv with fn visit_Expr(
   env,
   expr,
 ) {

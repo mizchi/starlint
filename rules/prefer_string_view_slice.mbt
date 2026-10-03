@@ -7,6 +7,7 @@ let prefer_string_view_slice_description : String = "Prefer StringView slicing o
 ///|
 priv struct PreferStringViewSliceEnv {
   diags : Array[@starlint.Diagnostic]
+  source : String
 }
 
 ///|
@@ -15,7 +16,15 @@ fn is_substring_name(name : String) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferStringViewSliceEnv with fn visit_Expr(
+  env,
+  expr,
+) {
+  if @internal.legacy_call_marker(env.source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    env.base().visit_Expr(expr)
+    return
+  }
   match @internal.unwrap_paren(expr) {
     @syntax.DotApply(method_name~, loc~, ..) =>
       if is_substring_name(@internal.label_name(method_name)) {
@@ -35,12 +44,7 @@ impl @syntax.IterVisitor for PreferStringViewSliceEnv with visit_Expr(env, expr)
           ),
         )
       }
-    @syntax.Apply(
-      func=@syntax.Method(type_name~, method_name~, ..),
-      attr=NoAttr,
-      loc~,
-      ..
-    ) =>
+    @syntax.Apply(func=@syntax.Method(type_name~, method_name~, ..), loc~, ..) =>
       if @internal.type_name_right_name(type_name) == "String" &&
         is_substring_name(@internal.label_name(method_name)) {
         let message = "Substring allocates; prefer StringView slicing."
@@ -72,7 +76,10 @@ fn prefer_string_view_slice_rule() -> @starlint.Rule {
     tags=["perf"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferStringViewSliceEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferStringViewSliceEnv::{
+        diags: Array::new(capacity=4),
+        source: input.source,
+      }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

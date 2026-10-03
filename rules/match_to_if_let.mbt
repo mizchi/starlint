@@ -95,7 +95,7 @@ fn push_match_to_if_let_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for MatchToIfLetEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for MatchToIfLetEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Sequence(exprs~, last_expr=_, loc=_) => {
       let items = @internal.list_to_array(exprs)

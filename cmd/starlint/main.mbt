@@ -519,7 +519,7 @@ fn extract_doc_tests(source : String, allow_plain_blocks : Bool) -> DocTestInfo 
       }
     }
   } nobreak {
-    DocTestInfo::{ tests, check_style_tests, unnamed_tests, block_count }
+    DocTestInfo::{ tests, check_style_tests, unnamed_tests, block_count, }
   }
 }
 
@@ -826,17 +826,16 @@ fn build_command() -> @argparse.Command {
     flags=[
       @argparse.FlagArg("fix", short='f', about="apply autofixes"),
       @argparse.FlagArg(
-        "dry-run", about="preview autofixes without writing files",
+        "dry-run",
+        about="preview autofixes without writing files",
       ),
       @argparse.FlagArg("ai", about="output AI review metadata"),
-      @argparse.FlagArg(
+      @argparse.FlagArg("by-file", about="group by file (default)", conflicts_with=[
+        "by-rule",
+      ]),
+      @argparse.FlagArg("by-rule", about="group by rule", conflicts_with=[
         "by-file",
-        about="group by file (default)",
-        conflicts_with=["by-rule"],
-      ),
-      @argparse.FlagArg(
-        "by-rule", about="group by rule", conflicts_with=["by-file"],
-      ),
+      ]),
     ],
     options=[
       @argparse.OptionArg("config", short='c', about="config file path"),
@@ -844,30 +843,20 @@ fn build_command() -> @argparse.Command {
     ],
     positionals=[
       @argparse.PositionArg(
-        "files", num_args=@argparse.ValueRange(lower=0), about="files to lint",
+        "files",
+        num_args=@argparse.ValueRange(lower=0),
+        about="files to lint",
       ),
     ],
     subcommands=[
       @argparse.Command("doc", about="print rules documentation"),
       @argparse.Command("init", about="initialize starlint config"),
-      @argparse.Command(
-        "baseline",
-        about="create baseline snapshot",
-        options=[
-          @argparse.OptionArg(
-            "compare", short='c', about="compare file path",
-          ),
-        ],
-      ),
-      @argparse.Command(
-        "analyze",
-        about="analyze lint results",
-        options=[
-          @argparse.OptionArg(
-            "compare", short='c', about="compare file path",
-          ),
-        ],
-      ),
+      @argparse.Command("baseline", about="create baseline snapshot", options=[
+        @argparse.OptionArg("compare", short='c', about="compare file path"),
+      ]),
+      @argparse.Command("analyze", about="analyze lint results", options=[
+        @argparse.OptionArg("compare", short='c', about="compare file path"),
+      ]),
     ],
   )
 }

@@ -7,6 +7,7 @@ let prefer_guard_chain_description : String = "Prefer guard/if for nested matche
 ///|
 priv struct PreferGuardChainEnv {
   diags : Array[@starlint.Diagnostic]
+  source : String
   skip_locs : Map[String, Bool]
 }
 
@@ -16,7 +17,12 @@ fn is_noop_pattern(pat : @syntax.Pattern) -> Bool {
 }
 
 ///|
-fn is_terminal_expr(expr : @syntax.Expr) -> Bool {
+fn is_terminal_expr(expr : @syntax.Expr, source : String) -> Bool {
+  if @internal.legacy_call_marker(source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    return false
+  }
+
   match @internal.unwrap_paren(expr) {
     @syntax.Raise(..) => true
     @syntax.Return(..) => true
@@ -25,16 +31,14 @@ fn is_terminal_expr(expr : @syntax.Expr) -> Bool {
     @syntax.Apply(
       func=@syntax.Field(record=_, accessor=@syntax.Accessor::Label(label), ..),
       args=_,
-      attr=NoAttr,
       loc=_
     ) => is_terminal_name(@internal.label_name(label))
     @syntax.Apply(
       func=@syntax.Method(type_name=_, method_name~, ..),
       args=_,
-      attr=NoAttr,
       loc=_
     ) => is_terminal_name(@internal.label_name(method_name))
-    @syntax.Apply(func=@syntax.Ident(id=ident, ..), args=_, attr=NoAttr, loc=_) =>
+    @syntax.Apply(func=@syntax.Ident(id=ident, ..), args=_, loc=_) =>
       is_terminal_name(@internal.longident_right_name(ident.name))
     @syntax.DotApply(method_name~, ..) =>
       is_terminal_name(@internal.label_name(method_name))
@@ -48,14 +52,17 @@ fn is_terminal_name(name : String) -> Bool {
 }
 
 ///|
-fn is_trivial_fallback_case(case_ : @syntax.Case) -> Bool {
+fn is_trivial_fallback_case(case_ : @syntax.Case, source : String) -> Bool {
   case_.guard_ is None &&
   is_noop_pattern(case_.pattern) &&
-  (@internal.is_unit_expr(case_.body) || is_terminal_expr(case_.body))
+  (@internal.is_unit_expr(case_.body) || is_terminal_expr(case_.body, source))
 }
 
 ///|
-fn active_case_from_cases(cases : @list.List[@syntax.Case]) -> @syntax.Case? {
+fn active_case_from_cases(
+  cases : @list.List[@syntax.Case],
+  source : String,
+) -> @syntax.Case? {
   let cases_array = @internal.list_to_array(cases)
   let mut active_case : @syntax.Case? = None
   let mut has_fallback = false
@@ -63,7 +70,7 @@ fn active_case_from_cases(cases : @list.List[@syntax.Case]) -> @syntax.Case? {
     if case_.guard_ is Some(_) {
       return None
     }
-    if is_trivial_fallback_case(case_) {
+    if is_trivial_fallback_case(case_, source) {
       has_fallback = true
     } else {
       match active_case {
@@ -117,15 +124,16 @@ fn match_expr_from_body(
 fn collect_match_chain_locs_from(
   expr : @syntax.Expr,
   locs : Array[@basic.Location],
+  source : String,
 ) -> Bool {
   match match_expr_from_body(expr) {
     Some((_, cases, loc)) =>
-      match active_case_from_cases(cases) {
+      match active_case_from_cases(cases, source) {
         Some(active_case) => {
           locs.push(loc)
           match match_expr_from_body(active_case.body) {
             Some((next_expr, _, _)) =>
-              collect_match_chain_locs_from(next_expr, locs)
+              collect_match_chain_locs_from(next_expr, locs, source)
             None => true
           }
         }
@@ -136,9 +144,12 @@ fn collect_match_chain_locs_from(
 }
 
 ///|
-fn collect_match_chain_locs(expr : @syntax.Expr) -> Array[@basic.Location]? {
+fn collect_match_chain_locs(
+  expr : @syntax.Expr,
+  source : String,
+) -> Array[@basic.Location]? {
   let locs = Array::new(capacity=2)
-  let ok = collect_match_chain_locs_from(expr, locs)
+  let ok = collect_match_chain_locs_from(expr, locs, source)
   if ok && locs.length() >= 2 {
     Some(locs)
   } else {
@@ -175,11 +186,11 @@ fn push_prefer_guard_chain_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferGuardChainEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferGuardChainEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Match(loc~, ..) =>
       if env.skip_locs.get(@internal.location_key(loc)) is None {
-        match collect_match_chain_locs(expr) {
+        match collect_match_chain_locs(expr, env.source) {
           Some(locs) => {
             for i in 1..<locs.length() {
               env.skip_locs.set(@internal.location_key(locs[i]), true)
@@ -204,6 +215,7 @@ fn prefer_guard_chain_rule() -> @starlint.Rule {
     run=input => {
       let env = PreferGuardChainEnv::{
         diags: Array::new(capacity=8),
+        source: input.source,
         skip_locs: Map::new(),
       }
       for impl_ in input.impls {

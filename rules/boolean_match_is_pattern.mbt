@@ -115,7 +115,10 @@ fn push_boolean_match_is_pattern_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for BooleanMatchIsPatternEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for BooleanMatchIsPatternEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) =>
       match match_boolean_pattern(cases) {

@@ -19,15 +19,12 @@ fn is_char_access_method(name : String) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferUnicodeSafeIterationEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferUnicodeSafeIterationEnv with fn visit_Expr(
   env,
   expr,
 ) {
   match expr {
-    @syntax.For(..)
-    | @syntax.ForEach(..)
-    | @syntax.While(..)
-    | @syntax.Loop(..) => {
+    @syntax.For(..) | @syntax.ForEach(..) | @syntax.While(..) => {
       let prev = env.loop_depth
       env.loop_depth = prev + 1
       env.base().visit_Expr(expr)

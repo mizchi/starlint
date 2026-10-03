@@ -140,7 +140,7 @@ priv struct ExprVisitEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for ExprVisitEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for ExprVisitEnv with fn visit_Expr(env, expr) {
   (env.callback)(expr)
   env.base().visit_Expr(expr)
 }

@@ -121,7 +121,7 @@ fn push_spawn_bg_no_wait_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with visit_Expr(
+impl @syntax.IterVisitor for SpawnBgLongRunningRequiresNoWaitEnv with fn visit_Expr(
   env,
   expr,
 ) {

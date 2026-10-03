@@ -30,7 +30,7 @@ fn is_zero_literal(expr : @syntax.Expr) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferIsEmptyEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferIsEmptyEnv with fn visit_Expr(env, expr) {
   match @internal.match_infix(expr, "==") {
     Some((lhs, rhs, loc)) => {
       let receiver = if is_zero_literal(rhs) {

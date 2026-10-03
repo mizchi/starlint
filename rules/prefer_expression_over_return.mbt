@@ -19,7 +19,6 @@ fn tail_return_expr(expr : @syntax.Expr) -> (@basic.Location, @syntax.Expr)? {
     @syntax.LetMut(binder=_, ty=_, expr=_, body~, loc=_) =>
       tail_return_expr(body)
     @syntax.LetFn(name=_, func=_, body~, loc=_) => tail_return_expr(body)
-    @syntax.LetRec(bindings=_, body~, loc=_) => tail_return_expr(body)
     @syntax.LetAnd(bindings=_, body~, loc=_) => tail_return_expr(body)
     @syntax.Defer(expr=_, body~, loc=_) => tail_return_expr(body)
     _ => None
@@ -71,14 +70,14 @@ fn push_prefer_expression_over_return_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferExpressionOverReturnEnv with visit_Impl(
+impl @syntax.IterVisitor for PreferExpressionOverReturnEnv with fn visit_Impl(
   env,
   impl_,
 ) {
   match impl_ {
     @syntax.Impl::TopFuncDef(fun_decl=_, decl_body~, loc=_) =>
       match decl_body {
-        @syntax.DeclBody::DeclBody(local_types=_, expr~) =>
+        @syntax.DeclBody::DeclBody(expr~) =>
           match tail_return_expr(expr) {
             Some((loc, value)) =>
               push_prefer_expression_over_return_diag(env, loc, value)
@@ -92,7 +91,7 @@ impl @syntax.IterVisitor for PreferExpressionOverReturnEnv with visit_Impl(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferExpressionOverReturnEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferExpressionOverReturnEnv with fn visit_Expr(
   env,
   expr,
 ) {

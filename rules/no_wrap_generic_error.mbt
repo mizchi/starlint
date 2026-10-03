@@ -40,17 +40,13 @@ fn push_no_wrap_generic_error_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for NoWrapGenericErrorEnv with visit_TypeDecl(
+impl @syntax.IterVisitor for NoWrapGenericErrorEnv with fn visit_TypeDecl(
   env,
   decl,
 ) {
   match decl.components {
     @syntax.TypeDesc::Error(exception) =>
       match exception {
-        @syntax.ExceptionDecl::SinglePayload(ty) =>
-          if is_error_type(ty) {
-            push_no_wrap_generic_error_diag(env, decl.loc)
-          }
         @syntax.ExceptionDecl::EnumPayload(constrs) => {
           let items = @internal.list_to_array(constrs)
           for constr in items {
@@ -80,7 +76,7 @@ fn no_wrap_generic_error_rule() -> @starlint.Rule {
     tags=["error"],
     enabled_by_default=false,
     run=input => {
-      let env = NoWrapGenericErrorEnv::{ diags: Array::new(capacity=4) }
+      let env = NoWrapGenericErrorEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

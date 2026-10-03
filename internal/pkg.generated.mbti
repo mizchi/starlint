@@ -3,7 +3,7 @@ package "mizchi/starlint/internal"
 
 import {
   "moonbitlang/core/list",
-  "moonbitlang/parser/basic",
+  "moonbitlang/lexer/basic",
   "moonbitlang/parser/syntax",
 }
 
@@ -44,6 +44,8 @@ pub fn is_unit_expr(@syntax.Expr) -> Bool
 
 pub fn label_name(@syntax.Label) -> String
 
+pub fn legacy_call_marker(String, @syntax.Expr) -> (Int, Bool, @basic.Location)?
+
 pub fn[T] list_to_array(@list.List[T]) -> Array[T]
 
 pub fn location_key(@basic.Location) -> String
@@ -72,9 +74,9 @@ pub fn match_infix(@syntax.Expr, String) -> (@syntax.Expr, @syntax.Expr, @basic.
 
 pub fn match_match_expr(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
 
-pub fn match_some_apply(@syntax.Expr) -> @syntax.Expr?
+pub fn match_some_apply(@syntax.Expr, source? : String) -> @syntax.Expr?
 
-pub fn match_try_question(@syntax.Expr) -> (@syntax.Expr, @basic.Location)?
+pub fn match_try_question(@syntax.Expr, source~ : String) -> (@syntax.Expr, @basic.Location)?
 
 pub fn pattern_source(String, @syntax.Pattern) -> String?
 
@@ -93,4 +95,3 @@ pub fn unwrap_paren(@syntax.Expr) -> @syntax.Expr
 // Type aliases
 
 // Traits
-

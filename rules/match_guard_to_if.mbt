@@ -69,7 +69,7 @@ fn push_match_guard_to_if_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for MatchGuardToIfEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for MatchGuardToIfEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=_, cases~, match_loc=_, loc~) =>
       if is_guard_chain_cases(cases) {
@@ -88,7 +88,7 @@ fn match_guard_to_if_rule() -> @starlint.Rule {
     tags=["fp"],
     enabled_by_default=false,
     run=input => {
-      let env = MatchGuardToIfEnv::{ diags: Array::new(capacity=8) }
+      let env = MatchGuardToIfEnv::{ diags: Array::new(capacity=8), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

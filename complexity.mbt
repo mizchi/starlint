@@ -4,7 +4,7 @@ priv struct ComplexityEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for ComplexityEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for ComplexityEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.If(..) => env.count += 1
     @syntax.Match(cases~, ..) => {
@@ -16,7 +16,6 @@ impl @syntax.IterVisitor for ComplexityEnv with visit_Expr(env, expr) {
     @syntax.For(..) => env.count += 1
     @syntax.ForEach(..) => env.count += 1
     @syntax.While(..) => env.count += 1
-    @syntax.Loop(..) => env.count += 1
     @syntax.TryOperator(..) => env.count += 1
     @syntax.Infix(op={ name: Ident(name~), .. }, ..) =>
       if name == "&&" || name == "||" {
@@ -29,7 +28,7 @@ impl @syntax.IterVisitor for ComplexityEnv with visit_Expr(env, expr) {
 
 ///|
 pub fn compute_complexity(body : @syntax.Expr) -> Int {
-  let env = ComplexityEnv::{ count: 1 }
+  let env = ComplexityEnv::{ count: 1, }
   env.visit_Expr(body)
   env.count
 }
@@ -52,7 +51,7 @@ pub fn compute_file_complexity(
       @syntax.Impl::TopFuncDef(fun_decl~, decl_body~, loc=_) => {
         let name = format_fun_decl_name(fun_decl)
         match decl_body {
-          @syntax.DeclBody::DeclBody(local_types=_, expr~) =>
+          @syntax.DeclBody::DeclBody(expr~) =>
             results.push(FunctionComplexity::{
               name,
               complexity: compute_complexity(expr),
@@ -63,7 +62,7 @@ pub fn compute_file_complexity(
       @syntax.Impl::TopImpl(self_ty~, method_name~, body~, ..) => {
         let name = format_impl_method_name(self_ty, method_name)
         match body {
-          @syntax.DeclBody::DeclBody(local_types=_, expr~) =>
+          @syntax.DeclBody::DeclBody(expr~) =>
             results.push(FunctionComplexity::{
               name,
               complexity: compute_complexity(expr),

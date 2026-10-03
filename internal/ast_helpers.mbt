@@ -288,12 +288,17 @@ pub fn is_none_pattern(pat : @syntax.Pattern) -> Bool {
 }
 
 ///|
-pub fn match_some_apply(expr : @syntax.Expr) -> @syntax.Expr? {
+pub fn match_some_apply(
+  expr : @syntax.Expr,
+  source? : String = "",
+) -> @syntax.Expr? {
+  if legacy_call_marker(source, unwrap_paren(expr)) is Some(_) {
+    return None
+  }
   match unwrap_paren(expr) {
     @syntax.Apply(
       func=@syntax.Constr(constr={ name: { name: "Some", .. }, .. }, ..),
       args~,
-      attr=NoAttr,
       ..
     ) => {
       let args_array = list_to_array(args)
@@ -378,10 +383,17 @@ pub fn pattern_source(source : String, pat : @syntax.Pattern) -> String? {
 ///|
 pub fn match_try_question(
   expr : @syntax.Expr,
+  source~ : String,
 ) -> (@syntax.Expr, @basic.Location)? {
   match unwrap_paren(expr) {
-    @syntax.TryOperator(kind=Question, body~, try_loc=_, loc~) =>
-      Some((body, loc))
+    @syntax.TryOperator(body~, try_loc~, loc~, ..) => {
+      let marker = skip_source_trivia(source, try_loc.start.cnum + 3)
+      if marker < source.length() && source[marker] == '?' {
+        Some((body, loc))
+      } else {
+        None
+      }
+    }
     _ => None
   }
 }
@@ -394,5 +406,90 @@ pub fn match_match_expr(
     @syntax.Match(expr=subject, cases=_, match_loc=_, loc~) =>
       Some((subject, loc))
     _ => None
+  }
+}
+
+///|
+/// Skip only trivia at an AST boundary, never search through arguments or strings.
+fn skip_source_trivia(source : String, start : Int) -> Int {
+  let mut index = start
+  while index >= 0 && index < source.length() {
+    match source[index] {
+      ' ' | '\t' | '\r' | '\n' => index += 1
+      '/' if index + 1 < source.length() && source[index + 1] == '/' => {
+        index += 2
+        while index < source.length() && source[index] != '\n' {
+          index += 1
+        }
+      }
+      '/' if index + 1 < source.length() && source[index + 1] == '*' => {
+        index += 2
+        let mut depth = 1
+        while index < source.length() && depth > 0 {
+          if index + 1 < source.length() &&
+            source[index] == '/' &&
+            source[index + 1] == '*' {
+            depth += 1
+            index += 2
+          } else if index + 1 < source.length() &&
+            source[index] == '*' &&
+            source[index + 1] == '/' {
+            depth -= 1
+            index += 2
+          } else {
+            index += 1
+          }
+        }
+      }
+      _ => break
+    }
+  }
+  index
+}
+
+///| Recover deprecated call markers removed by the compatibility parser.
+
+///|
+/// Returns marker offset, whether it is a question mark, and the full call range.
+pub fn legacy_call_marker(
+  source : String,
+  expr : @syntax.Expr,
+) -> (Int, Bool, @basic.Location)? {
+  let (callee_end, loc) = match expr {
+    @syntax.Apply(func~, loc~, ..) => (func.loc().end.cnum, loc)
+    @syntax.DotApply(method_name~, loc~, ..) => (method_name.loc.end.cnum, loc)
+    _ => return None
+  }
+  if callee_end < 0 || loc.end.cnum > source.length() {
+    return None
+  }
+  let marker = skip_source_trivia(source, callee_end)
+  if marker < source.length() &&
+    (source[marker] == '!' || source[marker] == '?') {
+    let paren = skip_source_trivia(source, marker + 1)
+    if paren < source.length() && source[paren] == '(' {
+      return Some((marker, source[marker] == '?', loc))
+    }
+  }
+  // Match the normalizer: trivia may separate a postfix question mark.
+  let marker = skip_source_trivia(source, loc.end.cnum)
+  if marker >= 0 && marker < source.length() && source[marker] == '?' {
+    let mut line = loc.end.lnum
+    let mut bol = loc.end.bol
+    for index in loc.end.cnum..<marker {
+      if source[index] == '\n' {
+        line += 1
+        bol = index + 1
+      }
+    }
+    let end : @basic.Position = {
+      ..loc.end,
+      cnum: marker + 1,
+      lnum: line,
+      bol,
+    }
+    Some((marker, true, { ..loc, end, }))
+  } else {
+    None
   }
 }

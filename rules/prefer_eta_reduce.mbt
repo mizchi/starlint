@@ -58,9 +58,14 @@ fn is_eta_target(expr : @syntax.Expr) -> Bool {
 fn eta_call_target(
   expr : @syntax.Expr,
   params : Array[String],
+  source : String,
 ) -> @syntax.Expr? {
+  if @internal.legacy_call_marker(source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    return None
+  }
   match @internal.unwrap_paren(expr) {
-    @syntax.Apply(func~, args~, attr=NoAttr, ..) => {
+    @syntax.Apply(func~, args~, ..) => {
       if !is_eta_target(func) {
         return None
       }
@@ -100,12 +105,12 @@ fn eta_reduce_has_call_suffix(source : String, loc : @basic.Location) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferEtaReduceEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferEtaReduceEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Function(func~, loc~) =>
       if func.return_type is None &&
         func.is_async is None &&
-        func.has_error is None {
+        func.nocancel_ is None {
         let is_lambda = match func.kind {
           @syntax.FnKind::Lambda => true
           @syntax.FnKind::Arrow => true
@@ -120,7 +125,7 @@ impl @syntax.IterVisitor for PreferEtaReduceEnv with visit_Expr(env, expr) {
             Some(param_names) =>
               match eta_reduce_single_expr_body(func.body) {
                 Some(body_expr) =>
-                  match eta_call_target(body_expr, param_names) {
+                  match eta_call_target(body_expr, param_names, env.source) {
                     Some(target_expr) =>
                       match @internal.expr_source(env.source, target_expr) {
                         Some(target_src) => {

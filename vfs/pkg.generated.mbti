@@ -27,10 +27,9 @@ pub impl VFS for WasiVFS
 
 // Traits
 pub(open) trait VFS {
-  read_string(Self, String) -> String raise
-  write_string(Self, String, String) -> Unit raise
-  path_exists(Self, String) -> Bool
-  read_dir(Self, String) -> Array[String] raise
-  is_dir(Self, String) -> Bool raise
+  fn read_string(Self, String) -> String raise
+  fn write_string(Self, String, String) -> Unit raise
+  fn path_exists(Self, String) -> Bool
+  fn read_dir(Self, String) -> Array[String] raise
+  fn is_dir(Self, String) -> Bool raise
 }
-

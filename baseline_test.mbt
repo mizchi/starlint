@@ -90,7 +90,7 @@ test "baseline JSON round-trip" {
   files.set("src/main.mbt", FileBaseline::{
     package_name: "test/pkg",
     loc: 50,
-    functions: [FunctionComplexity::{ name: "foo", complexity: 3 }],
+    functions: [FunctionComplexity::{ name: "foo", complexity: 3, }],
     complexity_avg: 3.0,
     complexity_max: 3,
   })
@@ -100,7 +100,7 @@ test "baseline JSON round-trip" {
     version: "1",
     packages,
     files,
-    diagnostics: DiagnosticsSummary::{ total: 2, by_rule },
+    diagnostics: DiagnosticsSummary::{ total: 2, by_rule, },
     summary: BaselineSummary::{
       total_files: 1,
       total_loc: 50,

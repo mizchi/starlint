@@ -7,6 +7,7 @@ let avoid_string_from_array_large_description : String = "Avoid String::from_arr
 ///|
 priv struct AvoidStringFromArrayLargeEnv {
   diags : Array[@starlint.Diagnostic]
+  source : String
 }
 
 ///|
@@ -19,15 +20,19 @@ fn should_warn_from_array_arg(expr : @syntax.Expr) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidStringFromArrayLargeEnv with visit_Expr(
+impl @syntax.IterVisitor for AvoidStringFromArrayLargeEnv with fn visit_Expr(
   env,
   expr,
 ) {
+  if @internal.legacy_call_marker(env.source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    env.base().visit_Expr(expr)
+    return
+  }
   match @internal.unwrap_paren(expr) {
     @syntax.Apply(
       func=@syntax.Method(type_name~, method_name~, ..),
       args~,
-      attr=NoAttr,
       loc~
     ) =>
       if @internal.type_name_right_name(type_name) == "String" &&
@@ -70,7 +75,10 @@ fn avoid_string_from_array_large_rule() -> @starlint.Rule {
     tags=["perf"],
     enabled_by_default=false,
     run=input => {
-      let env = AvoidStringFromArrayLargeEnv::{ diags: Array::new(capacity=4) }
+      let env = AvoidStringFromArrayLargeEnv::{
+        diags: Array::new(capacity=4),
+        source: input.source,
+      }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

@@ -41,7 +41,7 @@ fn push_double_option_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidDoubleOptionParamEnv with visit_Parameter(
+impl @syntax.IterVisitor for AvoidDoubleOptionParamEnv with fn visit_Parameter(
   env,
   param,
 ) {
@@ -67,7 +67,7 @@ fn avoid_double_option_param_rule() -> @starlint.Rule {
     tags=["fp"],
     enabled_by_default=false,
     run=input => {
-      let env = AvoidDoubleOptionParamEnv::{ diags: Array::new(capacity=4) }
+      let env = AvoidDoubleOptionParamEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

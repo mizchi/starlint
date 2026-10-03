@@ -73,7 +73,7 @@ fn dotdot_single_has_only_ws_before_on_line(
 }
 
 ///|
-impl @syntax.IterVisitor for DotdotSingleCallEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for DotdotSingleCallEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.DotApply(self~, return_self=true, loc~, ..) => {
       match self {

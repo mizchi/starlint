@@ -1,6 +1,6 @@
 import {
   "mizchi/starlint",
   "mizchi/starlint/rules",
-  "moonbitlang/parser/basic",
+  "moonbitlang/lexer/basic",
   "moonbitlang/parser/syntax",
 }

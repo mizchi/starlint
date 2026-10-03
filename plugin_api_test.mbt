@@ -63,7 +63,9 @@ test "plugin ctx with extra rules on impls" {
   )
   inspect(
     diagnostics.map(d => d.rule_id),
-    content="[\"plugin_assert_true_literal\"]",
+    content=(
+      #|[plugin_assert_true_literal]
+    ),
   )
 }
 
@@ -82,7 +84,9 @@ test "plugin ctx with extra rules on source" {
   inspect(reports.length(), content="0")
   inspect(
     diagnostics.map(d => d.rule_id),
-    content="[\"plugin_assert_true_literal\"]",
+    content=(
+      #|[plugin_assert_true_literal]
+    ),
   )
   let has_fix = diagnostics.length() == 1 && diagnostics[0].fix is Some(_)
   inspect(has_fix, content="true")

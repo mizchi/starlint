@@ -20,7 +20,10 @@ fn is_safe_unwrap_or_default(expr : @syntax.Expr) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for MatchOptionUnwrapOrEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) => {
       let cases_array = @internal.list_to_array(cases)

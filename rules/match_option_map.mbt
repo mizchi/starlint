@@ -11,7 +11,7 @@ priv struct MatchOptionMapEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for MatchOptionMapEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) => {
       let cases_array = @internal.list_to_array(cases)
@@ -54,7 +54,11 @@ impl @syntax.IterVisitor for MatchOptionMapEnv with visit_Expr(env, expr) {
                 if !body_src.contains("\n") {
                   // Restrict autofix to Some(inner) only.
                   // For arbitrary Some branch expressions, map can change Option nesting.
-                  match @internal.match_some_apply(some_case.body) {
+                  match
+                    @internal.match_some_apply(
+                      some_case.body,
+                      source=env.source,
+                    ) {
                     Some(inner) =>
                       match @internal.expr_source(env.source, inner) {
                         Some(inner_src) => {

@@ -13,6 +13,7 @@ priv struct PreferOptionFilterEnv {
 ///|
 fn match_some_guard_some_none(
   cases_array : Array[@syntax.Case],
+  source : String,
 ) -> (String, @syntax.Expr, @syntax.Case, @syntax.Case)? {
   if cases_array.length() != 2 {
     return None
@@ -41,7 +42,7 @@ fn match_some_guard_some_none(
       match sc.guard_ {
         Some(guard_expr) if @internal.is_none_expr(nc.body) =>
           // Check that Some branch returns Some(same_binder)
-          match @internal.match_some_apply(sc.body) {
+          match @internal.match_some_apply(sc.body, source~) {
             Some(inner) =>
               if @internal.match_ident_name(inner) == Some(name) {
                 Some((name, guard_expr, sc, nc))
@@ -57,11 +58,11 @@ fn match_some_guard_some_none(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferOptionFilterEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferOptionFilterEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases~, match_loc=_, loc~) => {
       let cases_array = @internal.list_to_array(cases)
-      match match_some_guard_some_none(cases_array) {
+      match match_some_guard_some_none(cases_array, env.source) {
         Some((name, guard_expr, _, _)) => {
           let message = "Match can be replaced with filter."
           let detail =

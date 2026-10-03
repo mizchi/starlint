@@ -34,7 +34,10 @@ fn default_arg_from_map_or(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferOptionMapOrElseEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferOptionMapOrElseEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match default_arg_from_map_or(expr) {
     Some((default_expr, loc)) if @internal.is_call_expr(default_expr) => {
       let message = "map_or default is evaluated eagerly; use map_or_else for lazy evaluation."
@@ -65,7 +68,7 @@ fn prefer_option_map_or_else_rule() -> @starlint.Rule {
     tags=["perf"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferOptionMapOrElseEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferOptionMapOrElseEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

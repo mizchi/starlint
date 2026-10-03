@@ -2,10 +2,27 @@
 
 simple linter for MoonBit language.
 
+## parser compatibility
+
+The current integration uses `moonbitlang/parser` 0.4.3 and `moonbitlang/lexer`
+0.4.2, tested with MoonBit v0.10.14. CI continues to check the latest official
+stable toolchain.
+
+Migration rules still recognize legacy `try?`, `f!(...)`, `f?(...)`, and
+`f(...)?` syntax. Compatibility edits are token-based, retain original source
+positions, and leave literal text and comments unchanged. Fix ranges use UTF-16
+indices, including when preceding text contains supplementary Unicode characters.
+
+The obsolete `loop value { pattern => ... }` grammar is not supported by the
+current parser. It produces a parse diagnostic rather than silently skipping
+linting. Current `for`, `for ... in`, and `while` loops remain supported.
+
 ## test
 
 ```
-moon test --target wasm-gc
+moon test --target native
+# Optional library-only WebAssembly tests (the CLI uses native C FFI):
+moon test --target wasm-gc --package mizchi/starlint
 ```
 
 ## basic usage
@@ -42,6 +59,7 @@ example `myapp/tasks/lint`) and compose rules there for each runtime
 environment.
 
 ```mbt nocheck
+///|
 // moon.pkg
 import {
   "mizchi/starlint",
@@ -69,6 +87,7 @@ The plugin receives `ctx` (report + AST utilities), similar to ESLint's
 `create(context)` style.
 
 ```mbt nocheck
+///|
 // moon.pkg
 import {
   "mizchi/starlint",

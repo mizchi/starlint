@@ -43,7 +43,7 @@ fn match_empty_string_compare(expr : @syntax.Expr) -> @syntax.Expr? {
 ///|
 fn match_starts_with(expr : @syntax.Expr) -> Bool {
   match @internal.unwrap_paren(expr) {
-    @syntax.DotApply(self=_, method_name~, args~, return_self=_, attr=_, loc=_) =>
+    @syntax.DotApply(self=_, method_name~, args~, return_self=_, loc=_) =>
       if @internal.label_name(method_name) != "starts_with" {
         false
       } else {
@@ -67,7 +67,10 @@ fn match_starts_with(expr : @syntax.Expr) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferStringPatternEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferStringPatternEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.If(cond~, ifso=_, ifnot=Some(_), loc~) =>
       if match_empty_string_compare(cond) is Some(_) {
@@ -120,7 +123,7 @@ fn prefer_string_pattern_rule() -> @starlint.Rule {
     tags=["fp"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferStringPatternEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferStringPatternEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

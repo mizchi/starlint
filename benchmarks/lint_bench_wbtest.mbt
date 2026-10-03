@@ -25,7 +25,7 @@ fn load_lint_bench_source() -> (String, String) {
   let filename = lint_bench_file_path()
   let source = @fs.read_file_to_string(filename) catch {
     err => {
-      println("failed to read \{filename}: \{err}")
+      println("failed to read \{filename}: \{@debug.to_string(err)}")
       panic()
     }
   }

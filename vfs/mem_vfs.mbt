@@ -6,7 +6,7 @@ pub struct MemVFS {
 
 ///|
 pub fn MemVFS::new() -> MemVFS {
-  MemVFS::{ files: {}, dirs: {} }
+  MemVFS::{ files: {}, dirs: {}, }
 }
 
 ///|
@@ -44,7 +44,7 @@ pub fn MemVFS::add_dir(self : MemVFS, path : String) -> Unit {
 }
 
 ///|
-pub impl VFS for MemVFS with read_string(self, path : String) -> String raise Error {
+pub impl VFS for MemVFS with fn read_string(self, path : String) -> String raise Error {
   match self.files.get(path) {
     Some(content) => content
     None => raise FileNotFoundError(path)
@@ -52,18 +52,22 @@ pub impl VFS for MemVFS with read_string(self, path : String) -> String raise Er
 }
 
 ///|
-pub impl VFS for MemVFS with write_string(self, path : String, content : String) -> Unit raise Error {
+pub impl VFS for MemVFS with fn write_string(
+  self,
+  path : String,
+  content : String,
+) -> Unit raise Error {
   self.files[path] = content
   self.ensure_parent_dirs(path)
 }
 
 ///|
-pub impl VFS for MemVFS with path_exists(self, path : String) -> Bool {
+pub impl VFS for MemVFS with fn path_exists(self, path : String) -> Bool {
   self.files.contains(path) || self.dirs.contains(path)
 }
 
 ///|
-pub impl VFS for MemVFS with read_dir(self, path : String) -> Array[String] raise Error {
+pub impl VFS for MemVFS with fn read_dir(self, path : String) -> Array[String] raise Error {
   let normalized = if path.has_suffix("/") {
     path[:path.length() - 1].to_string()
   } else {
@@ -102,7 +106,7 @@ pub impl VFS for MemVFS with read_dir(self, path : String) -> Array[String] rais
 }
 
 ///|
-pub impl VFS for MemVFS with is_dir(self, path : String) -> Bool raise Error {
+pub impl VFS for MemVFS with fn is_dir(self, path : String) -> Bool raise Error {
   self.dirs.contains(path)
 }
 
@@ -112,7 +116,7 @@ pub suberror FileNotFoundError {
 }
 
 ///|
-impl Show for FileNotFoundError with output(self, logger) -> Unit {
+impl Show for FileNotFoundError with fn output(self, logger) -> Unit {
   let FileNotFoundError(path) = self
   logger.write_string("FileNotFoundError: ")
   logger.write_string(path)

@@ -90,7 +90,7 @@ fn require_snake_case_pkg_rule() -> @starlint.Rule {
         bol: 0,
         cnum: 0,
       }
-      let loc = @basic.Location::{ start: pos, end: pos }
+      let loc = @basic.Location::{ start: pos, end: pos, }
       match extract_pkg_dir_name(input.filename) {
         Some(pkg_name) =>
           if !is_snake_case(pkg_name) {

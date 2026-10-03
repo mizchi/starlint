@@ -47,7 +47,7 @@ fn push_json_diag(env : AvoidJsonJsEnv, loc : @basic.Location) -> Unit {
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidJsonJsEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AvoidJsonJsEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Ident(id=binding, loc~) =>
       if is_json_pkg_ident(binding) {
@@ -67,7 +67,7 @@ impl @syntax.IterVisitor for AvoidJsonJsEnv with visit_Expr(env, expr) {
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidJsonJsEnv with visit_Type(env, ty) {
+impl @syntax.IterVisitor for AvoidJsonJsEnv with fn visit_Type(env, ty) {
   match ty {
     @syntax.Type::Name(constr_id~, tys=_, loc~) =>
       if is_json_constr_id(constr_id) {
@@ -86,7 +86,7 @@ fn avoid_json_js_rule() -> @starlint.Rule {
     tags=["size"],
     enabled_by_default=false,
     run=input => {
-      let env = AvoidJsonJsEnv::{ diags: Array::new(capacity=8) }
+      let env = AvoidJsonJsEnv::{ diags: Array::new(capacity=8), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

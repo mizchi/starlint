@@ -189,7 +189,10 @@ test "warning fixtures" {
     let _ = fixture.name
     let diagnostics = test_lint_for_warning_fixtures(fixture.input)
     let summary = diagnostics.map(diag => diag.rule_id)
-    inspect(summary, content=fixture.expected)
+    let expected : Array[String] = @json.from_json(
+      @json.parse(fixture.expected),
+    )
+    assert_eq(summary, expected, msg=fixture.name)
   }
 }
 
@@ -275,7 +278,7 @@ test "warning fixtures async/error" {
     WarningFixture::{
       name: "no_wrap_generic_error",
       input: (
-        #|suberror WrapA(Error)
+        #|suberror WrapA { WrapA(Error) }
       ),
       expected: "[\"no_wrap_generic_error\"]",
     },
@@ -315,7 +318,10 @@ test "warning fixtures async/error" {
       ["async", "error"],
     )
     let summary = diagnostics.map(diag => diag.rule_id)
-    inspect(summary, content=fixture.expected)
+    let expected : Array[String] = @json.from_json(
+      @json.parse(fixture.expected),
+    )
+    assert_eq(summary, expected, msg=fixture.name)
   }
 }
 
@@ -405,7 +411,10 @@ test "warning fixtures test category" {
       ["test"],
     )
     let summary = diagnostics.map(diag => diag.rule_id)
-    inspect(summary, content=fixture.expected)
+    let expected : Array[String] = @json.from_json(
+      @json.parse(fixture.expected),
+    )
+    assert_eq(summary, expected, msg=fixture.name)
   }
 }
 
@@ -447,14 +456,14 @@ test "warning fixtures module category" {
     WarningFixture::{
       name: "using_only_in_file",
       input: (
-        #|using xpath {type Path}
+        #|using @xpath {type Path}
       ),
       expected: "[\"using_only_in_file\"]",
     },
     WarningFixture::{
       name: "using_only_in_file_ok",
       input: (
-        #|using xpath {type Path}
+        #|using @xpath {type Path}
       ),
       expected: "[]",
     },
@@ -472,6 +481,9 @@ test "warning fixtures module category" {
       filename,
     )
     let summary = diagnostics.map(diag => diag.rule_id)
-    inspect(summary, content=fixture.expected)
+    let expected : Array[String] = @json.from_json(
+      @json.parse(fixture.expected),
+    )
+    assert_eq(summary, expected, msg=fixture.name)
   }
 }
