@@ -4,7 +4,7 @@ package "mizchi/starlint/tasks/lint"
 import {
   "mizchi/starlint",
   "moonbitlang/core/list",
-  "moonbitlang/parser/basic",
+  "moonbitlang/lexer/basic",
   "moonbitlang/parser/syntax",
 }
 
@@ -30,4 +30,3 @@ pub fn rules() -> Array[@starlint.Rule]
 // Type aliases
 
 // Traits
-

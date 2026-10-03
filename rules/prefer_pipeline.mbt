@@ -25,7 +25,7 @@ fn simple_apply(
   expr : @syntax.Expr,
 ) -> (@syntax.Expr, @syntax.Expr, @basic.Location)? {
   match @internal.unwrap_paren(expr) {
-    @syntax.Apply(func~, args~, attr=NoAttr, loc~) => {
+    @syntax.Apply(func~, args~, loc~) => {
       let args_array = @internal.list_to_array(args)
       if args_array.length() != 1 {
         return None
@@ -43,11 +43,16 @@ fn simple_apply(
 ///|
 fn collect_chain(
   expr : @syntax.Expr,
+  source : String,
 ) -> (@syntax.Expr, Array[@syntax.Expr], @basic.Location)? {
   let funcs = Array::new(capacity=4)
   let mut current = expr
   let mut outer_loc : @basic.Location? = None
   while true {
+    if @internal.legacy_call_marker(source, @internal.unwrap_paren(current))
+      is Some(_) {
+      return None
+    }
     match simple_apply(current) {
       Some((func, arg, loc)) if is_allowed_pipe_rhs(func) => {
         funcs.push(func)
@@ -105,7 +110,7 @@ fn pipeline_suggestion(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferPipelineEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferPipelineEnv with fn visit_Expr(env, expr) {
   match @internal.unwrap_paren(expr) {
     @syntax.Apply(args~, ..) => {
       let args_array = @internal.list_to_array(args)
@@ -116,7 +121,7 @@ impl @syntax.IterVisitor for PreferPipelineEnv with visit_Expr(env, expr) {
     _ => ()
   }
   let mut emitted = false
-  match collect_chain(expr) {
+  match collect_chain(expr, env.source) {
     Some((base, funcs, loc)) =>
       match pipeline_suggestion(env.source, base, funcs) {
         Some(suggestion_text) => {

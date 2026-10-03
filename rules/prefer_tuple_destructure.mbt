@@ -58,7 +58,7 @@ fn collect_tuple_let_chain(
                 if outer_loc is None {
                   outer_loc = Some(loc)
                 }
-                lets.push(TupleLetInfo::{ loc, name: binder.name, index })
+                lets.push(TupleLetInfo::{ loc, name: binder.name, index, })
                 current = body
               }
               None => break
@@ -174,7 +174,7 @@ fn push_prefer_tuple_destructure_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferTupleDestructureEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferTupleDestructureEnv with fn visit_Expr(
   env,
   expr,
 ) {

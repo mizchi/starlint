@@ -45,7 +45,7 @@ fn push_require_doc_pub_fn_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for RequireDocPubFnEnv with visit_Impl(env, impl_) {
+impl @syntax.IterVisitor for RequireDocPubFnEnv with fn visit_Impl(env, impl_) {
   match impl_ {
     @syntax.Impl::TopFuncDef(fun_decl~, decl_body=_, loc=_) =>
       match fun_decl.vis {
@@ -68,7 +68,7 @@ fn require_doc_pub_fn_rule() -> @starlint.Rule {
     tags=["module"],
     enabled_by_default=false,
     run=input => {
-      let env = RequireDocPubFnEnv::{ diags: Array::new(capacity=4) }
+      let env = RequireDocPubFnEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

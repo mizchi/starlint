@@ -16,23 +16,20 @@ priv struct ContinueFinder {
 }
 
 ///|
-impl @syntax.IterVisitor for ContinueFinder with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for ContinueFinder with fn visit_Expr(env, expr) {
   if env.found {
     return
   }
   match expr {
     @syntax.Continue(..) => env.found = true
-    @syntax.For(..)
-    | @syntax.ForEach(..)
-    | @syntax.While(..)
-    | @syntax.Loop(..) => ()
+    @syntax.For(..) | @syntax.ForEach(..) | @syntax.While(..) => ()
     _ => env.base().visit_Expr(expr)
   }
 }
 
 ///|
 fn contains_continue(expr : @syntax.Expr) -> Bool {
-  let env = ContinueFinder::{ found: false }
+  let env = ContinueFinder::{ found: false, }
   env.visit_Expr(expr)
   env.found
 }
@@ -92,7 +89,10 @@ fn format_range_side(src : String) -> String {
 }
 
 ///|
-impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for CStyleForSimpleRangeEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.For(
       binders~,

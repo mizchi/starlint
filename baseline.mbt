@@ -384,9 +384,9 @@ pub fn Baseline::from_json(text : String) -> Baseline raise {
               }
             _ => ()
           }
-          DiagnosticsSummary::{ total, by_rule }
+          DiagnosticsSummary::{ total, by_rule, }
         }
-        _ => DiagnosticsSummary::{ total: 0, by_rule: Map::new() }
+        _ => DiagnosticsSummary::{ total: 0, by_rule: Map::new(), }
       }
       let summary = match obj.get("summary") {
         Some(Object(s)) => {
@@ -425,7 +425,7 @@ pub fn Baseline::from_json(text : String) -> Baseline raise {
             max_complexity: 0,
           }
       }
-      Baseline::{ version, packages, files, diagnostics, summary }
+      Baseline::{ version, packages, files, diagnostics, summary, }
     }
     _ => fail("Invalid JSON: expected object")
   }

@@ -6,7 +6,7 @@ pub struct Fix {
 
 ///|
 pub fn Fix::new(range~ : @basic.Location, replacement~ : String) -> Fix {
-  { range, replacement }
+  { range, replacement, }
 }
 
 ///|
@@ -37,7 +37,7 @@ pub fn Diagnostic::new(
   fix? : Fix,
   severity? : Severity = Severity::Warning,
 ) -> Diagnostic {
-  { rule_id, loc, message, detail, suggestion, fix, severity }
+  { rule_id, loc, message, detail, suggestion, fix, severity, }
 }
 
 ///|
@@ -46,5 +46,5 @@ pub fn Diagnostic::with_severity(
   severity : Severity,
 ) -> Diagnostic {
   let { rule_id, loc, message, detail, suggestion, fix, .. } = self
-  { rule_id, loc, message, detail, suggestion, fix, severity }
+  { rule_id, loc, message, detail, suggestion, fix, severity, }
 }

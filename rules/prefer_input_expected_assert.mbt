@@ -35,7 +35,7 @@ fn push_prefer_input_expected_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with visit_Impl(
+impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with fn visit_Impl(
   env,
   impl_,
 ) {
@@ -53,7 +53,7 @@ impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with visit_Impl(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferInputExpectedAssertEnv with fn visit_Expr(
   env,
   expr,
 ) {

@@ -16,7 +16,7 @@ priv struct RaiseSearchEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for RaiseSearchEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for RaiseSearchEnv with fn visit_Expr(env, expr) {
   if env.found {
     return
   }
@@ -29,7 +29,7 @@ impl @syntax.IterVisitor for RaiseSearchEnv with visit_Expr(env, expr) {
 
 ///|
 fn contains_raise(expr : @syntax.Expr) -> Bool {
-  let env = RaiseSearchEnv::{ found: false }
+  let env = RaiseSearchEnv::{ found: false, }
   env.visit_Expr(expr)
   env.found
 }
@@ -61,7 +61,7 @@ fn push_async_cancellation_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Impl(
+impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with fn visit_Impl(
   env,
   impl_,
 ) {
@@ -93,7 +93,7 @@ impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Impl(
 }
 
 ///|
-impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Func(
+impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with fn visit_Func(
   env,
   func,
 ) {
@@ -106,7 +106,7 @@ impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Func(
 }
 
 ///|
-impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with visit_Expr(
+impl @syntax.IterVisitor for AsyncCancellationMustPropagateEnv with fn visit_Expr(
   env,
   expr,
 ) {

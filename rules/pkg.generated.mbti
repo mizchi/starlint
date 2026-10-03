@@ -15,4 +15,3 @@ pub fn rules() -> Array[@starlint.Rule]
 // Type aliases
 
 // Traits
-

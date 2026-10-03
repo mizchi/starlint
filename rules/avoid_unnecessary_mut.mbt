@@ -16,7 +16,7 @@ priv struct AssignDetector {
 }
 
 ///|
-impl @syntax.IterVisitor for AssignDetector with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AssignDetector with fn visit_Expr(env, expr) {
   if env.found {
     return
   }
@@ -32,13 +32,16 @@ impl @syntax.IterVisitor for AssignDetector with visit_Expr(env, expr) {
 
 ///|
 fn has_assignment(name : String, expr : @syntax.Expr) -> Bool {
-  let detector = AssignDetector::{ name, found: false }
+  let detector = AssignDetector::{ name, found: false, }
   detector.visit_Expr(expr)
   detector.found
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidUnnecessaryMutEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AvoidUnnecessaryMutEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.LetMut(binder~, ty=_, expr=_, body~, loc~) =>
       if !has_assignment(binder.name, body) {
@@ -71,7 +74,7 @@ fn avoid_unnecessary_mut_rule() -> @starlint.Rule {
     tags=["fp"],
     enabled_by_default=false,
     run=input => {
-      let env = AvoidUnnecessaryMutEnv::{ diags: Array::new(capacity=4) }
+      let env = AvoidUnnecessaryMutEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

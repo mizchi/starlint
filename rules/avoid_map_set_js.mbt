@@ -51,7 +51,7 @@ fn push_map_set_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidMapSetJsEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AvoidMapSetJsEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Map(elems=_, loc~) => push_map_set_diag(env, loc, "Map")
     @syntax.Method(type_name~, loc~, ..) =>
@@ -65,7 +65,7 @@ impl @syntax.IterVisitor for AvoidMapSetJsEnv with visit_Expr(env, expr) {
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidMapSetJsEnv with visit_Type(env, ty) {
+impl @syntax.IterVisitor for AvoidMapSetJsEnv with fn visit_Type(env, ty) {
   match ty {
     @syntax.Type::Name(constr_id~, tys=_, loc~) =>
       match map_set_kind_from_constr_id(constr_id) {
@@ -85,7 +85,7 @@ fn avoid_map_set_js_rule() -> @starlint.Rule {
     tags=["size"],
     enabled_by_default=false,
     run=input => {
-      let env = AvoidMapSetJsEnv::{ diags: Array::new(capacity=8) }
+      let env = AvoidMapSetJsEnv::{ diags: Array::new(capacity=8), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

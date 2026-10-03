@@ -17,4 +17,3 @@ pub fn keep_bench_imports_used(String, String, String) -> (@list.List[@syntax.Im
 // Type aliases
 
 // Traits
-

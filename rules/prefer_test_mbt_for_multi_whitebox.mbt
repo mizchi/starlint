@@ -80,7 +80,7 @@ fn prefer_test_mbt_for_multi_wbtest_rule() -> @starlint.Rule {
         bol: 0,
         cnum: 0,
       }
-      let loc = @basic.Location::{ start: pos, end: pos }
+      let loc = @basic.Location::{ start: pos, end: pos, }
       let suggestion =
         #|Add or consolidate tests into a *_test.mbt file in this package.
       [

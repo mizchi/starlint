@@ -30,7 +30,7 @@ fn is_irrefutable_pattern(pat : @syntax.Pattern) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidSingleVariantMatchEnv with visit_Expr(
+impl @syntax.IterVisitor for AvoidSingleVariantMatchEnv with fn visit_Expr(
   env,
   expr,
 ) {
@@ -71,7 +71,7 @@ fn avoid_single_variant_match_rule() -> @starlint.Rule {
     id=avoid_single_variant_match_rule_id,
     description=avoid_single_variant_match_description,
     run=input => {
-      let env = AvoidSingleVariantMatchEnv::{ diags: Array::new(capacity=4) }
+      let env = AvoidSingleVariantMatchEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

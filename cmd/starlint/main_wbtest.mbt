@@ -65,7 +65,12 @@ test "build_command: lint with flags" {
   }
   inspect(rule, content="some_rule")
   let files = matches.values.get("files").unwrap_or([])
-  inspect(files, content="[\"a.mbt\"]")
+  inspect(
+    files,
+    content=(
+      #|[a.mbt]
+    ),
+  )
 }
 
 ///|
@@ -77,7 +82,12 @@ test "normalize_lint_targets: single dot means module scan" {
 ///|
 test "normalize_lint_targets: file path is kept" {
   let actual = normalize_lint_targets(["foo.mbt"])
-  inspect(actual, content="[\"foo.mbt\"]")
+  inspect(
+    actual,
+    content=(
+      #|[foo.mbt]
+    ),
+  )
 }
 
 ///|

@@ -5,23 +5,27 @@ let match_result_try_rule_id : String = "match_result_try"
 let match_result_try_description : String = "Prefer try/catch over match on try? results (covers constrained/as expressions)."
 
 ///|
-priv struct MatchResultTryEnv(Array[@starlint.Diagnostic])
+priv struct MatchResultTryEnv {
+  diags : Array[@starlint.Diagnostic]
+  source : String
+}
 
 ///|
-fn is_try_question_expr(expr : @syntax.Expr) -> Bool {
+fn is_try_question_expr(expr : @syntax.Expr, source : String) -> Bool {
   match @internal.unwrap_paren(expr) {
-    @syntax.TryOperator(kind=Question, ..) => true
-    @syntax.Constraint(expr=inner, ..) => is_try_question_expr(inner)
-    @syntax.As(expr=inner, ..) => is_try_question_expr(inner)
+    @syntax.TryOperator(..) =>
+      @internal.match_try_question(expr, source~) is Some(_)
+    @syntax.Constraint(expr=inner, ..) => is_try_question_expr(inner, source)
+    @syntax.As(expr=inner, ..) => is_try_question_expr(inner, source)
     _ => false
   }
 }
 
 ///|
-impl @syntax.IterVisitor for MatchResultTryEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for MatchResultTryEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Match(expr=subject, cases=_, match_loc=_, loc~) =>
-      if is_try_question_expr(subject) {
+      if is_try_question_expr(subject, env.source) {
         let message = "Avoid match (try? ...) for error handling."
         let detail =
           #|match (try? expr) {
@@ -34,7 +38,7 @@ impl @syntax.IterVisitor for MatchResultTryEnv with visit_Expr(env, expr) {
           #|} noraise {
           #|  value => <branch_ok>
           #|}
-        env.0.push(
+        env.diags.push(
           @starlint.Diagnostic::new(
             rule_id=match_result_try_rule_id,
             loc~,
@@ -55,12 +59,14 @@ fn match_result_try_rule() -> @starlint.Rule {
     id=match_result_try_rule_id,
     description=match_result_try_description,
     run=input => {
-      let env = MatchResultTryEnv(Array::new(capacity=8))
+      let env = MatchResultTryEnv::{
+        diags: Array::new(capacity=8),
+        source: input.source,
+      }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {
-        let MatchResultTryEnv(diags) = env
-        diags
+        env.diags
       }
     },
   )

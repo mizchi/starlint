@@ -7,19 +7,21 @@ let prefer_string_view_usage_description : String = "Prefer using StringView wit
 ///|
 priv struct PreferStringViewUsageEnv {
   diags : Array[@starlint.Diagnostic]
+  source : String
 }
 
 ///|
-fn is_string_view_producer(expr : @syntax.Expr) -> Bool {
+fn is_string_view_producer(expr : @syntax.Expr, source : String) -> Bool {
+  if @internal.legacy_call_marker(source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    return false
+  }
+
   match @internal.unwrap_paren(expr) {
     @syntax.ArrayGetSlice(..) => true
     @syntax.DotApply(method_name~, ..) =>
       @internal.label_name(method_name) == "view"
-    @syntax.Apply(
-      func=@syntax.Method(type_name~, method_name~, ..),
-      attr=NoAttr,
-      ..
-    ) =>
+    @syntax.Apply(func=@syntax.Method(type_name~, method_name~, ..), ..) =>
       @internal.type_name_right_name(type_name) == "String" &&
       @internal.label_name(method_name) == "view"
     _ => false
@@ -49,17 +51,24 @@ fn push_string_view_usage_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferStringViewUsageEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferStringViewUsageEnv with fn visit_Expr(
+  env,
+  expr,
+) {
+  if @internal.legacy_call_marker(env.source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    env.base().visit_Expr(expr)
+    return
+  }
   match @internal.unwrap_paren(expr) {
-    @syntax.DotApply(self~, method_name~, attr=NoAttr, loc~, ..) =>
+    @syntax.DotApply(self~, method_name~, loc~, ..) =>
       if @internal.label_name(method_name) == "to_string" &&
-        is_string_view_producer(self) {
+        is_string_view_producer(self, env.source) {
         push_string_view_usage_diag(env, loc)
       }
     @syntax.Apply(
       func=@syntax.Method(type_name~, method_name~, ..),
       args~,
-      attr=NoAttr,
       loc~
     ) =>
       if @internal.type_name_right_name(type_name) == "StringView" &&
@@ -67,7 +76,7 @@ impl @syntax.IterVisitor for PreferStringViewUsageEnv with visit_Expr(env, expr)
         let args_array = @internal.list_to_array(args)
         if args_array.length() == 1 &&
           args_array[0].kind is @syntax.ArgumentKind::Positional &&
-          is_string_view_producer(args_array[0].value) {
+          is_string_view_producer(args_array[0].value, env.source) {
           push_string_view_usage_diag(env, loc)
         }
       }
@@ -84,7 +93,10 @@ fn prefer_string_view_usage_rule() -> @starlint.Rule {
     tags=["perf"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferStringViewUsageEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferStringViewUsageEnv::{
+        diags: Array::new(capacity=4),
+        source: input.source,
+      }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

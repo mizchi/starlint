@@ -88,7 +88,7 @@ fn push_prefer_prefix_not_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for NotCallToPrefixNotEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for NotCallToPrefixNotEnv with fn visit_Expr(env, expr) {
   match match_unary_not_call(expr) {
     Some((arg, loc)) => push_prefer_prefix_not_diag(env, loc, arg)
     None => ()

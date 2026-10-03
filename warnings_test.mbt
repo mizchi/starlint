@@ -30,7 +30,7 @@ test "match try?" {
   inspect(
     summary,
     content=(
-      #|[("match_try_question", <lint test>-2:13-9:4), ("match_try_question", <lint test>-5:7-8:8), ("match_result_try", <lint test>-2:13-9:4), ("match_result_try", <lint test>-5:7-8:8)]
+      #|[(match_try_question, <lint test>-2:13-9:4), (match_try_question, <lint test>-5:7-8:8), (match_result_try, <lint test>-2:13-9:4), (match_result_try, <lint test>-5:7-8:8)]
     ),
   )
 }
@@ -47,7 +47,9 @@ test "string literal multiply number" {
   let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
   inspect(
     summary,
-    content="[(\"string_literal_multiply_number\", <lint test>-2:11-2:22)]",
+    content=(
+      #|[(string_literal_multiply_number, <lint test>-2:11-2:22)]
+    ),
   )
 }
 
@@ -63,7 +65,9 @@ test "boolean if true false" {
   let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
   inspect(
     summary,
-    content="[(\"boolean_if_true_false\", <lint test>-2:11-2:42)]",
+    content=(
+      #|[(boolean_if_true_false, <lint test>-2:11-2:42)]
+    ),
   )
 }
 
@@ -79,7 +83,9 @@ test "boolean if false true" {
   let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
   inspect(
     summary,
-    content="[(\"boolean_if_false_true\", <lint test>-2:11-2:42)]",
+    content=(
+      #|[(boolean_if_false_true, <lint test>-2:11-2:42)]
+    ),
   )
 }
 
@@ -95,7 +101,9 @@ test "redundant if same branch" {
   let summary = diagnostics.map(diag => (diag.rule_id, diag.loc))
   inspect(
     summary,
-    content="[(\"redundant_if_same_branch\", <lint test>-2:11-2:39)]",
+    content=(
+      #|[(redundant_if_same_branch, <lint test>-2:11-2:39)]
+    ),
   )
 }
 
@@ -113,7 +121,7 @@ test "legacy call syntax" {
   inspect(
     summary,
     content=(
-      #|[("legacy_call_syntax", <lint test>-2:3-2:11), ("legacy_call_syntax", <lint test>-3:3-3:8)]
+      #|[(legacy_call_syntax, <lint test>-2:3-2:11), (legacy_call_syntax, <lint test>-3:3-3:8)]
     ),
   )
 }
@@ -128,7 +136,12 @@ let option_map_or_else =
 test "prefer option map_or_else" {
   let diagnostics = test_lint(option_map_or_else)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_option_map_or_else\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_option_map_or_else]
+    ),
+  )
 }
 
 ///|
@@ -141,7 +154,12 @@ let option_unwrap_or_else =
 test "prefer option unwrap_or_else" {
   let diagnostics = test_lint(option_unwrap_or_else)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_option_unwrap_or_else\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_option_unwrap_or_else]
+    ),
+  )
 }
 
 ///|
@@ -159,7 +177,9 @@ test "prefer string builder for concat" {
   let summary = diagnostics.map(diag => diag.rule_id)
   inspect(
     summary,
-    content="[\"prefer_string_builder_for_concat\", \"prefer_string_interpolation\"]",
+    content=(
+      #|[prefer_string_builder_for_concat, prefer_string_interpolation]
+    ),
   )
 }
 
@@ -173,7 +193,12 @@ let string_from_array_large =
 test "avoid string from array large" {
   let diagnostics = test_lint(string_from_array_large)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"avoid_string_from_array_large\"]")
+  inspect(
+    summary,
+    content=(
+      #|[avoid_string_from_array_large]
+    ),
+  )
 }
 
 ///|
@@ -186,7 +211,12 @@ let string_substring =
 test "prefer string view slice" {
   let diagnostics = test_lint(string_substring)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_string_view_slice\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_string_view_slice]
+    ),
+  )
 }
 
 ///|
@@ -200,7 +230,12 @@ let string_view_to_string =
 test "prefer string view usage" {
   let diagnostics = test_lint(string_view_to_string)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_string_view_usage\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_string_view_usage]
+    ),
+  )
 }
 
 ///|
@@ -215,7 +250,12 @@ let string_index_access =
 test "prefer unicode safe iteration" {
   let diagnostics = test_lint(string_index_access)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_unicode_safe_iteration\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_unicode_safe_iteration]
+    ),
+  )
 }
 
 ///|
@@ -230,7 +270,12 @@ let map_direct_index =
 test "prefer map get pattern" {
   let diagnostics = test_lint(map_direct_index)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -246,7 +291,12 @@ let map_direct_index_if =
 test "prefer map get pattern if" {
   let diagnostics = test_lint(map_direct_index_if)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -263,7 +313,9 @@ test "prefer map get pattern assign" {
   let summary = diagnostics.map(diag => diag.rule_id)
   inspect(
     summary,
-    content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\", \"avoid_map_set_js\"]",
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js, avoid_map_set_js]
+    ),
   )
 }
 
@@ -285,7 +337,9 @@ test "prefer map get pattern match" {
   let summary = diagnostics.map(diag => diag.rule_id)
   inspect(
     summary,
-    content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\", \"avoid_map_set_js\"]",
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js, avoid_map_set_js]
+    ),
   )
 }
 
@@ -304,7 +358,12 @@ let map_direct_index_match_raise =
 test "prefer map get pattern match raise" {
   let diagnostics = test_lint(map_direct_index_match_raise)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -322,7 +381,12 @@ let map_direct_index_match_abort =
 test "prefer map get pattern match abort" {
   let diagnostics = test_lint(map_direct_index_match_abort)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -340,7 +404,12 @@ let map_direct_index_match_panic =
 test "prefer map get pattern match panic" {
   let diagnostics = test_lint(map_direct_index_match_panic)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -358,7 +427,12 @@ let map_direct_index_match_pkg_panic =
 test "prefer map get pattern match pkg panic" {
   let diagnostics = test_lint(map_direct_index_match_pkg_panic)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -374,7 +448,12 @@ let map_direct_index_try_panic =
 test "prefer map get pattern try panic" {
   let diagnostics = test_lint(map_direct_index_try_panic)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -390,7 +469,12 @@ let map_direct_index_try =
 test "prefer map get pattern try fail" {
   let diagnostics = test_lint(map_direct_index_try)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_map_get_pattern\", \"avoid_map_set_js\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_map_get_pattern, avoid_map_set_js]
+    ),
+  )
 }
 
 ///|
@@ -408,7 +492,7 @@ test "c style for simple range" {
   inspect(
     summary,
     content=(
-      #|[("c_style_for_simple_range", <lint test>-2:3-4:4)]
+      #|[(c_style_for_simple_range, <lint test>-2:3-4:4)]
     ),
   )
 }
@@ -465,7 +549,7 @@ test "match option do nothing last expr" {
   inspect(
     summary,
     content=(
-      #|[("match_option_do_nothing", <lint test>-3:3-6:4)]
+      #|[(match_option_do_nothing, <lint test>-3:3-6:4)]
     ),
   )
 }
@@ -488,7 +572,7 @@ test "match option do nothing statement" {
   inspect(
     summary,
     content=(
-      #|[("match_option_do_nothing", <lint test>-3:3-6:4)]
+      #|[(match_option_do_nothing, <lint test>-3:3-6:4)]
     ),
   )
 }
@@ -511,7 +595,7 @@ test "match option do nothing let discard" {
   inspect(
     summary,
     content=(
-      #|[("match_option_do_nothing", <lint test>-3:11-6:4)]
+      #|[(match_option_do_nothing, <lint test>-3:11-6:4)]
     ),
   )
 }
@@ -533,7 +617,7 @@ test "match option unwrap_or" {
   inspect(
     summary,
     content=(
-      #|[("match_option_unwrap_or", <lint test>-3:15-6:4)]
+      #|[(match_option_unwrap_or, <lint test>-3:15-6:4)]
     ),
   )
 }
@@ -555,7 +639,7 @@ test "match option unwrap_or literal default" {
   inspect(
     summary,
     content=(
-      #|[("match_option_unwrap_or", <lint test>-3:15-6:4)]
+      #|[(match_option_unwrap_or, <lint test>-3:15-6:4)]
     ),
   )
 }
@@ -594,7 +678,7 @@ test "match option map" {
   inspect(
     summary,
     content=(
-      #|[("match_option_map", <lint test>-3:15-6:4)]
+      #|[(match_option_map, <lint test>-3:15-6:4)]
     ),
   )
 }
@@ -634,7 +718,7 @@ test "match to if let statement" {
   inspect(
     summary,
     content=(
-      #|[("match_to_if_let", <lint test>-3:3-6:4)]
+      #|[(match_to_if_let, <lint test>-3:3-6:4)]
     ),
   )
 }
@@ -653,7 +737,7 @@ test "if let to match" {
   inspect(
     summary,
     content=(
-      #|[("if_let_to_match", <lint test>-3:15-3:54)]
+      #|[(if_let_to_match, <lint test>-3:15-3:54)]
     ),
   )
 }
@@ -674,7 +758,7 @@ test "match result try" {
   inspect(
     summary,
     content=(
-      #|[("match_result_try", <lint test>-2:11-5:4)]
+      #|[(match_result_try, <lint test>-2:11-5:4)]
     ),
   )
 }
@@ -694,7 +778,7 @@ test "avoid map set js" {
   inspect(
     summary,
     content=(
-      #|[("avoid_map_set_js", <lint test>-2:11-2:27), ("avoid_map_set_js", <lint test>-2:30-2:40), ("avoid_map_set_js", <lint test>-3:11-3:19), ("avoid_map_set_js", <lint test>-4:11-4:19)]
+      #|[(avoid_map_set_js, <lint test>-2:11-2:27), (avoid_map_set_js, <lint test>-2:30-2:40), (avoid_map_set_js, <lint test>-3:11-3:19), (avoid_map_set_js, <lint test>-4:11-4:19)]
     ),
   )
 }
@@ -714,7 +798,7 @@ test "avoid json js" {
   inspect(
     summary,
     content=(
-      #|[("avoid_json_js", <lint test>-2:11-2:15), ("avoid_json_js", <lint test>-2:18-2:29), ("avoid_json_js", <lint test>-3:11-3:26), ("avoid_json_js", <lint test>-4:11-4:21)]
+      #|[(avoid_json_js, <lint test>-2:11-2:15), (avoid_json_js, <lint test>-2:18-2:29), (avoid_json_js, <lint test>-3:11-3:26), (avoid_json_js, <lint test>-4:11-4:21)]
     ),
   )
 }
@@ -733,7 +817,7 @@ test "avoid double to_string js" {
   inspect(
     summary,
     content=(
-      #|[("avoid_double_to_string_js", <lint test>-2:11-2:28), ("avoid_double_to_string_js", <lint test>-3:11-3:26)]
+      #|[(avoid_double_to_string_js, <lint test>-2:11-2:28), (avoid_double_to_string_js, <lint test>-3:11-3:26)]
     ),
   )
 }
@@ -753,7 +837,7 @@ test "dotdot chain sequence" {
   inspect(
     summary,
     content=(
-      #|[("dotdot_chain_sequence", <lint test>-3:3-4:14)]
+      #|[(dotdot_chain_sequence, <lint test>-3:3-4:14)]
     ),
   )
 }
@@ -787,7 +871,7 @@ test "dotdot chain sequence field receiver" {
   inspect(
     summary,
     content=(
-      #|[("dotdot_chain_sequence", <lint test>-3:3-4:16)]
+      #|[(dotdot_chain_sequence, <lint test>-3:3-4:16)]
     ),
   )
 }
@@ -807,7 +891,7 @@ test "dotdot chain sequence deep field receiver" {
   inspect(
     summary,
     content=(
-      #|[("dotdot_chain_sequence", <lint test>-3:3-4:20)]
+      #|[(dotdot_chain_sequence, <lint test>-3:3-4:20)]
     ),
   )
 }
@@ -826,7 +910,7 @@ test "dotdot chain sequence value result" {
   inspect(
     summary,
     content=(
-      #|[("dotdot_chain_sequence", <lint test>-3:13-3:29)]
+      #|[(dotdot_chain_sequence, <lint test>-3:13-3:29)]
     ),
   )
 }
@@ -872,7 +956,7 @@ test "prefer pipeline" {
   inspect(
     summary,
     content=(
-      #|[("prefer_pipeline", <lint test>-2:11-2:21)]
+      #|[(prefer_pipeline, <lint test>-2:11-2:21)]
     ),
   )
 }
@@ -890,7 +974,7 @@ test "prefer pipeline method" {
   inspect(
     summary,
     content=(
-      #|[("prefer_pipeline", <lint test>-2:11-2:25)]
+      #|[(prefer_pipeline, <lint test>-2:11-2:25)]
     ),
   )
 }
@@ -921,7 +1005,12 @@ let prefer_pipeline_rebind_chain =
 test "prefer pipeline rebind chain" {
   let diagnostics = test_lint(prefer_pipeline_rebind_chain)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_pipeline_rebind\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_pipeline_rebind]
+    ),
+  )
 }
 
 ///|
@@ -1036,7 +1125,7 @@ test "prefer arrow fn" {
   inspect(
     summary,
     content=(
-      #|[("prefer_arrow_fn", <lint test>-2:11-2:21)]
+      #|[(prefer_arrow_fn, <lint test>-2:11-2:21)]
     ),
   )
 }
@@ -1054,7 +1143,7 @@ test "prefer eta reduce" {
   inspect(
     summary,
     content=(
-      #|[("prefer_arrow_fn", <lint test>-2:11-2:24), ("prefer_eta_reduce", <lint test>-2:11-2:24)]
+      #|[(prefer_arrow_fn, <lint test>-2:11-2:24), (prefer_eta_reduce, <lint test>-2:11-2:24)]
     ),
   )
 }
@@ -1072,7 +1161,7 @@ test "prefer eta reduce arrow" {
   inspect(
     summary,
     content=(
-      #|[("prefer_eta_reduce", <lint test>-2:11-2:28)]
+      #|[(prefer_eta_reduce, <lint test>-2:11-2:28)]
     ),
   )
 }
@@ -1090,7 +1179,7 @@ test "avoid side effect in map" {
   inspect(
     summary,
     content=(
-      #|[("avoid_side_effect_in_map", <lint test>-2:3-2:12)]
+      #|[(avoid_side_effect_in_map, <lint test>-2:3-2:12)]
     ),
   )
 }
@@ -1110,7 +1199,7 @@ test "prefer tuple destructure" {
   inspect(
     summary,
     content=(
-      #|[("prefer_tuple_destructure", <lint test>-2:3-4:12)]
+      #|[(prefer_tuple_destructure, <lint test>-2:3-4:12)]
     ),
   )
 }
@@ -1143,7 +1232,7 @@ test "prefer expression over return" {
   inspect(
     summary,
     content=(
-      #|[("prefer_expression_over_return", <lint test>-2:3-2:15)]
+      #|[(prefer_expression_over_return, <lint test>-2:3-2:15)]
     ),
   )
 }
@@ -1162,7 +1251,7 @@ test "prefer expression over return sequence" {
   inspect(
     summary,
     content=(
-      #|[("prefer_expression_over_return", <lint test>-3:3-3:16)]
+      #|[(prefer_expression_over_return, <lint test>-3:3-3:16)]
     ),
   )
 }
@@ -1198,7 +1287,7 @@ test "prefer array pattern match" {
   inspect(
     summary,
     content=(
-      #|[("prefer_array_pattern", <lint test>-3:3-6:4)]
+      #|[(prefer_array_pattern, <lint test>-3:3-6:4)]
     ),
   )
 }
@@ -1216,7 +1305,7 @@ test "prefer array pattern length" {
   inspect(
     summary,
     content=(
-      #|[("prefer_array_pattern", <lint test>-2:3-2:47), ("prefer_is_empty", <lint test>-2:6-2:22)]
+      #|[(prefer_array_pattern, <lint test>-2:3-2:47), (prefer_is_empty, <lint test>-2:6-2:22)]
     ),
   )
 }
@@ -1234,7 +1323,7 @@ test "prefer array pattern length no else" {
   inspect(
     summary,
     content=(
-      #|[("prefer_is_empty", <lint test>-2:6-2:22)]
+      #|[(prefer_is_empty, <lint test>-2:6-2:22)]
     ),
   )
 }
@@ -1252,7 +1341,7 @@ test "prefer string pattern empty" {
   inspect(
     summary,
     content=(
-      #|[("prefer_string_pattern", <lint test>-2:3-2:38)]
+      #|[(prefer_string_pattern, <lint test>-2:3-2:38)]
     ),
   )
 }
@@ -1270,7 +1359,7 @@ test "prefer string pattern prefix" {
   inspect(
     summary,
     content=(
-      #|[("prefer_string_pattern", <lint test>-2:3-2:51)]
+      #|[(prefer_string_pattern, <lint test>-2:3-2:51)]
     ),
   )
 }
@@ -1288,7 +1377,7 @@ test "avoid double option param" {
   inspect(
     summary,
     content=(
-      #|[("avoid_double_option_param", <lint test>-1:6-1:15), ("avoid_double_option_param", <lint test>-2:6-2:25)]
+      #|[(avoid_double_option_param, <lint test>-1:6-1:15), (avoid_double_option_param, <lint test>-2:6-2:25)]
     ),
   )
 }
@@ -1307,7 +1396,7 @@ test "avoid unnecessary mut" {
   inspect(
     summary,
     content=(
-      #|[("avoid_unnecessary_mut", <lint test>-2:3-3:16)]
+      #|[(avoid_unnecessary_mut, <lint test>-2:3-3:16)]
     ),
   )
 }
@@ -1354,7 +1443,12 @@ let empty_source =
 test "require snake_case pkg: camelCase detected" {
   let diagnostics = test_lint_with_filename(empty_source, "myPackage/foo.mbt")
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"require_snake_case_pkg\"]")
+  inspect(
+    summary,
+    content=(
+      #|[require_snake_case_pkg]
+    ),
+  )
 }
 
 ///|
@@ -1379,7 +1473,12 @@ test "require snake_case pkg: root file no dir" {
 test "require snake_case pkg: kebab-case detected" {
   let diagnostics = test_lint_with_filename(empty_source, "my-package/foo.mbt")
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"require_snake_case_pkg\"]")
+  inspect(
+    summary,
+    content=(
+      #|[require_snake_case_pkg]
+    ),
+  )
 }
 
 ///|
@@ -1389,7 +1488,7 @@ test "require snake_case pkg: camelCase file name detected" {
   inspect(
     summary,
     content=(
-      #|["File name 'myFile.mbt' is not snake_case."]
+      #|[File name 'myFile.mbt' is not snake_case.]
     ),
   )
 }
@@ -1410,7 +1509,7 @@ test "require snake_case pkg: both dir and file bad" {
   inspect(
     summary,
     content=(
-      #|["Package directory name 'myPkg' is not snake_case.", "File name 'myFile.mbt' is not snake_case."]
+      #|[Package directory name 'myPkg' is not snake_case., File name 'myFile.mbt' is not snake_case.]
     ),
   )
 }
@@ -1423,7 +1522,12 @@ test "prefer test mbt for multi wbtest: warns when no blackbox test file" {
     package_files=["pkg/foo_wbtest.mbt", "pkg/bar_wbtest.mbt", "pkg/main.mbt"],
   )
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"prefer_test_mbt_for_multi_wbtest\"]")
+  inspect(
+    summary,
+    content=(
+      #|[prefer_test_mbt_for_multi_wbtest]
+    ),
+  )
 }
 
 ///|

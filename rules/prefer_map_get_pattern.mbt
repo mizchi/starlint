@@ -8,6 +8,7 @@ let prefer_map_get_pattern_description : String = "Prefer map.get + pattern matc
 priv struct PreferMapGetPatternEnv {
   diags : Array[@starlint.Diagnostic]
   bindings : Array[MapBinding]
+  source : String
 }
 
 ///|
@@ -40,7 +41,6 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
       @syntax.Try(
         body~,
         catch_~,
-        catch_all=_,
         try_else~,
         has_try=_,
         try_loc=_,
@@ -50,7 +50,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
       ) => {
         let mut ok = true
         let mut has_map = false
-        if !is_non_value_expr(body) {
+        if !is_non_value_expr(body, env.source) {
           if is_map_like_expr(env, body) {
             has_map = true
           } else {
@@ -59,7 +59,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
         }
         let catch_array = @internal.list_to_array(catch_)
         for case_ in catch_array {
-          if ok && !is_non_value_expr(case_.body) {
+          if ok && !is_non_value_expr(case_.body, env.source) {
             if is_map_like_expr(env, case_.body) {
               has_map = true
             } else {
@@ -71,7 +71,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
           Some(else_cases) => {
             let else_array = @internal.list_to_array(else_cases)
             for case_ in else_array {
-              if ok && !is_non_value_expr(case_.body) {
+              if ok && !is_non_value_expr(case_.body, env.source) {
                 if is_map_like_expr(env, case_.body) {
                   has_map = true
                 } else {
@@ -92,7 +92,7 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
           let mut ok = true
           let mut has_map = false
           for case_ in cases_array {
-            if is_non_value_expr(case_.body) {
+            if is_non_value_expr(case_.body, env.source) {
               ()
             } else if is_map_like_expr(env, case_.body) {
               has_map = true
@@ -117,7 +117,11 @@ fn is_map_like_expr(env : PreferMapGetPatternEnv, expr : @syntax.Expr) -> Bool {
 }
 
 ///|
-fn is_non_value_expr(expr : @syntax.Expr) -> Bool {
+fn is_non_value_expr(expr : @syntax.Expr, source : String) -> Bool {
+  if @internal.legacy_call_marker(source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    return false
+  }
   match @internal.unwrap_paren(expr) {
     @syntax.Raise(..) => true
     @syntax.Return(..) => true
@@ -126,16 +130,14 @@ fn is_non_value_expr(expr : @syntax.Expr) -> Bool {
     @syntax.Apply(
       func=@syntax.Field(record=_, accessor=@syntax.Accessor::Label(label), ..),
       args=_,
-      attr=NoAttr,
       loc=_
     ) => is_non_value_name(@internal.label_name(label))
     @syntax.Apply(
       func=@syntax.Method(type_name=_, method_name~, ..),
       args=_,
-      attr=NoAttr,
       loc=_
     ) => is_non_value_name(@internal.label_name(method_name))
-    @syntax.Apply(func=@syntax.Ident(id=ident, ..), args=_, attr=NoAttr, loc=_) =>
+    @syntax.Apply(func=@syntax.Ident(id=ident, ..), args=_, loc=_) =>
       is_non_value_name(@internal.longident_right_name(ident.name))
     @syntax.DotApply(method_name~, ..) =>
       is_non_value_name(@internal.label_name(method_name))
@@ -154,7 +156,7 @@ fn push_binding(
   name : String,
   is_map : Bool,
 ) -> Unit {
-  env.bindings.push(MapBinding::{ name, is_map })
+  env.bindings.push(MapBinding::{ name, is_map, })
 }
 
 ///|
@@ -190,7 +192,7 @@ fn update_binding(
     idx = idx - 1
     let binding = env.bindings[idx]
     if binding.name == name {
-      env.bindings[idx] = MapBinding::{ name, is_map }
+      env.bindings[idx] = MapBinding::{ name, is_map, }
       return true
     }
   }
@@ -246,7 +248,10 @@ fn visit_func_body(env : PreferMapGetPatternEnv, func : @syntax.Func) -> Unit {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferMapGetPatternEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferMapGetPatternEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.Let(pattern~, expr=bound, body~, loc=_) => {
       env.visit_Expr(bound)
@@ -281,23 +286,6 @@ impl @syntax.IterVisitor for PreferMapGetPatternEnv with visit_Expr(env, expr) {
       } else {
         push_binding(env, name.name, false)
         1
-      }
-      env.visit_Expr(body)
-      pop_bindings(env, count)
-    }
-    @syntax.LetRec(bindings~, body~, loc=_) => {
-      let bindings_array = @internal.list_to_array(bindings)
-      for binding in bindings_array {
-        let (_, func) = binding
-        visit_func_body(env, func)
-      }
-      let mut count = 0
-      for binding in bindings_array {
-        let (binder, _) = binding
-        if binder.name != "_" {
-          push_binding(env, binder.name, false)
-          count = count + 1
-        }
       }
       env.visit_Expr(body)
       pop_bindings(env, count)
@@ -359,6 +347,7 @@ fn prefer_map_get_pattern_rule() -> @starlint.Rule {
       let env = PreferMapGetPatternEnv::{
         diags: Array::new(capacity=4),
         bindings: Array::new(capacity=4),
+        source: input.source,
       }
       for impl_ in input.impls {
         env.visit_Impl(impl_)

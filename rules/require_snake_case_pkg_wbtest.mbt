@@ -25,27 +25,51 @@ test "is_snake_case invalid" {
 ///|
 test "extract_pkg_dir_name" {
   inspect(extract_pkg_dir_name("foo.mbt"), content="None")
-  inspect(extract_pkg_dir_name("cli/main.mbt"), content="Some(\"cli\")")
+  inspect(
+    extract_pkg_dir_name("cli/main.mbt"),
+    content=(
+      #|Some(cli)
+    ),
+  )
   inspect(
     extract_pkg_dir_name("src/foo_bar/baz.mbt"),
-    content="Some(\"foo_bar\")",
+    content=(
+      #|Some(foo_bar)
+    ),
   )
   inspect(
     extract_pkg_dir_name("myPackage/foo.mbt"),
-    content="Some(\"myPackage\")",
+    content=(
+      #|Some(myPackage)
+    ),
   )
   inspect(
     extract_pkg_dir_name("a/b/camelCase/test.mbt"),
-    content="Some(\"camelCase\")",
+    content="Some(camelCase)",
   )
 }
 
 ///|
 test "extract_file_stem" {
-  inspect(extract_file_stem("foo.mbt"), content="Some(\"foo\")")
-  inspect(extract_file_stem("cli/main.mbt"), content="Some(\"main\")")
-  inspect(extract_file_stem("src/myFile.mbt"), content="Some(\"myFile\")")
-  inspect(extract_file_stem("foo_bar.mbt"), content="Some(\"foo_bar\")")
-  inspect(extract_file_stem("FooBar.mbt"), content="Some(\"FooBar\")")
+  inspect(
+    extract_file_stem("foo.mbt"),
+    content=(
+      #|Some(foo)
+    ),
+  )
+  inspect(
+    extract_file_stem("cli/main.mbt"),
+    content=(
+      #|Some(main)
+    ),
+  )
+  inspect(
+    extract_file_stem("src/myFile.mbt"),
+    content=(
+      #|Some(myFile)
+    ),
+  )
+  inspect(extract_file_stem("foo_bar.mbt"), content="Some(foo_bar)")
+  inspect(extract_file_stem("FooBar.mbt"), content="Some(FooBar)")
   inspect(extract_file_stem("not_mbt.txt"), content="None")
 }

@@ -10,7 +10,7 @@ priv struct AvoidIgnoreErrorEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidIgnoreErrorEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AvoidIgnoreErrorEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Try(catch_~, catch_loc~, ..) => {
       let cases = @internal.list_to_array(catch_)
@@ -50,7 +50,7 @@ fn avoid_ignore_error_rule() -> @starlint.Rule {
     description=avoid_ignore_error_description,
     tags=["error"],
     run=input => {
-      let env = AvoidIgnoreErrorEnv::{ diags: Array::new(capacity=4) }
+      let env = AvoidIgnoreErrorEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

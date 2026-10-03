@@ -32,15 +32,12 @@ fn is_augmented_plus(op : @syntax.Var?) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferStringBuilderForConcatEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferStringBuilderForConcatEnv with fn visit_Expr(
   env,
   expr,
 ) {
   match expr {
-    @syntax.For(..)
-    | @syntax.ForEach(..)
-    | @syntax.While(..)
-    | @syntax.Loop(..) => {
+    @syntax.For(..) | @syntax.ForEach(..) | @syntax.While(..) => {
       let prev = env.loop_depth
       env.loop_depth = prev + 1
       env.base().visit_Expr(expr)

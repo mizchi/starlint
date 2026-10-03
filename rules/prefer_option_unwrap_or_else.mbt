@@ -34,7 +34,7 @@ fn default_arg_from_unwrap_or(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferOptionUnwrapOrElseEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferOptionUnwrapOrElseEnv with fn visit_Expr(
   env,
   expr,
 ) {
@@ -68,7 +68,7 @@ fn prefer_option_unwrap_or_else_rule() -> @starlint.Rule {
     tags=["perf"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferOptionUnwrapOrElseEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferOptionUnwrapOrElseEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

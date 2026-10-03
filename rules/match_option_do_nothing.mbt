@@ -95,7 +95,10 @@ fn push_match_option_do_nothing_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for MatchOptionDoNothingEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for MatchOptionDoNothingEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.Sequence(exprs~, last_expr=_, loc=_) => {
       let items = @internal.list_to_array(exprs)

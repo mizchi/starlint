@@ -1,64 +1,4 @@
 ///|
-fn is_ident_char(c : UInt16) -> Bool {
-  (('a' : UInt16) <= c && c <= ('z' : UInt16)) ||
-  (('A' : UInt16) <= c && c <= ('Z' : UInt16)) ||
-  (('0' : UInt16) <= c && c <= ('9' : UInt16)) ||
-  c == ('_' : UInt16)
-}
-
-///|
-fn normalize_using_type_keyword(source : String) -> String {
-  let mut output = source
-  let mut offset = 0
-  while offset < output.length() {
-    let view = output[offset:]
-    match view.find("using") {
-      None => break
-      Some(rel) => {
-        let using_pos = offset + rel
-        if using_pos > 0 && is_ident_char(output[using_pos - 1]) {
-          offset = using_pos + 5
-          continue
-        }
-        let using_end = using_pos + 5
-        if using_end < output.length() && is_ident_char(output[using_end]) {
-          offset = using_end
-          continue
-        }
-        let after_using = output[using_pos:]
-        match after_using.find("{") {
-          None => break
-          Some(rel_brace) => {
-            let brace_pos = using_pos + rel_brace
-            let after_brace = output[brace_pos:]
-            match after_brace.find("}") {
-              None => break
-              Some(rel_close) => {
-                let close_pos = brace_pos + rel_close
-                let prefix = output[:brace_pos + 1]
-                let mid = output[brace_pos + 1:close_pos]
-                let suffix = output[close_pos:]
-                let mid_replaced = mid
-                  .to_string()
-                  .replace_all(old="type ", new="     ")
-                let sb = StringBuilder::new()
-                sb
-                ..write_view(prefix)
-                ..write_string(mid_replaced)
-                .write_view(suffix)
-                output = sb.to_string()
-                offset = close_pos + 1
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  output
-}
-
-///|
 fn normalize_range_lt_inclusive(source : String) -> String {
   // TODO: parser が `..<=` を対応したら、この正規化を削除する。
   let view = source[:]
@@ -67,7 +7,7 @@ fn normalize_range_lt_inclusive(source : String) -> String {
     Some(_) => ()
   }
   let lex_result = @lexer.tokens_from_string_with_utf16_location(
-    source,
+    source[:],
     comment=true,
   )
   if lex_result.errors.length() > 0 {
@@ -136,48 +76,67 @@ fn next_significant_token(
 }
 
 ///|
-fn normalize_nobreak_keyword(source : String) -> String {
-  let lex_result = @lexer.tokens_from_string_with_utf16_location(
-    source,
+// Keep legacy syntax parseable for migration rules without changing offsets.
+// Token-based edits leave comments and string literals untouched.
+fn normalize_legacy_syntax(source : String) -> String {
+  let lexed = @lexer.tokens_from_string_with_utf16_location(
+    source[:],
     comment=true,
   )
-  if lex_result.errors.length() > 0 {
+  if !lexed.errors.is_empty() {
     return source
   }
-  let replacements : Array[(Int, Int)] = Array::new(capacity=2)
-  for i in 0..<lex_result.tokens.length() {
-    let (tok, start, end) = lex_result.tokens[i]
-    match tok {
-      @tokens.Token::LIDENT(name) if name == "nobreak" =>
-        match
-          (
-            prev_significant_token(lex_result.tokens, i),
-            next_significant_token(lex_result.tokens, i),
-          ) {
-          (Some(@tokens.Token::RBRACE), Some(@tokens.Token::LBRACE)) =>
-            replacements.push((start.cnum, end.cnum))
-          _ => ()
+  let sb = StringBuilder::new()
+  let mut last = 0
+  for i in 0..<lexed.tokens.length() {
+    let (token, start, end) = lexed.tokens[i]
+    match token {
+      @tokens.Token::INTERP(parts)
+      | @tokens.Token::MULTILINE_INTERP(parts)
+      | @tokens.Token::BYTES_INTERP(parts)
+      | @tokens.Token::REGEX_INTERP(parts) =>
+        for part in parts {
+          if part is @tokens.InterpElem::InterpSource({ loc, .. }) {
+            sb.write_view(source[last:loc.start.cnum])
+            sb.write_string(
+              normalize_legacy_syntax(
+                source[loc.start.cnum:loc.end.cnum].to_owned(),
+              ),
+            )
+            last = loc.end.cnum
+          }
         }
       _ => ()
     }
-  }
-  if replacements.is_empty() {
-    return source
-  }
-  replacements.sort_by((a, b) => a.0 - b.0)
-  let sb = StringBuilder::new()
-  let mut last = 0
-  for replacement in replacements {
-    let (start, end) = replacement
-    if start < last || end < start || end > source.length() {
-      return source
+    let replacement = match token {
+      @tokens.Token::TRY_QUESTION => Some("try!")
+      @tokens.Token::EXCLAMATION | @tokens.Token::QUESTION => {
+        let previous = prev_significant_token(lexed.tokens, i)
+        let next = next_significant_token(lexed.tokens, i)
+        match (previous, next) {
+          (
+            Some(
+              @tokens.Token::LIDENT(_)
+              | @tokens.Token::UIDENT(_)
+              | @tokens.Token::RPAREN
+              | @tokens.Token::RBRACKET
+            ),
+            Some(@tokens.Token::LPAREN),
+          ) => Some(" ")
+          (Some(@tokens.Token::RPAREN), _) if token is @tokens.Token::QUESTION =>
+            Some(" ")
+          _ => None
+        }
+      }
+      _ => None
     }
-    let prefix = source[last:start]
-    sb..write_view(prefix).write_string("else")
-    last = end
+    if replacement is Some(text) {
+      sb.write_view(source[last:start.cnum])
+      sb.write_string(text)
+      last = end.cnum
+    }
   }
-  let suffix = source[last:]
-  sb.write_view(suffix)
+  sb.write_view(source[last:])
   sb.to_string()
 }
 
@@ -222,23 +181,21 @@ fn attach_docstrings_for_lint(
         td.doc = doc
         match td.components {
           @syntax.TypeDesc::Abstract
-          | @syntax.TypeDesc::Extern
-          | @syntax.TypeDesc::Newtype(_)
+          | @syntax.TypeDesc::ExtensibleEnum(None)
           | @syntax.TypeDesc::Alias(_)
-          | @syntax.TypeDesc::Error(
-            @syntax.ExceptionDecl::NoPayload
-            | @syntax.ExceptionDecl::SinglePayload(_)
-          )
+          | @syntax.TypeDesc::Error(@syntax.ExceptionDecl::NoPayload)
           | @syntax.TypeDesc::TupleStruct(_) => ()
           @syntax.TypeDesc::Error(@syntax.ExceptionDecl::EnumPayload(constrs))
-          | @syntax.TypeDesc::Variant(constrs) =>
+          | @syntax.TypeDesc::Variant(constrs)
+          | @syntax.TypeDesc::ExtensibleEnum(Some(constrs))
+          | @syntax.TypeDesc::ExtendEnum(constructors=constrs, ..) =>
             constrs.each(constr => {
               let previous = skip_docstrings_before(constr.loc.start)
                 .map(make_doc)
                 .unwrap_or(@syntax.DocString::empty())
               constr.doc = previous
             })
-          @syntax.TypeDesc::Record(fields) =>
+          @syntax.TypeDesc::Record(fields~, ..) =>
             fields.each(field => {
               let previous = skip_docstrings_before(field.loc.start)
                 .map(make_doc)
@@ -248,17 +205,16 @@ fn attach_docstrings_for_lint(
         }
       }
       @syntax.Impl::TopFuncDef(fun_decl~, ..) => fun_decl.doc = doc
-      @syntax.Impl::TopFuncAlias(..) as fa => fa.doc = doc
       @syntax.Impl::TopLetDef(..) as ld => ld.doc = doc
       @syntax.Impl::TopExpr(..) => ()
       @syntax.Impl::TopImplRelation(..) as imp => imp.doc = doc
       @syntax.Impl::TopTest(..) as test_ => test_.doc = doc
       @syntax.Impl::TopTrait(decl) => decl.doc = doc
-      @syntax.Impl::TopBatchTypeAlias(..) as decl => decl.doc = doc
-      @syntax.Impl::TopBatchTraitAlias(..) as decl => decl.doc = doc
       @syntax.Impl::TopView(..) as view => view.doc = doc
       @syntax.Impl::TopImpl(..) as imp => imp.doc = doc
       @syntax.Impl::TopUsing(..) as using_stmt => using_stmt.doc = doc
+      @syntax.Impl::TopExtend(..) as extend_stmt => extend_stmt.doc = doc
+      @syntax.Impl::TopImport(..) as import_stmt => import_stmt.doc = doc
     }
     skip_docstrings_before(toplevel.loc().end) |> ignore
   }
@@ -361,7 +317,7 @@ fn parse_moonyacc_tokens(
         @list.empty(),
         [
           @basic.Report::{
-            loc: { start: pos, end: pos },
+            loc: { start: pos, end: pos, },
             msg: "Unexpected end of file.",
           },
         ],
@@ -369,7 +325,12 @@ fn parse_moonyacc_tokens(
     @yacc_parser.UnexpectedToken(token, (start, end), _) =>
       (
         @list.empty(),
-        [@basic.Report::{ loc: { start, end }, msg: "Unexpected `\{token}`." }],
+        [
+          @basic.Report::{
+            loc: { start, end, },
+            msg: "Unexpected `\{@debug.to_string(token)}`.",
+          },
+        ],
       )
   }
 }
@@ -379,8 +340,8 @@ fn parse_moonyacc_with_match_parens(
   source : String,
   name : String,
 ) -> (@syntax.Impls, Array[@basic.Report]) {
-  let { tokens, docstrings, .. } = @lexer.tokens_from_string(
-    source,
+  let { tokens, docstrings, .. } = @lexer.tokens_from_string_with_utf16_location(
+    source[:],
     comment=true,
     name~,
   )
@@ -405,30 +366,86 @@ fn has_unexpected_match(reports : Array[@basic.Report]) -> Bool {
 }
 
 ///|
+priv struct InterpolationParser {
+  reports : Array[@basic.Report]
+}
+
+///|
+impl @syntax.MapVisitor for InterpolationParser with fn visit_InterpElem(
+  env,
+  elem,
+) {
+  match elem {
+    @syntax.InterpElem::Source({ source, loc, }) => {
+      // Upstream preserves interpolation bodies as unparsed source. Parse them
+      // here so lint visitors see them, using the surrounding UTF-16 positions.
+      let { tokens, errors, .. } = @lexer.tokens_from_string_with_utf16_location(
+        source[:],
+        name=loc.start.fname,
+        start_pos=loc.start,
+        is_interpolation=true,
+        comment=false,
+      )
+      for (start, end, err) in errors {
+        env.reports.push(@basic.Report::{
+          loc: { start, end, },
+          msg: err.to_string(),
+        })
+      }
+      let (expr, reports) = @handrolled_parser.parse_expr(tokens)
+      env.reports.append(reports)
+      @syntax.InterpElem::Expr(expr=env.visit_Expr(expr), loc~)
+    }
+    _ => env.base().visit_InterpElem(elem)
+  }
+}
+
+///|
+fn parse_interpolations(
+  impls : @syntax.Impls,
+  reports : Array[@basic.Report],
+) -> (@syntax.Impls, Array[@basic.Report]) {
+  let env = InterpolationParser::{ reports, }
+  (impls.map(impl_ => env.visit_Impl(impl_)), reports)
+}
+
+///|
 pub fn parse_string_for_lint(
   source : String,
   name? : String = "",
   parser? : @parser.Parser = Handrolled,
 ) -> (@syntax.Impls, Array[@basic.Report]) {
   let normalized = source
-    |> normalize_using_type_keyword
     |> normalize_range_lt_inclusive
-    |> normalize_nobreak_keyword
-  let (impls, reports) = @parser.parse_string(normalized, name~, parser~)
-  if reports.length() > 0 {
-    match parser {
-      @parser.Parser::MoonYacc =>
-        if has_unexpected_match(reports) {
-          // Retry with match expressions wrapped in parens for infix contexts.
-          let (retry_impls, retry_reports) = parse_moonyacc_with_match_parens(
-            normalized, name,
-          )
-          if retry_reports.length() == 0 {
-            return (retry_impls, retry_reports)
-          }
-        }
-      _ => ()
+    |> normalize_legacy_syntax
+  // All fixes slice MoonBit strings using UTF-16 offsets. The parser facade
+  // defaults to Unicode scalar offsets, so lex explicitly in UTF-16 here.
+  let { tokens, docstrings, errors, } = @lexer.tokens_from_string_with_utf16_location(
+    normalized[:],
+    name~,
+    comment=true,
+  )
+  let (impls, diagnostics) = match parser {
+    Handrolled => @handrolled_parser.parse(tokens)
+    MoonYacc =>
+      parse_moonyacc_tokens(
+        tokens.filter(triple => !is_parser_trivia_token(triple.0)),
+      )
+  }
+  attach_docstrings_for_lint(docstrings, impls)
+  let reports = errors.filter_map(error => {
+    let (start, end, err) = error
+    match err {
+      @lexer.LexicalError::Reserved_keyword(_) => None
+      _ => Some(@basic.Report::{ loc: { start, end, }, msg: err.to_string(), })
+    }
+  })
+  reports.append(diagnostics)
+  if parser is MoonYacc && errors.is_empty() && has_unexpected_match(reports) {
+    let (fallback, errors) = parse_moonyacc_with_match_parens(normalized, name)
+    if errors.is_empty() {
+      return parse_interpolations(fallback, errors)
     }
   }
-  (impls, reports)
+  parse_interpolations(impls, reports)
 }

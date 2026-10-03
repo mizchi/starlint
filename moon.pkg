@@ -1,13 +1,15 @@
 import {
   "mizchi/starlint/internal",
   "moonbitlang/core/json",
+  "moonbitlang/core/debug",
   "moonbitlang/core/list",
   "moonbitlang/parser",
-  "moonbitlang/parser/lexer",
-  "moonbitlang/parser/syntax",
-  "moonbitlang/parser/basic",
-  "moonbitlang/parser/tokens",
   "moonbitlang/parser/yacc_parser",
+  "moonbitlang/parser/handrolled_parser",
+  "moonbitlang/lexer",
+  "moonbitlang/parser/syntax",
+  "moonbitlang/lexer/basic",
+  "moonbitlang/lexer/tokens",
 }
 
 import {

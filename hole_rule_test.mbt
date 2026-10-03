@@ -8,7 +8,6 @@ test "no hole placeholder" {
     @syntax.Impl::TopExpr(
       expr=hole,
       is_main=false,
-      local_types=@list.new(),
       is_async=None,
       loc=@syntax.no_location,
     ),
@@ -21,5 +20,10 @@ test "no hole placeholder" {
   let config = @starlint.LintConfig::enable_categories(["error"])
   let diagnostics = @starlint.lint_with_config(input, @lint.rules(), config)
   let summary = diagnostics.map(diag => diag.rule_id)
-  inspect(summary, content="[\"no_hole_placeholder\"]")
+  inspect(
+    summary,
+    content=(
+      #|[no_hole_placeholder]
+    ),
+  )
 }

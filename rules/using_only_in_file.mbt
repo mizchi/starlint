@@ -51,7 +51,7 @@ fn push_using_only_in_file_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for UsingOnlyInFileEnv with visit_Impl(env, impl_) {
+impl @syntax.IterVisitor for UsingOnlyInFileEnv with fn visit_Impl(env, impl_) {
   match impl_ {
     @syntax.Impl::TopUsing(loc~, ..) =>
       if !is_allowed_using_file(env.filename) {

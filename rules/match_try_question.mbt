@@ -5,12 +5,15 @@ let match_try_question_rule_id : String = "match_try_question"
 let match_try_question_description : String = "Prefer try/catch over match on try? results."
 
 ///|
-priv struct MatchTryQuestionEnv(Array[@starlint.Diagnostic])
+priv struct MatchTryQuestionEnv {
+  diags : Array[@starlint.Diagnostic]
+  source : String
+}
 
 ///|
-impl @syntax.IterVisitor for MatchTryQuestionEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for MatchTryQuestionEnv with fn visit_Expr(env, expr) {
   if @internal.match_match_expr(expr) is Some((subject, loc)) &&
-    @internal.match_try_question(subject) is Some(_) {
+    @internal.match_try_question(subject, source=env.source) is Some(_) {
     let message = "Avoid match (try? ...) for error handling."
     let detail =
       #|match (try? expr) {
@@ -23,7 +26,7 @@ impl @syntax.IterVisitor for MatchTryQuestionEnv with visit_Expr(env, expr) {
       #|} noraise {
       #|  value => <branch_ok>
       #|}
-    env.0.push(
+    env.diags.push(
       @starlint.Diagnostic::new(
         rule_id=match_try_question_rule_id,
         loc~,
@@ -42,12 +45,14 @@ fn match_try_question_rule() -> @starlint.Rule {
     id=match_try_question_rule_id,
     description=match_try_question_description,
     run=input => {
-      let env = MatchTryQuestionEnv(Array::new(capacity=8))
+      let env = MatchTryQuestionEnv::{
+        diags: Array::new(capacity=8),
+        source: input.source,
+      }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {
-        let MatchTryQuestionEnv(diags) = env
-        diags
+        env.diags
       }
     },
   )

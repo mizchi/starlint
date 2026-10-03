@@ -54,7 +54,10 @@ fn push_trivial_assert_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Impl(env, impl_) {
+impl @syntax.IterVisitor for AvoidTrivialAssertEnv with fn visit_Impl(
+  env,
+  impl_,
+) {
   match impl_ {
     @syntax.Impl::TopTest(..) => {
       let prev = env.in_test
@@ -69,7 +72,7 @@ impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Impl(env, impl_) {
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidTrivialAssertEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AvoidTrivialAssertEnv with fn visit_Expr(env, expr) {
   match @internal.match_call_info(expr) {
     Some((name, args, loc)) if env.in_test =>
       if name == "assert_true" || name == "assert_false" {

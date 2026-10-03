@@ -11,16 +11,14 @@ priv struct AvoidSideEffectInMapEnv {
 }
 
 ///|
-fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
+fn map_call_loc(expr : @syntax.Expr, source : String) -> @basic.Location? {
+  if @internal.legacy_call_marker(source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    return None
+  }
+
   match @internal.unwrap_paren(expr) {
-    @syntax.DotApply(
-      self=_,
-      method_name~,
-      args~,
-      return_self=_,
-      attr=NoAttr,
-      loc~
-    ) =>
+    @syntax.DotApply(self=_, method_name~, args~, return_self=_, loc~) =>
       if @internal.label_name(method_name) != "map" {
         None
       } else {
@@ -38,7 +36,6 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
     @syntax.Apply(
       func=@syntax.Field(record=_, accessor=@syntax.Accessor::Label(label), ..),
       args~,
-      attr=NoAttr,
       loc~
     ) =>
       if @internal.label_name(label) != "map" {
@@ -58,7 +55,6 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
     @syntax.Apply(
       func=@syntax.Method(type_name=_, method_name~, ..),
       args~,
-      attr=NoAttr,
       loc~
     ) =>
       if @internal.label_name(method_name) != "map" {
@@ -78,7 +74,6 @@ fn map_call_loc(expr : @syntax.Expr) -> @basic.Location? {
     @syntax.Apply(
       func=@syntax.Ident(id={ name: Ident(name~), .. }, ..),
       args~,
-      attr=NoAttr,
       loc~
     ) =>
       if name != "map" {
@@ -118,7 +113,7 @@ fn push_avoid_side_effect_in_map_diag(
   expr : @syntax.Expr,
   require_semicolon : Bool,
 ) -> Unit {
-  match map_call_loc(expr) {
+  match map_call_loc(expr, env.source) {
     Some(loc) =>
       if !require_semicolon || map_has_trailing_semicolon(env.source, loc) {
         let message = "Result of map is unused; use iter().each or a for loop."
@@ -141,7 +136,10 @@ fn push_avoid_side_effect_in_map_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidSideEffectInMapEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AvoidSideEffectInMapEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.Let(pattern~, expr=bound, body=_, loc=_) =>
       if @internal.is_discard_pattern(pattern) {

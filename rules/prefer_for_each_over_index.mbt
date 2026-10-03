@@ -32,7 +32,7 @@ priv struct IndexAccessFinder {
 }
 
 ///|
-impl @syntax.IterVisitor for IndexAccessFinder with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for IndexAccessFinder with fn visit_Expr(env, expr) {
   if env.found_other_use {
     return
   }
@@ -57,16 +57,16 @@ impl @syntax.IterVisitor for IndexAccessFinder with visit_Expr(env, expr) {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferForEachOverIndexEnv with visit_Expr(
+impl @syntax.IterVisitor for PreferForEachOverIndexEnv with fn visit_Expr(
   env,
   expr,
 ) {
   match expr {
-    @syntax.ForEach(binders~, expr=iter_expr, body~, else_block=None, loc~, ..) => {
-      let binders_array = @internal.list_to_array(binders)
+    @syntax.ForEach(patterns~, expr=iter_expr, body~, else_block=None, loc~, ..) => {
+      let binders_array = @internal.list_to_array(patterns)
       if binders_array.length() == 1 {
         match binders_array[0] {
-          Some(binder) => {
+          @syntax.Pattern::Var(binder) => {
             let binder_name = binder.name
             // Check iter is 0..<something.length()
             match @internal.match_infix(iter_expr, "..<") {
@@ -109,7 +109,7 @@ impl @syntax.IterVisitor for PreferForEachOverIndexEnv with visit_Expr(
               None => ()
             }
           }
-          None => ()
+          _ => ()
         }
       }
     }
@@ -125,7 +125,7 @@ fn prefer_for_each_over_index_rule() -> @starlint.Rule {
     description=prefer_for_each_over_index_description,
     enabled_by_default=false,
     run=input => {
-      let env = PreferForEachOverIndexEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferForEachOverIndexEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

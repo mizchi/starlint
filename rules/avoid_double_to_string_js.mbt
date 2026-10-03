@@ -38,7 +38,10 @@ fn push_double_to_string_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for AvoidDoubleToStringJsEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for AvoidDoubleToStringJsEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.Method(type_name~, method_name~, loc~) =>
       if @internal.type_name_right_name(type_name) == "Double" &&
@@ -63,7 +66,7 @@ fn avoid_double_to_string_js_rule() -> @starlint.Rule {
     tags=["size"],
     enabled_by_default=false,
     run=input => {
-      let env = AvoidDoubleToStringJsEnv::{ diags: Array::new(capacity=8) }
+      let env = AvoidDoubleToStringJsEnv::{ diags: Array::new(capacity=8), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

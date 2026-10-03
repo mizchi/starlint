@@ -11,7 +11,10 @@ priv struct RedundantIfSameBranchEnv {
 }
 
 ///|
-impl @syntax.IterVisitor for RedundantIfSameBranchEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for RedundantIfSameBranchEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   match expr {
     @syntax.If(cond~, ifso~, ifnot=Some(ifnot), loc~) =>
       match

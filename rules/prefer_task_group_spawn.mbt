@@ -59,7 +59,10 @@ fn push_prefer_task_group_spawn_diag(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferTaskGroupSpawnEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferTaskGroupSpawnEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   if is_async_spawn_call(expr) {
     push_prefer_task_group_spawn_diag(env, expr.loc())
   }
@@ -74,7 +77,7 @@ fn prefer_task_group_spawn_rule() -> @starlint.Rule {
     tags=["async"],
     enabled_by_default=false,
     run=input => {
-      let env = PreferTaskGroupSpawnEnv::{ diags: Array::new(capacity=4) }
+      let env = PreferTaskGroupSpawnEnv::{ diags: Array::new(capacity=4), }
       for impl_ in input.impls {
         env.visit_Impl(impl_)
       } nobreak {

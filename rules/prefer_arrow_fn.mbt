@@ -62,12 +62,12 @@ fn has_call_suffix(source : String, loc : @basic.Location) -> Bool {
 }
 
 ///|
-impl @syntax.IterVisitor for PreferArrowFnEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferArrowFnEnv with fn visit_Expr(env, expr) {
   match expr {
     @syntax.Function(func~, loc~) =>
       if func.return_type is None &&
         func.is_async is None &&
-        func.has_error is None {
+        func.nocancel_ is None {
         let is_lambda = match func.kind {
           @syntax.FnKind::Lambda => true
           _ => false

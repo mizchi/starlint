@@ -36,9 +36,15 @@ fn rebind_match_ident_like(expr : @syntax.Expr) -> String? {
 ///|
 fn rebind_parse_simple_apply(
   expr : @syntax.Expr,
+  source : String,
 ) -> (@syntax.Expr, Array[@syntax.Argument], @basic.Location)? {
+  if @internal.legacy_call_marker(source, @internal.unwrap_paren(expr))
+    is Some(_) {
+    return None
+  }
+
   match @internal.unwrap_paren(expr) {
-    @syntax.Apply(func~, args~, attr=NoAttr, loc~) =>
+    @syntax.Apply(func~, args~, loc~) =>
       Some((func, @internal.list_to_array(args), loc))
     _ => None
   }
@@ -123,7 +129,7 @@ fn rebind_pipeline_suggestion(
   sb.write_view(base_src)
   for step in steps {
     let (_, bound_expr) = step
-    match rebind_parse_simple_apply(bound_expr) {
+    match rebind_parse_simple_apply(bound_expr, source) {
       Some((func, args, _)) => {
         if !rebind_allowed_pipe_rhs(func) {
           return None
@@ -154,9 +160,10 @@ fn rebind_pipeline_suggestion(
 ///|
 fn rebind_chain_base_and_steps(
   steps : Array[(String, @syntax.Expr)],
+  source : String,
 ) -> (@syntax.Expr, Array[(String, @syntax.Expr)])? {
   let (first_name, first_expr) = steps[0]
-  let (func, args, _) = match rebind_parse_simple_apply(first_expr) {
+  let (func, args, _) = match rebind_parse_simple_apply(first_expr, source) {
     Some(v) => v
     None => return None
   }
@@ -175,7 +182,7 @@ fn rebind_chain_base_and_steps(
   let mut idx = 1
   while idx < steps.length() {
     let (name, expr) = steps[idx]
-    let (func_i, args_i, _) = match rebind_parse_simple_apply(expr) {
+    let (func_i, args_i, _) = match rebind_parse_simple_apply(expr, source) {
       Some(v) => v
       None => return None
     }
@@ -197,11 +204,14 @@ fn rebind_chain_base_and_steps(
 }
 
 ///|
-impl @syntax.IterVisitor for PreferPipelineRebindEnv with visit_Expr(env, expr) {
+impl @syntax.IterVisitor for PreferPipelineRebindEnv with fn visit_Expr(
+  env,
+  expr,
+) {
   let mut emitted = false
   match rebind_let_chain(expr) {
     Some((loc, steps)) =>
-      match rebind_chain_base_and_steps(steps) {
+      match rebind_chain_base_and_steps(steps, env.source) {
         Some((base, steps)) =>
           match rebind_pipeline_suggestion(env.source, base, steps) {
             Some(suggestion) => {
